@@ -2,8 +2,11 @@
     "compilerOptions": {
         "target": "ES5",
         "lib": [
-            "es2018",
-            "dom"
+            "ES2018",
+            "DOM",
+        ],
+        "types": [
+            "node"
         ],
         "isolatedModules": false,
         "experimentalDecorators": true,
