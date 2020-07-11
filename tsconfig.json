@@ -5,6 +5,7 @@
             "ES2018",
             "DOM",
         ],
+        "types": [],
         "isolatedModules": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
