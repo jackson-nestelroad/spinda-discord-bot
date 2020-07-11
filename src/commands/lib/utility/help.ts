@@ -47,8 +47,8 @@ export class HelpCommand implements Command {
                 const cmd = bot.commands.get(needHelp);
                 embed.setTitle(`${prefix}${needHelp} ${cmd.args}`);
                 embed.addField('Description', cmd.description);
-                embed.addField('Category', CommandCategory[cmd.category]);
-                embed.addField('Permission', CommandPermission[cmd.permission]);
+                embed.addField('Category', CommandCategory[cmd.category], true);
+                embed.addField('Permission', CommandPermission[cmd.permission], true);
             }
             else {
                 embed.setTitle('No Command Found');
