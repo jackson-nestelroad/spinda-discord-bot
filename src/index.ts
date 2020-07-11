@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import { Environment } from './data/environment';
 
 // Use local .env file
-if (Environment.getEnvironment() !== 'prod') {
+if (Environment.getEnvironment() !== 'production') {
     config();
 }
 

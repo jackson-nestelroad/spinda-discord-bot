@@ -1,6 +1,6 @@
 export namespace Environment {
-    export function getEnvironment(): string {
-        return process.env.ENVIRONMENT;
+    export function getEnvironment(): 'production' | 'development' | undefined {
+        return process.env.NODE_ENV as any;
     }
     
     export function getDiscordToken(): string {
