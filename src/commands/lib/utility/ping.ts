@@ -11,9 +11,8 @@ export class PingCommand implements Command {
 
     public async run(bot: DiscordBot, msg: Message) {
         const start = new Date();
-        msg.channel.send('Pong!').then(msg => {
-            const end = new Date();
-            msg.edit(`Pong! (${((end as any) - (start as any))} ms)`);
-        });
+        const newMsg = await msg.channel.send('Pong!');
+        const end = new Date();
+        newMsg.edit(`Pong! (${((end as any) - (start as any))} ms)`);
     }
 }

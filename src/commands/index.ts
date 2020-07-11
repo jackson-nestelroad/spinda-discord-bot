@@ -1,7 +1,7 @@
 import { Command } from './lib/base';
-import { PingCommand } from './lib/util/ping';
+import { PingCommand } from './lib/utility/ping';
+import { HelpCommand } from './lib/utility/help';
 import { SpindaCommand } from './lib/spinda';
-import { HelpCommand } from './lib/util/help';
 import { ConchCommand } from './lib/fun/conch';
 import { BotsnackCommand } from './lib/fun/botsnack';
 import { EightBallCommand } from './lib/fun/8ball';
