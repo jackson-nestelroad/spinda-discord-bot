@@ -26,7 +26,7 @@ export class JsCommand implements Command {
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
 
-    public readonly maxLength = 500;
+    public readonly maxLength = 1000;
 
     // See https://nodejs.org/api/globals.html
     public readonly blacklist: string[] = [
@@ -63,7 +63,7 @@ export class JsCommand implements Command {
         else {
             res = (new EvalContext(bot, msg)).eval(code);
             if (res.length > this.maxLength) {
-                res.substr(0, this.maxLength);
+                res = res.substr(0, this.maxLength);
             }
         }
         msg.channel.send(`\`\`\`js\n${res}\n\`\`\``);
