@@ -186,16 +186,14 @@ export class SpindaCommand implements Command {
         const width = this.canvas.width;
         const height = this.canvas.height;
         const imageData = this.ctx.getImageData(0, 0, width, height).data;
-        if (Math.floor(Math.random() * this.shinyOdds) === 0) {
-            // Iterate over every pixel, change the spot colors
-            for (let x = 0; x < width; ++x) {
-                for (let y = 0; y < height; ++y) {
-                    const pixel = this.getPixel(imageData, x, y, width);
-                    for (const key in SpindaColors.spots) {
-                        if (pixel.hex === SpindaColors.spots[key].hex) {
-                            this.ctx.fillStyle = SpindaColors.shinySpots[key].rgba;
-                            this.ctx.fillRect(x, y, 1, 1);
-                        }
+        // Iterate over every pixel, change the spot colors
+        for (let x = 0; x < width; ++x) {
+            for (let y = 0; y < height; ++y) {
+                const pixel = this.getPixel(imageData, x, y, width);
+                for (const key in SpindaColors.spots) {
+                    if (pixel.hex === SpindaColors.spots[key].hex) {
+                        this.ctx.fillStyle = SpindaColors.shinySpots[key].rgba;
+                        this.ctx.fillRect(x, y, 1, 1);
                     }
                 }
             }
