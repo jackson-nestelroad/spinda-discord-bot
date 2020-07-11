@@ -10,6 +10,7 @@ const CommandTypes: Array<{ new (): Command }> = [
     PingCommand,
     HelpCommand,
 
+    SpindaCommand,
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,
