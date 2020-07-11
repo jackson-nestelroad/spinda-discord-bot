@@ -1,6 +1,10 @@
 {
     "compilerOptions": {
         "target": "ES5",
+        "lib": [
+            "es2018",
+            "dom"
+        ],
         "isolatedModules": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
