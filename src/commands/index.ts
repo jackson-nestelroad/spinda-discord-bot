@@ -5,8 +5,9 @@ import { SpindaCommand } from './lib/spinda';
 import { ConchCommand } from './lib/fun/conch';
 import { BotsnackCommand } from './lib/fun/botsnack';
 import { EightBallCommand } from './lib/fun/8ball';
+import { PokengineCommands } from './lib/pokengine';
 
-const CommandTypes: Array<{ new (): Command }> = [
+const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
     HelpCommand,
 
@@ -14,6 +15,8 @@ const CommandTypes: Array<{ new (): Command }> = [
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,
+
+    ...PokengineCommands,
 ];
 
 function buildCommandMap(): Map<string, Command> {
