@@ -3,20 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message, MessageEmbed } from 'discord.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { SpindaColors } from '../spinda/spinda-colors';
-
-interface WebScrapedPokedex {
-    name: string;
-    dexPath: string;
-    iconPath: string;
-}
-
-interface WebScrapedFakemon {
-    num: number;
-    name: string;
-    dexPath: string;
-    imagePath: string;
-}
+import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';
 
 export class CertifiedCommand implements Command {
     public names = ['certified'];
@@ -25,27 +12,21 @@ export class CertifiedCommand implements Command {
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
 
-    public readonly baseUrl: string = 'http://pokengine.org';
     public readonly pokedexPath: string = '/pok\u00E9dex';
     public certifiedDexNames: WebScrapedPokedex[];
-
-    private formatNum(num: number, length: number = 3): string {
-        const str = num.toString();
-        return str.length < length ? '0'.repeat(length - str.length) + str : str;
-    }
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
         // Retrieve certified dex information
         // We cache this data since it is very unlikely to change
         if (!this.certifiedDexNames) {
-            const dexesResponse = await axios.get(encodeURI(this.baseUrl + this.pokedexPath), { responseEncoding: 'binary' } as any);
+            const dexesResponse = await axios.get(PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.pokedexPath), { responseEncoding: 'binary' } as any);
             this.certifiedDexNames = [];
             cheerio(dexesResponse.data).find('.dexes').first().find('a.button').each((i, button) => {
                 const ctx = cheerio(button);
                 this.certifiedDexNames.push({
                     name: ctx.text(),
                     dexPath: ctx.attr('href'),
-                    iconPath: ctx.find('img').attr('src'),
+                    iconPath: '/' + ctx.find('img').attr('src'),
                 })
             });
         }
@@ -63,11 +44,11 @@ export class CertifiedCommand implements Command {
         }
 
         // Get dex page, this is somewhat of a slow operation
-        const dexResponse = await axios.get(this.baseUrl + dex.dexPath + '?all', { responseEncoding: 'binary' } as any);
+        const dexResponse = await axios.get(PokengineUtil.baseUrl + dex.dexPath + '?all', { responseEncoding: 'binary' } as any);
 
         // Gather data
         // TODO: Think about caching this data
-        let mons: WebScrapedFakemon[] = [];
+        let mons: WebScrapedDexBlock[] = [];
         cheerio(dexResponse.data).find('.dex-block').each((i, block) => {
             const ctx = cheerio(block);
             const split = ctx.text().split(' ');
@@ -75,7 +56,7 @@ export class CertifiedCommand implements Command {
                 mons.push({ 
                     num: parseInt(split[0]),
                     name: split.slice(1).join(' '),
-                    dexPath: ctx.attr('href'),
+                    pagePath: ctx.attr('href'),
                     imagePath: ctx.find('img').attr('data-src')
                 });
             }
@@ -85,7 +66,7 @@ export class CertifiedCommand implements Command {
             throw new Error(`Pok\u00E9dex "${dex.name}" is empty.`);
         }
 
-        let chosenMon: WebScrapedFakemon = null;
+        let chosenMon: WebScrapedDexBlock = null;
         if (args.length > 1) {
             // User gave a dex number
             let dexNum = parseInt(args[1]);
@@ -97,7 +78,8 @@ export class CertifiedCommand implements Command {
             }
             // User gave a Fakemon name
             else {
-                chosenMon = mons.find(mon => mon.name.localeCompare(args[1], undefined, { sensitivity: 'base' }) === 0);
+                const givenName = args.slice(1).join(' ');
+                chosenMon = mons.find(mon => mon.name.localeCompare(givenName, undefined, { sensitivity: 'base' }) === 0);
                 if (!chosenMon) {
                     throw new Error(`Pok\u00E9mon "${args[1]}" does not exist in Pok\u00E9dex ${dex.name}.`);
                 }
@@ -111,13 +93,9 @@ export class CertifiedCommand implements Command {
         }
 
         // Send embed
-        const embed = new MessageEmbed();
-        embed.setColor(SpindaColors.spots.base.hexString);
-        embed.setAuthor(dex.name, dex.iconPath ? this.baseUrl + '/' + dex.iconPath : undefined);
-        embed.setTitle(`#${this.formatNum(chosenMon.num)} ${chosenMon.name}`);
-        embed.setURL(decodeURI(this.baseUrl + chosenMon.dexPath));
-        embed.setImage(this.baseUrl + chosenMon.imagePath);
-        embed.setFooter(bot.name, bot.iconUrl);
+        const embed = bot.createEmbed();
+        PokengineUtil.embedDexBlock(embed, chosenMon);
+        embed.setAuthor(dex.name, dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined);
 
         msg.channel.send(embed);
     }
