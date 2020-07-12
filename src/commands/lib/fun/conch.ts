@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
+import { FunUtil } from './util';
 
 export class ConchCommand implements Command {
     public readonly prefix = ':shell: - ';
@@ -12,24 +13,15 @@ export class ConchCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
-    public readonly header = `${this.prefix}You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;
+    public readonly header = `You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;
     public readonly secondLine = `\n${this.prefix}`;
     public readonly editedHeader = this.header + this.secondLine;
-
-    public async wait(ms: number) {
-        return new Promise(resolve => setTimeout(() => resolve(), ms));
-    }
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
         const question = args.join(' ').toLowerCase().trim();
         let response = await msg.channel.send(this.header);
 
-        // Add some suspense
-        for (let i = 0; i < 2; ++i) {
-            await this.wait(1000);
-            response = await response.edit(this.editedHeader + '... '.repeat(i + 1));
-        }
-        await this.wait(1500 * Math.random());
+        response = await FunUtil.addSuspense(response, this.editedHeader, 2);
 
         let res: string;
         if (question.startsWith('which')) {
