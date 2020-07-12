@@ -31,7 +31,8 @@ export class SearchCommand implements Command {
     public tabNamesToUpperCase: Map<SearchTab, string> = null;
 
     private searchFor(query: string): string {
-        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query);
+        // Encode #, because they are used in searching
+        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(/#/g, '%23');
     }
 
     private sendEmbed(msg: Message, embed: MessageEmbed, searchUrl: string) {
