@@ -31,12 +31,13 @@ export class HelpCommand implements Command {
                         if (!this.commandListByCategory.has(cmd.category)) {
                             this.commandListByCategory.set(cmd.category, []);
                         }
-                        this.commandListByCategory.get(cmd.category).push(`${prefix}${name} ${cmd.args}`);
+                        this.commandListByCategory.get(cmd.category).push(`${name} ${cmd.args}`);
                     }
                 });
             }
             
             this.commandListByCategory.forEach((value, key) => {
+                value = value.map(value => `${prefix}${value}`);
                 embed.addField(CommandCategory[key], value.join('\n'), true);
             });
         }
