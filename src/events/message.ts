@@ -9,8 +9,15 @@ export class MessageEvent extends BaseEvent<'message'> {
         }
     
         const prefix = this.bot.dataService.getGuildConfig(msg.guild.id).prefix;
+        
         if (!msg.content.startsWith(prefix)) {
-            return;
+            // Bot is mentioned
+            if (msg.mentions.users.has(this.bot.client.user.id)) {
+                // User is asking for help
+                if (msg.content.toLowerCase().includes('help')) {
+                    this.bot.commands.get('help').run(this.bot, msg, []);
+                }
+            }
         }
         
         const args = msg.content.split(' ');
