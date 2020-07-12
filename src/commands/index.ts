@@ -7,10 +7,12 @@ import { BotsnackCommand } from './lib/fun/botsnack';
 import { EightBallCommand } from './lib/fun/8ball';
 import { PokengineCommands } from './lib/pokengine';
 import { RefreshCommand } from './lib/secret/refresh';
+import { CleanCommand } from './lib/utility/clean';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
     HelpCommand,
+    CleanCommand,
 
     SpindaCommand,
     BotsnackCommand,
