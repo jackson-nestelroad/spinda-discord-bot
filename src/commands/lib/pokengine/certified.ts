@@ -62,7 +62,7 @@ export class CertifiedCommand implements Command {
             dex = this.certifiedDexNames[Math.floor(Math.random() * this.certifiedDexNames.length)];
         }
 
-        // Get dex page, this is some what of a slow operation
+        // Get dex page, this is somewhat of a slow operation
         const dexResponse = await axios.get(this.baseUrl + dex.dexPath + '?all', { responseEncoding: 'binary' } as any);
 
         // Gather data
