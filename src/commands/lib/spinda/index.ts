@@ -31,7 +31,7 @@ export class SpindaCommand implements Command {
         1: 'spinda/top_right_spot.png',
         2: 'spinda/bottom_left_spot.png',
         3: 'spinda/bottom_right_spot.png',
-    };
+    } as const;
 
     // Actual resources fetched and cached
     private readonly resources: SpindaConfig<Image> = { } as any;
@@ -43,7 +43,7 @@ export class SpindaCommand implements Command {
         1: new Point(32, 13),
         2: new Point(8, 19),
         3: new Point(20, 23),
-    };
+    } as const;
 
     // Thickness for outline, set to 0 for no outline
     private readonly outlineThickness: number = 1;

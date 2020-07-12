@@ -22,4 +22,4 @@ export const SpindaColors = {
     black: new Color(0, 0, 0),
     white: new Color(255, 255, 255),
     transparent: new Color(0, 0, 0, 0),
-};
+} as const;
