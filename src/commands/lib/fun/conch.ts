@@ -12,6 +12,9 @@ export class ConchCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
+    public readonly header = `${this.prefix}You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;
+    public readonly secondLine = `\n${this.prefix}`;
+    public readonly editedHeader = this.header + this.secondLine;
 
     public async wait(ms: number) {
         return new Promise(resolve => setTimeout(() => resolve(), ms));
@@ -19,15 +22,14 @@ export class ConchCommand implements Command {
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
         const question = args.join(' ').toLowerCase().trim();
-        msg.channel.send(this.prefix + 'You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.');
-        
-        // Suspense!
-        await this.wait(1000);
-        msg.channel.send('...');
-        await this.wait(1000);
-        msg.channel.send('...');
-        await this.wait(1000);
-        await this.wait(1000 * Math.random());
+        let response = await msg.channel.send(this.header);
+
+        // Add some suspense
+        for (let i = 0; i < 2; ++i) {
+            await this.wait(1000);
+            response = await response.edit(this.editedHeader + '... '.repeat(i + 1));
+        }
+        await this.wait(1500 * Math.random());
 
         let res: string;
         if (question.startsWith('which')) {
@@ -46,6 +48,6 @@ export class ConchCommand implements Command {
             res = this.options[Math.floor(Math.random() * this.options.length)];
         }
 
-        msg.channel.send(this.prefix + res);
+        response.edit(`${this.editedHeader}"${res}"`);
     }
 }
