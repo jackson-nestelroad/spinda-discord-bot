@@ -85,8 +85,12 @@ export class SearchCommand implements Command {
         const firstDexBlock = searchResults.find('.dex-block').first();
         // Results are Pokemon or Trainers
         if (firstDexBlock.length > 0) {
+            // Result is private
+            if (firstDexBlock.text() === 'Private') {
+                PokengineUtil.embedPrivate(embed);
+            }
             // Results are Pokemon
-            if (searchResults.find('#monsters').length > 0) {
+            else if (searchResults.find('#monsters').length > 0) {
                 const split = firstDexBlock.text().split(' ');
                 PokengineUtil.embedDexBlock(embed, { 
                     num: parseInt(split[0]),

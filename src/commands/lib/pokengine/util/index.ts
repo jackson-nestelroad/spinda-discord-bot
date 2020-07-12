@@ -121,6 +121,11 @@ export namespace PokengineUtil {
         embed.setImage(baseUrl + block.imagePath);
     }
 
+    export function embedPrivate(embed: MessageEmbed) {
+        embed.setTitle('Private');
+        embed.setDescription('This result cannot be viewed.');
+    }
+
     export function embedMove(embed: MessageEmbed, move: WebScrapedMove) {
         embed.setTitle(`#${move.num} ${move.name}`);
         embed.setURL(decodeURI(baseUrl + move.pagePath));
