@@ -45,7 +45,7 @@ export class RoutletteCommand implements Command {
             bullets = chambers;
         }
 
-        const nickname = msg.guild.member(msg.author).user.username;
+        const nickname = msg.guild.member(msg.author).nickname || msg.author.username;
 
         const responseText = `${nickname} places ${bullets} bullet${bullets === 1 ? '' : 's'} in ${chambers} chamber${chambers === 1 ? '' : 's'}. They spin the cylinder and place the nozzle to their head.`;
         let response = await msg.channel.send(responseText);
