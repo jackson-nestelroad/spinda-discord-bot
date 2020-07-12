@@ -6,6 +6,7 @@ import { ConchCommand } from './lib/fun/conch';
 import { BotsnackCommand } from './lib/fun/botsnack';
 import { EightBallCommand } from './lib/fun/8ball';
 import { PokengineCommands } from './lib/pokengine';
+import { RefreshCommand } from './lib/secret/refresh';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -17,17 +18,20 @@ const CommandTypes: Array<{ new(): Command }> = [
     EightBallCommand,
 
     ...PokengineCommands,
+
+    RefreshCommand,
 ];
 
-function buildCommandMap(): Map<string, Command> {
-    const map = new Map();
-    for (const cmd of CommandTypes) {
-        const instance = new cmd();
-        for (const name of instance.names) {
-            map.set(name, instance);
+export namespace Commands {
+    export function buildCommandMap(): Map<string, Command> {
+        const map = new Map();
+        for (const cmd of CommandTypes) {
+            const instance = new cmd();
+            for (const name of instance.names) {
+                map.set(name, instance);
+            }
         }
+        return map;
     }
-    return map;
+    
 }
-
-export const Commands = buildCommandMap();

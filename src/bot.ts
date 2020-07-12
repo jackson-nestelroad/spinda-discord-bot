@@ -27,7 +27,11 @@ export class DiscordBot {
         this.events.set('ready', new ReadyEvent(this, 'ready'));
         this.events.set('message', new MessageEvent(this, 'message'));
 
-        this.commands = Commands;
+        this.refreshCommands();
+    }
+
+    public refreshCommands() {
+        this.commands = Commands.buildCommandMap();
     }
 
     public run() {
