@@ -7,7 +7,7 @@ export class ConchCommand implements Command {
     
     public names = ['conch'];
     public args = '(question)';
-    public description = this.prefix + 'Pulls the Magic Conch Shell\'s string for words of wisdom.';
+    public description = this.prefix + 'Pulls the Magic Conch Shell\u2122\'s string for words of wisdom.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
 
