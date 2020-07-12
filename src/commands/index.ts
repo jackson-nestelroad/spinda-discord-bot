@@ -8,6 +8,7 @@ import { EightBallCommand } from './lib/fun/8ball';
 import { PokengineCommands } from './lib/pokengine';
 import { RefreshCommand } from './lib/secret/refresh';
 import { CleanCommand } from './lib/utility/clean';
+import { RoutletteCommand } from './lib/fun/roulette';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -18,6 +19,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,
+    RoutletteCommand,
 
     ...PokengineCommands,
 
