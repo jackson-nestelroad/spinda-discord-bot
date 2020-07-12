@@ -1,4 +1,4 @@
-import { Client } from 'discord.js';
+import { Client, MessageEmbed } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -6,6 +6,12 @@ import { Command } from './commands/lib/base';
 import { Commands } from './commands';
 import { DataService } from './data/data-service';
 import { Environment } from './data/environment';
+import { SpindaColors } from './commands/lib/spinda/spinda-colors';
+
+interface EmbedOptions {
+    footer?: boolean;
+    timestamp?: boolean;
+}
 
 export class DiscordBot {
     public readonly name = 'Spinda';
@@ -32,6 +38,24 @@ export class DiscordBot {
 
     public refreshCommands() {
         this.commands = Commands.buildCommandMap();
+    }
+
+    public createEmbed(options: EmbedOptions = { 
+        footer: true,
+        timestamp: false,
+    }): MessageEmbed {
+        const embed = new MessageEmbed();
+        embed.setColor(SpindaColors.spots.base.hexString);
+        
+        if (options.timestamp) {
+            embed.setTimestamp();
+        }
+
+        if (options.footer) {
+            embed.setFooter(this.name, this.iconUrl);
+        }
+
+        return embed;
     }
 
     public run() {

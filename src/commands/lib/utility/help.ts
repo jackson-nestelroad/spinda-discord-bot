@@ -1,7 +1,6 @@
 import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
-import { Message, MessageEmbed } from 'discord.js';
-import { SpindaColors } from '../spinda/spinda-colors';
+import { Message } from 'discord.js';
 
 export class HelpCommand implements Command {
     public names = ['help'];
@@ -14,10 +13,8 @@ export class HelpCommand implements Command {
     public commandListByCategory: Map<CommandCategory, string[]> = null;
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
-        const embed = new MessageEmbed();
-        embed.setColor(SpindaColors.spots.base.hexString);
+        const embed = bot.createEmbed();
         embed.setAuthor(bot.name + ' Commands', bot.iconUrl);
-        embed.setFooter(new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
         const prefix = bot.dataService.getGuildConfig(msg.guild.id).prefix;
 
         // Get all commands by category
