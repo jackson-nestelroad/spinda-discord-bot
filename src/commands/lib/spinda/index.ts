@@ -27,22 +27,21 @@ export class SpindaCommand implements Command {
     // Paths to resources
     private readonly resourcePaths: SpindaConfig<string> = {
         base: 'spinda/base.png',
-        0: 'spinda/top_left_spot.png',
-        1: 'spinda/top_right_spot.png',
-        2: 'spinda/bottom_left_spot.png',
-        3: 'spinda/bottom_right_spot.png',
+        0: 'spinda/medium/top_left_spot.png',
+        1: 'spinda/medium/top_right_spot.png',
+        2: 'spinda/medium/bottom_left_spot.png',
+        3: 'spinda/medium/bottom_right_spot.png',
     } as const;
 
     // Actual resources fetched and cached
     private readonly resources: SpindaConfig<Image> = { } as any;
 
-    // Defines the top-left corner of the smallest possible box the spot can fit into (if the spot is 0x0)
-    // The actual origin, or top-left corner of a spot, will be calculated with the width and height of each spots
+    // Defines the top-left corner of each spot
     private readonly spotAnchors: SpindaConfig<Point> = {
-        0: new Point(8, 7),
-        1: new Point(32, 13),
-        2: new Point(8, 19),
-        3: new Point(20, 23),
+        0: new Point(-3, -5),
+        1: new Point(20, 3),
+        2: new Point(3, 10),
+        3: new Point(13, 15),
     } as const;
 
     // Thickness for outline, set to 0 for no outline
@@ -132,7 +131,7 @@ export class SpindaCommand implements Command {
     private drawSpots(pid: number) {
         // Get actual origin for spots
         const offsetSpotAnchors: SpindaConfig<Point> = Object.entries(this.spotAnchors)
-            .map(([key, point]) => [key, point.translate(this.outlineThickness - this.resources[key].width, this.outlineThickness - this.resources[key].height)])
+            .map(([key, point]) => [key, point.translate(this.outlineThickness, this.outlineThickness)])
             .reduce((obj, entry) => { 
                 return { ...obj, [entry[0] as any]: entry[1], }
             }, { }) as any;
