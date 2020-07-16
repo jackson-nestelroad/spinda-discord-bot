@@ -111,7 +111,7 @@ export namespace PokengineUtil {
     }
 
     export function embedDexBlock(embed: MessageEmbed, block: WebScrapedDexBlock) {
-        if (block.num) {
+        if (block.num || block.num === 0) {
             embed.setTitle(`#${formatNum(block.num)} ${block.name}`);
         }
         else {
@@ -123,13 +123,13 @@ export namespace PokengineUtil {
 
     export function embedPrivate(embed: MessageEmbed) {
         embed.setTitle('Private');
-        embed.setDescription('This result cannot be viewed.');
+        embed.addField('Error', 'This result cannot be viewed.');
     }
 
     export function embedMove(embed: MessageEmbed, move: WebScrapedMove) {
         embed.setTitle(`#${move.num} ${move.name}`);
         embed.setURL(decodeURI(baseUrl + move.pagePath));
-        embed.setDescription(move.description);
+        embed.addField('Description', move.description);
         embed.addField('Type', move.type, true);
         embed.addField('Category', move.category, true);
     }
@@ -138,13 +138,13 @@ export namespace PokengineUtil {
         embed.setTitle(`#${item.num} ${item.name}`);
         embed.setURL(decodeURI(baseUrl + item.pagePath));
         embed.setThumbnail(baseUrl + item.imagePath);
-        embed.setDescription(item.description);
+        embed.addField('Description', item.description);
     }
 
     export function embedAbility(embed: MessageEmbed, ability: WebScrapedAbility) {
         embed.setTitle(`#${ability.num} ${ability.name}`);
         embed.setURL(decodeURI(baseUrl + ability.pagePath));
-        embed.setDescription(ability.description);
+        embed.addField('Description', ability.description);
     }
 
     export function embedPlayer(embed: MessageEmbed, player: WebScrapedPlayer) {

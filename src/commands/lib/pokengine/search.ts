@@ -36,7 +36,7 @@ export class SearchCommand implements Command {
     }
 
     private sendEmbed(msg: Message, embed: MessageEmbed, searchUrl: string) {
-        embed.addField('See More', searchUrl);
+        embed.setDescription(`[See more results](${searchUrl})`);
         msg.channel.send(embed);
     }
 
@@ -91,10 +91,9 @@ export class SearchCommand implements Command {
             }
             // Results are Pokemon
             else if (searchResults.find('#monsters').length > 0) {
-                const split = firstDexBlock.text().split(' ');
                 PokengineUtil.embedDexBlock(embed, { 
-                    num: parseInt(split[0]),
-                    name: split.slice(1).join(' '),
+                    num: parseInt(firstDexBlock.attr('data-id')),
+                    name: firstDexBlock.attr('title'),
                     pagePath: firstDexBlock.attr('href'),
                     imagePath: firstDexBlock.find('img').attr('data-src'),
                 });

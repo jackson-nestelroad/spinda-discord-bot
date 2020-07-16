@@ -9,7 +9,7 @@ import { Environment } from './data/environment';
 import { SpindaColors } from './commands/lib/spinda/spinda-colors';
 
 interface EmbedOptions {
-    footer?: boolean;
+    footer?: boolean | string;
     timestamp?: boolean;
 }
 
@@ -52,7 +52,7 @@ export class DiscordBot {
         }
 
         if (options.footer) {
-            embed.setFooter(this.name, this.iconUrl);
+            embed.setFooter(typeof options.footer === 'string' ? options.footer : this.name, this.iconUrl);
         }
 
         return embed;
