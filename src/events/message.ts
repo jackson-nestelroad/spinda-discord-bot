@@ -1,8 +1,15 @@
 import { Message } from 'discord.js';
 import { BaseEvent } from './base';
 import { Validation } from './util/validate';
+import { DiscordBot } from '../bot';
 
-export class MessageEvent extends BaseEvent<'message'> {
+const event = 'message';
+
+export class MessageEvent extends BaseEvent<typeof event> {
+    constructor(bot: DiscordBot) {
+        super(bot, event);
+    }
+    
     public async run(msg: Message) {
         if (msg.author.bot) {
             return;

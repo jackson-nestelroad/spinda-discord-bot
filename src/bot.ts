@@ -30,8 +30,8 @@ export class DiscordBot {
         this.client = new Client();
         this.dataService = new DataService();
 
-        this.events.set('ready', new ReadyEvent(this, 'ready'));
-        this.events.set('message', new MessageEvent(this, 'message'));
+        this.events.set('ready', new ReadyEvent(this));
+        this.events.set('message', new MessageEvent(this));
 
         this.refreshCommands();
     }
