@@ -45,7 +45,7 @@ export class SearchCommand implements Command {
         const searchUrl = this.searchFor(query);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
         const searchResults = cheerio(searchResponse.data);
-        const title = searchResults.find('#content .content.above');
+        const title = searchResults.find('#content .content.above').last();
 
         const embed: MessageEmbed = bot.createEmbed();
         
@@ -64,7 +64,7 @@ export class SearchCommand implements Command {
             });
         }
 
-        const titleText = searchResults.find('#content .content.above').text();
+        const titleText = title.text();
         const upperCaseTitleText = titleText.toUpperCase();
 
         // Get which tab we are on
