@@ -11,7 +11,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
     }
     
     public async run(msg: Message) {
-        if (msg.author.bot) {
+        if (msg.author.bot || msg.guild === null) {
             return;
         }
     
