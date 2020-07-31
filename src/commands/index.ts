@@ -9,6 +9,7 @@ import { PokengineCommands } from './lib/pokengine';
 import { RefreshCommand } from './lib/secret/refresh';
 import { CleanCommand } from './lib/utility/clean';
 import { RoutletteCommand } from './lib/fun/roulette';
+import { EvalCommand } from './lib/secret/eval';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -23,6 +24,7 @@ const CommandTypes: Array<{ new(): Command }> = [
 
     ...PokengineCommands,
 
+    EvalCommand,
     RefreshCommand,
 ];
 
