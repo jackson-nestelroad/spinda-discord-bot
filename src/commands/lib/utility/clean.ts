@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
+import { DiscordUtil } from '../../../util/discord';
 
 export class CleanCommand implements Command {
     public names = ['clean'];
@@ -28,8 +29,8 @@ export class CleanCommand implements Command {
         try {
             await msg.channel.bulkDelete(toDelete);
         } catch (error) {
-            if (error.message === 'Missing Permissions') {
-                throw new Error('Missing "Manage Messages" permission for this operation.');
+            if (error.message === DiscordUtil.APIErrorMessages.Permissions) {
+                error.message = 'Missing "Manage Messages" Permission';
             }
             throw error;
         }
