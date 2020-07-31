@@ -230,7 +230,7 @@ export class SpindaCommand implements Command {
         this.drawSpots(pid);
 
         // Chance of shiny
-        if (Math.floor(Math.random() * this.shinyOdds) === 327) {
+        if (Math.floor(Math.random() * this.shinyOdds) === 0) {
             this.recolorShiny();
         }
 
