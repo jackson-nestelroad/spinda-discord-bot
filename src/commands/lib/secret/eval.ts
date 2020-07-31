@@ -9,7 +9,7 @@ import { runInContext, createContext } from 'vm';
 export class EvalCommand implements Command {
     public names = ['eval'];
     public args = 'code';
-    public description = 'Executes a single line of arbitrary JavaScript and returns the result.';
+    public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
 
