@@ -18,15 +18,17 @@ export class DiscordBot {
     public readonly iconUrl = 'https://archives.bulbagarden.net/media/upload/d/d5/BT327.png';
 
     public listening: boolean;
-    public client: Client;
     public commands: Map<string, Command>;
 
-    public dataService: DataService;
+    public readonly startedAt: Date;
+    public readonly client: Client;
+    public readonly dataService: DataService;
 
     private events: Map<string, BaseEvent<any>> = new Map();
 
     constructor() {
         this.listening = true;
+        this.startedAt = new Date();
         this.client = new Client();
         this.dataService = new DataService();
 

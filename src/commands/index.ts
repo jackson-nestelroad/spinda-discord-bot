@@ -11,11 +11,13 @@ import { CleanCommand } from './lib/utility/clean';
 import { RoutletteCommand } from './lib/fun/roulette';
 import { EvalCommand } from './lib/secret/eval';
 import { SayCommand } from './lib/secret/say';
+import { UptimeCommand } from './lib/utility/uptime';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
     HelpCommand,
     CleanCommand,
+    UptimeCommand,
 
     SpindaCommand,
     BotsnackCommand,
