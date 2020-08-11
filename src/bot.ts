@@ -17,7 +17,6 @@ export class DiscordBot {
     public readonly name = 'Spinda';
     public readonly iconUrl = 'https://archives.bulbagarden.net/media/upload/d/d5/BT327.png';
 
-    public listening: boolean;
     public commands: Map<string, Command>;
 
     public readonly startedAt: Date;
@@ -27,7 +26,6 @@ export class DiscordBot {
     private events: Map<string, BaseEvent<any>> = new Map();
 
     constructor() {
-        this.listening = true;
         this.startedAt = new Date();
         this.client = new Client();
         this.dataService = new DataService();
