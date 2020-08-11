@@ -6,7 +6,7 @@ import { FunUtil } from './util';
 export class RoutletteCommand implements Command {
     public readonly prefix = ':gun: - ';
 
-    public names = ['roulette'];
+    public name = 'roulette';
     public args = '(bullets) (chambers)';
     public description = this.prefix + 'Spins the chambers for a good ol\' fashioned game of Russian Roulette.';
     public category = CommandCategory.Fun;

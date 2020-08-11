@@ -3,7 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
 
 export class RefreshCommand implements Command {
-    public names = ['refresh'];
+    public name = 'refresh';
     public args = '';
     public description = 'Refreshes the bot commands, clearing out all cached data.';
     public category = CommandCategory.Secret;

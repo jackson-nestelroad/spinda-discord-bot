@@ -3,7 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
 
 export class BotsnackCommand implements Command {
-    public names = ['botsnack'];
+    public name = 'botsnack';
     public args = '';
     public description = 'Rewards the bot for good behavior.'
     public category = CommandCategory.Fun;

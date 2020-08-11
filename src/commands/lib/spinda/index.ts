@@ -18,7 +18,7 @@ interface SpindaConfig<T> {
 }
 
 export class SpindaCommand implements Command {
-    public names =  ['spinda'];
+    public name =  'spinda';
     public args =  '';
     public description = `Generates a random Spinda pattern from ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There is even a chance for shinies!`;
     public category = CommandCategory.Fun;

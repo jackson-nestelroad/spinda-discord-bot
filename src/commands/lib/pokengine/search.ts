@@ -22,7 +22,7 @@ type SearchTab = keyof typeof SearchTabs;
 export class SearchCommand implements Command {
     public readonly searchPath: string = '/search';
 
-    public names = ['search'];
+    public name = 'search';
     public args = 'query';
     public description = `Searches the Pok\u00E9ngine website with a given query and returns the *first* result only. If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor('help')}.`;
     public category = CommandCategory.Pokengine;

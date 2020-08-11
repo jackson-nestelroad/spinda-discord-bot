@@ -4,7 +4,7 @@ import { Message } from 'discord.js';
 import * as moment from 'moment';
 
 export class UptimeCommand implements Command {
-    public names = ['uptime'];
+    public name = 'uptime';
     public args = '';
     public description = 'Gives how long the bot has been continually running.';
     public category = CommandCategory.Utility;

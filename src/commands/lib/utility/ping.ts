@@ -3,7 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
 
 export class PingCommand implements Command {
-    public names = ['ping'];
+    public name = 'ping';
     public args = '';
     public description = 'Checks if the bot is still alive.';
     public category = CommandCategory.Utility;

@@ -5,7 +5,7 @@ import { Message } from 'discord.js';
 export class EightBallCommand implements Command {
     public readonly prefix = ':8ball: - ';
 
-    public names = ['8ball'];
+    public name = '8ball';
     public args = '(question)';
     public description = this.prefix + 'Shakes the Magic 8-ball for a glimpse into the future.';
     public category = CommandCategory.Fun;

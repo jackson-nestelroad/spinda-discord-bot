@@ -7,7 +7,7 @@ import { runInContext, createContext } from 'vm';
 
 // This command is heavily unsafe, use at your own risk
 export class EvalCommand implements Command {
-    public names = ['eval'];
+    public name = 'eval';
     public args = 'code';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;

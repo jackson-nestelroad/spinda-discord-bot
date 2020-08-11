@@ -3,7 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message, Channel, TextChannel } from 'discord.js';
 
 export class SayCommand implements Command {
-    public names = ['say'];
+    public name = 'say';
     public args = '(channel) message';
     public description = 'Repeats your message.';
     public category = CommandCategory.Secret;

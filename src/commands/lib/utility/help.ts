@@ -3,7 +3,7 @@ import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
 
 export class HelpCommand implements Command {
-    public names = ['help'];
+    public name = 'help';
     public args = '(command)';
     public description = 'Gives information on how to use the bot or a given command.';
     public category = CommandCategory.Utility;

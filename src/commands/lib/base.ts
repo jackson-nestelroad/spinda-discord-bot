@@ -16,7 +16,7 @@ export enum CommandPermission {
 
 export interface Command {
     run: (bot: DiscordBot, msg: Message, args: string[]) => Promise<void>;
-    readonly names: string[];
+    readonly name: string;
     readonly args: string;
     readonly description: string;
     readonly category: CommandCategory;

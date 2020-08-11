@@ -6,7 +6,7 @@ import { FunUtil } from './util';
 export class ConchCommand implements Command {
     public readonly prefix = ':shell: - ';
     
-    public names = ['conch'];
+    public name = 'conch';
     public args = '(question)';
     public description = this.prefix + 'Pulls the Magic Conch Shell\u2122\'s string for words of wisdom.';
     public category = CommandCategory.Fun;

@@ -4,7 +4,7 @@ import { Message } from 'discord.js';
 import { DiscordUtil } from '../../../util/discord';
 
 export class CleanCommand implements Command {
-    public names = ['clean'];
+    public name = 'clean';
     public args = '(number)';
     public description = 'Cleans up the bot responses for the current channel.';
     public category = CommandCategory.Utility;

@@ -37,9 +37,7 @@ export namespace Commands {
         const map = new Map();
         for (const cmd of CommandTypes) {
             const instance = new cmd();
-            for (const name of instance.names) {
-                map.set(name, instance);
-            }
+            map.set(instance.name, instance);
         }
         return map;
     }
