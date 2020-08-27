@@ -147,9 +147,7 @@ export class SearchCommand implements Command {
                         num: parseInt(cols.eq(0).text().substr(1)),
                         name: cols.eq(1).text() || 'Unnamed Map',
                         owner: cols.eq(2).find('a').text(),
-                        region: cols.eq(3).contents().filter(function() {
-                            return this.nodeType == 3;
-                        })[0].nodeValue,
+                        region: cols.eq(3).contents().filter((index, element) => (element as any).nodeType == 3)[0].nodeValue,
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
