@@ -50,6 +50,7 @@ export class EvalCommand implements Command {
             msg,
             setTimeout,
             setInterval,
+            clearInterval,
         });
         if (res.length > this.maxLength) {
             res = res.substr(0, this.maxLength) + '...';
