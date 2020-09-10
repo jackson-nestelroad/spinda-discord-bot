@@ -14,6 +14,8 @@ export class EvalCommand implements Command {
     public permission = CommandPermission.Owner;
 
     public readonly silentArg = 'silent';
+    public readonly codeBlockRegex = /```[^\s]*\n(.*)\n```/s;
+    public readonly codeLineRegex = /^(`{1,2})([^`]*)\1$/;
     public readonly maxLength = 1900;
     public sensitivePattern: RegExp = null;
 
@@ -44,7 +46,20 @@ export class EvalCommand implements Command {
             silent = true;
             args.shift();
         }
-        const code = args.join(' ');
+
+        // Parse code from code blocks/lines
+        let code = args.join(' ');
+        const codeBlockMatch = this.codeBlockRegex.exec(code);
+        if (codeBlockMatch) {
+            code = codeBlockMatch[1];
+        }
+        else {
+            const codeLineMatch = this.codeLineRegex.exec(code);
+            if (codeLineMatch) {
+                code = codeLineMatch[2];
+            }
+        }
+
         let res = await this.runCode(code, { 
             bot,
             msg,
