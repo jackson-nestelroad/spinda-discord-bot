@@ -8,11 +8,12 @@ import { runInContext, createContext } from 'vm';
 // This command is heavily unsafe, use at your own risk
 export class EvalCommand implements Command {
     public name = 'eval';
-    public args = 'code';
+    public args = '(silent?) code';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
 
+    public readonly silentArg = 'silent';
     public readonly maxLength = 1900;
     public sensitivePattern: RegExp = null;
 
@@ -38,12 +39,24 @@ export class EvalCommand implements Command {
     }
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
+        let silent = false;
+        if (args[0] === this.silentArg) {
+            silent = true;
+            args.shift();
+        }
         const code = args.join(' ');
-        let res = await this.runCode(code, { bot, msg });
+        let res = await this.runCode(code, { 
+            bot,
+            msg,
+            setTimeout,
+            setInterval,
+        });
         if (res.length > this.maxLength) {
             res = res.substr(0, this.maxLength) + '...';
         }
         res = res.replace(this.sensitivePattern, '???');
-        msg.channel.send(`\`\`\`javascript\n${res}\n\`\`\``);
+        if (!silent) {
+            await msg.channel.send(`\`\`\`javascript\n${res}\n\`\`\``);
+        }
     }
 }
