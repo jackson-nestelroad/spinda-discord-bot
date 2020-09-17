@@ -38,10 +38,10 @@ export class SpindaCommand implements Command {
 
     // Defines the top-left corner of each spot
     private readonly spotAnchors: SpindaConfig<Point> = {
-        0: new Point(-3, -5),
-        1: new Point(20, 3),
-        2: new Point(3, 10),
-        3: new Point(13, 15),
+        0: new Point(-2, -4),
+        1: new Point(19, 2),
+        2: new Point(2, 9),
+        3: new Point(12, 14),
     } as const;
 
     // Thickness for outline, set to 0 for no outline
