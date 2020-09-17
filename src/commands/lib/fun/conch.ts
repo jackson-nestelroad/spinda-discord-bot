@@ -40,6 +40,6 @@ export class ConchCommand implements Command {
             res = this.options[Math.floor(Math.random() * this.options.length)];
         }
 
-        response.edit(`${this.editedHeader}"${res}"`);
+        await response.edit(`${this.editedHeader}"${res}"`);
     }
 }

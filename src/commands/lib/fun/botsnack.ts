@@ -10,6 +10,6 @@ export class BotsnackCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public async run(bot: DiscordBot, msg: Message) {
-        msg.channel.send('botsnack, mmmmmm...')
+        await msg.channel.send('botsnack, mmmmmm...')
     }
 }

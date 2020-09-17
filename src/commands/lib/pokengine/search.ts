@@ -35,9 +35,9 @@ export class SearchCommand implements Command {
         return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(/#/g, '%23');
     }
 
-    private sendEmbed(msg: Message, embed: MessageEmbed, searchUrl: string) {
+    private async sendEmbed(msg: Message, embed: MessageEmbed, searchUrl: string) {
         embed.setDescription(`[See more results](${searchUrl})`);
-        msg.channel.send(embed);
+        await msg.channel.send(embed);
     }
 
     public async run(bot: DiscordBot, msg: Message, args: string[]) {
@@ -52,8 +52,7 @@ export class SearchCommand implements Command {
         // No results
         if (title.length === 0) {
             embed.setTitle('No results found!');
-            this.sendEmbed(msg, embed, searchUrl);
-            return;
+            return this.sendEmbed(msg, embed, searchUrl);
         }
 
         // Cached map names to upper case string
@@ -107,8 +106,7 @@ export class SearchCommand implements Command {
                 });
             }
             
-            this.sendEmbed(msg, embed, searchUrl);
-            return;
+            return this.sendEmbed(msg, embed, searchUrl);
         }
 
         // Check for search table
@@ -125,8 +123,7 @@ export class SearchCommand implements Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    this.sendEmbed(msg, embed, searchUrl);
-                    return;
+                    return this.sendEmbed(msg, embed, searchUrl);
                 }
 
                 case 'Items': {
@@ -138,8 +135,7 @@ export class SearchCommand implements Command {
                         imagePath: cols.eq(1).find('img').attr('data-src'),
                     });
                     
-                    this.sendEmbed(msg, embed, searchUrl);
-                    return;
+                    return this.sendEmbed(msg, embed, searchUrl);
                 }
 
                 case 'Maps': {
@@ -151,8 +147,7 @@ export class SearchCommand implements Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    this.sendEmbed(msg, embed, searchUrl);
-                    return;
+                    return this.sendEmbed(msg, embed, searchUrl);
                 }
 
                 case 'Moves': {
@@ -165,8 +160,7 @@ export class SearchCommand implements Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    this.sendEmbed(msg, embed, searchUrl);
-                    return;
+                    return this.sendEmbed(msg, embed, searchUrl);
                 }
 
                 case 'Players': {
@@ -179,8 +173,7 @@ export class SearchCommand implements Command {
                         imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
                     });
                     
-                    this.sendEmbed(msg, embed, searchUrl);
-                    return;
+                    return this.sendEmbed(msg, embed, searchUrl);
                 }
             }
         }
@@ -196,11 +189,10 @@ export class SearchCommand implements Command {
                 pagePath: origin.eq(1).attr('href'),
             });
 
-            this.sendEmbed(msg, embed, searchUrl);
-            return;
+            return await this.sendEmbed(msg, embed, searchUrl);
         }
 
         embed.setTitle('Could not parse results.');
-        this.sendEmbed(msg, embed, searchUrl);
+        return await this.sendEmbed(msg, embed, searchUrl);
     }
 }

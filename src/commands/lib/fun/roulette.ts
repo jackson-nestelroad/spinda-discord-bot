@@ -61,6 +61,6 @@ export class RoutletteCommand implements Command {
             result = ` *click* ...  ${nickname} survived. They breathe a sigh of relief.`;
         }
 
-        response.edit(response.content + result);
+        await response.edit(response.content + result);
     }
 }

@@ -37,7 +37,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
                         await command.run(this.bot, msg, args);
                     }
                 } catch (error) {
-                    msg.channel.send(`\`\`\`${error.name}: ${error.message}\`\`\``);
+                    await msg.channel.send(`\`\`\`${error.name}: ${error.message}\`\`\``);
                 }
             }
         }

@@ -97,6 +97,6 @@ export class CertifiedCommand implements Command {
         PokengineUtil.embedDexBlock(embed, chosenMon);
         embed.setAuthor(dex.name, dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined);
 
-        msg.channel.send(embed);
+        await msg.channel.send(embed);
     }
 }

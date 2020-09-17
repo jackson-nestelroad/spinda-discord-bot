@@ -35,6 +35,6 @@ export class EightBallCommand implements Command {
     ];
 
     public async run(bot: DiscordBot, msg: Message) {
-        msg.channel.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
+        await msg.channel.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
     }
 }

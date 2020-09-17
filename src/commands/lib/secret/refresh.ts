@@ -11,6 +11,6 @@ export class RefreshCommand implements Command {
 
     public async run(bot: DiscordBot, msg: Message) {
         bot.refreshCommands();
-        msg.channel.send('Refresh successful.');
+        await msg.channel.send('Refresh successful.');
     }
 }

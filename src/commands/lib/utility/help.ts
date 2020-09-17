@@ -54,6 +54,6 @@ export class HelpCommand implements Command {
             }
         }
 
-        msg.channel.send(embed);
+        await msg.channel.send(embed);
     }
 }
