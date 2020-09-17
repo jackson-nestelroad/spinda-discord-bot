@@ -40,12 +40,13 @@ export class SpindaCommand implements Command {
     private readonly spotAnchors: SpindaConfig<Point> = {
         0: new Point(-2, -4),
         1: new Point(19, 2),
-        2: new Point(2, 9),
-        3: new Point(12, 14),
+        2: new Point(2, 10),
+        3: new Point(13, 14),
     } as const;
 
     // Thickness for outline, set to 0 for no outline
     private readonly outlineThickness: number = 1;
+    private readonly scale: number = 2;
 
     private readonly shinyOdds: number = 8192;
 
@@ -73,7 +74,7 @@ export class SpindaCommand implements Command {
         this.ctx.drawImage(...args);
     }
 
-    private scale(scale: number) {
+    private scaleCanvas(scale: number) {
         const width = this.canvas.width;
         const height = this.canvas.height;
 
@@ -237,7 +238,7 @@ export class SpindaCommand implements Command {
             this.recolorShiny();
         }
 
-        this.scale(2);
+        this.scaleCanvas(this.scale);
 
         // Send image to Discord
         await msg.channel.send(new MessageAttachment(this.canvas.toBuffer()));
