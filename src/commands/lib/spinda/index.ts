@@ -200,6 +200,10 @@ export class SpindaCommand implements Command {
     }
 
     public async run(bot: DiscordBot, msg: Message) {
+        await this.runForPid(msg, this.getRandomPID());
+    }
+
+    public async runForPid(msg: Message, pid: number) {
         // Need resources
         if (Object.getOwnPropertyNames(this.resources).length === 0) {
             await this.loadResources();
@@ -226,7 +230,6 @@ export class SpindaCommand implements Command {
         this.drawImage(this.resources.base, this.outlineThickness, this.outlineThickness);
 
         // Draw the random spots
-        const pid = this.getRandomPID();
         this.drawSpots(pid);
 
         // Chance of shiny
@@ -237,6 +240,6 @@ export class SpindaCommand implements Command {
         this.scale(2);
 
         // Send image to Discord
-        msg.channel.send(new MessageAttachment(this.canvas.toBuffer()));
+        await msg.channel.send(new MessageAttachment(this.canvas.toBuffer()));
     }
 }
