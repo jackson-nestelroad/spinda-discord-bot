@@ -47,10 +47,7 @@ export class ImposterCommand implements Command {
         // Get a random sample
         let sample = Math.random() * totalWeight;
         // Find the matching star array
-        const { value } = this.stars.find(({ weight }) => {
-            sample -= weight;
-            return sample < 0;
-        });
+        const { value } = this.stars.find(({ weight }) => (sample -= weight) < 0);
         // Return a random star from the chosen array
         return Array.isArray(value) ? value[Math.floor(Math.random() * value.length)] : value;
     }
