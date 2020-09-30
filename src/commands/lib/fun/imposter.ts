@@ -71,7 +71,7 @@ export class ImposterCommand implements Command {
                 name = msg.mentions.users.first().username;
             }
             else {
-                name = args.join(' ').substr(0, 32);
+                name = args.join(' ');
             }
         }
         else {
