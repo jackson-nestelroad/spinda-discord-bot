@@ -13,6 +13,7 @@ import { EvalCommand } from './lib/secret/eval';
 import { SayCommand } from './lib/secret/say';
 import { UptimeCommand } from './lib/utility/uptime';
 import { ImposterCommand } from './lib/fun/imposter';
+import { PrefixCommand } from './lib/config/prefix';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -32,6 +33,8 @@ const CommandTypes: Array<{ new(): Command }> = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
+
+    PrefixCommand,
 ];
 
 export namespace Commands {

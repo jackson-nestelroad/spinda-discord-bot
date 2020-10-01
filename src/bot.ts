@@ -1,4 +1,4 @@
-import { Client, MessageEmbed } from 'discord.js';
+import { Client, MessageEmbed, User } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -7,6 +7,8 @@ import { Commands } from './commands';
 import { DataService } from './data/data-service';
 import { Environment } from './data/environment';
 import { SpindaColors } from './commands/lib/spinda/spinda-colors';
+import { MessageDeleteEvent } from './events/message-delete';
+import { DiscordUtil } from './util/discord';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -30,10 +32,13 @@ export class DiscordBot {
         this.client = new Client();
         this.dataService = new DataService();
 
-        this.events.set('ready', new ReadyEvent(this));
-        this.events.set('message', new MessageEvent(this));
-
-        this.refreshCommands();
+        this.dataService.initialize().then(() => {
+            this.events.set('ready', new ReadyEvent(this));
+            this.events.set('message', new MessageEvent(this));
+            this.events.set('messageDelete', new MessageDeleteEvent(this));
+    
+            this.refreshCommands();
+        });
     }
 
     public refreshCommands() {
@@ -56,6 +61,14 @@ export class DiscordBot {
         }
 
         return embed;
+    }
+
+    public getUserFromMention(mention: string): User | null {
+        const match = DiscordUtil.userMentionRegex.exec(mention);
+        if (match) {
+            return this.client.users.cache.get(match[1]) || null;
+        }
+        return null;
     }
 
     public run() {

@@ -4,6 +4,7 @@ import { Message } from 'discord.js';
 import { inspect } from 'util';
 import { Environment } from '../../../data/environment';
 import { runInContext, createContext } from 'vm';
+import { DiscordUtil } from '../../../util/discord';
 
 // This command is heavily unsafe, use at your own risk
 export class EvalCommand implements Command {
@@ -14,8 +15,6 @@ export class EvalCommand implements Command {
     public permission = CommandPermission.Owner;
 
     public readonly silentArg = 'silent';
-    public readonly codeBlockRegex = /```[^\s]*\n(.*)\n```/s;
-    public readonly codeLineRegex = /^(`{1,2})([^`]*)\1$/;
     public readonly maxLength = 1900;
     public sensitivePattern: RegExp = null;
 
@@ -49,14 +48,14 @@ export class EvalCommand implements Command {
 
         // Parse code from code blocks/lines
         let code = args.join(' ');
-        const codeBlockMatch = this.codeBlockRegex.exec(code);
-        if (codeBlockMatch) {
-            code = codeBlockMatch[1];
+        const codeBlock = DiscordUtil.getCodeBlock(code);
+        if (codeBlock.match) {
+            code = codeBlock.content;
         }
         else {
-            const codeLineMatch = this.codeLineRegex.exec(code);
-            if (codeLineMatch) {
-                code = codeLineMatch[2];
+            const codeLine = DiscordUtil.getCodeLine(code);
+            if (codeLine.match) {
+                code = codeLine.content;
             }
         }
 

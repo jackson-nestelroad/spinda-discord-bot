@@ -10,4 +10,8 @@ export namespace Environment {
     export function getGlobalOwner(): string {
         return process.env.GLOBAL_OWNER;
     }
+
+    export function getDatabaseUrl(): string {
+        return process.env.DATABASE_URL;
+    }
 }

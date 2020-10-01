@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
+import { GuildAttributes } from '../../../data/model/guild';
 
 export class HelpCommand implements Command {
     public name = 'help';
@@ -12,14 +13,15 @@ export class HelpCommand implements Command {
     // Cache for list of command names by category
     public commandListByCategory: Map<CommandCategory, string[]> = null;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
         const embed = bot.createEmbed();
         embed.setAuthor(bot.name + ' Commands', bot.iconUrl);
-        const prefix = bot.dataService.getGuildConfig(msg.guild.id).prefix;
+        const prefix = guild.prefix;
 
         // Get all commands by category
         if (args.length === 0) {
             embed.setTitle('All Commands');
+            embed.setDescription(`You may also use \`@${bot.name} cmd\` to run any command.`);
 
             if (!this.commandListByCategory) {
                 this.commandListByCategory = new Map();
