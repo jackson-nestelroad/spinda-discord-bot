@@ -75,7 +75,7 @@ ${Object.entries(this.options).map(([key, val]) => val === 'none' ? `\`${key}\``
                         if ((channel as TextChannel).guild.id !== msg.guild.id) {
                             throw new Error('Log channel must be in this guild.');
                         }
-                        if (!(channel as TextChannel).viewable && (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES'])) {
+                        if (!((channel as TextChannel).viewable && (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES']))) {
                             throw new Error(`Bot is missing permissions for ${value}.`);
                         }
 
