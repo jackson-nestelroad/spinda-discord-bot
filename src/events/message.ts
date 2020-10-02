@@ -19,7 +19,9 @@ export class MessageEvent extends BaseEvent<typeof event> {
                     await command.run(this.bot, msg, args, guild);
                 }
             } catch (error) {
-                await msg.channel.send(`\`\`\`${error.name}: ${error.message}\`\`\``);
+                const embed = this.bot.createEmbed({ footer: false, timestamp: false, error: true });
+                embed.setDescription(error.message || error.toString());
+                await msg.channel.send(embed);
             }
         }
     }

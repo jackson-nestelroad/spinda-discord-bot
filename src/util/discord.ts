@@ -5,6 +5,7 @@ export namespace DiscordUtil {
     export const codeBlockRegex = /```[^\s]*\n(.*)\n```/s;
     export const codeLineRegex = /^(`{1,2})([^`]*)\1$/;
     export const userMentionRegex = /^<@!?(\d+)>$/;
+    export const channelMentionRegex = /^<#(\d+)>$/;
 
     export const APIErrorMessages = {
         Access: 'Missing Access',

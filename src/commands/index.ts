@@ -14,6 +14,7 @@ import { SayCommand } from './lib/secret/say';
 import { UptimeCommand } from './lib/utility/uptime';
 import { ImposterCommand } from './lib/fun/imposter';
 import { PrefixCommand } from './lib/config/prefix';
+import { LogsCommand } from './lib/config/logs';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -35,6 +36,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     SayCommand,
 
     PrefixCommand,
+    LogsCommand,
 ];
 
 export namespace Commands {

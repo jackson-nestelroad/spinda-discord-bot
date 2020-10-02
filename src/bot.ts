@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User } from 'discord.js';
+import { Client, MessageEmbed, User, Channel } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -13,6 +13,8 @@ import { DiscordUtil } from './util/discord';
 interface EmbedOptions {
     footer?: boolean | string;
     timestamp?: boolean;
+    error?: boolean;
+    success?: boolean;
 }
 
 export class DiscordBot {
@@ -26,6 +28,11 @@ export class DiscordBot {
     public readonly dataService: DataService;
 
     private events: Map<string, BaseEvent<any>> = new Map();
+    private readonly colors = {
+        default: SpindaColors.spots.base.hexString,
+        error: '#F04947',
+        success: '#43B581',
+    } as const;
 
     constructor() {
         this.startedAt = new Date();
@@ -50,7 +57,16 @@ export class DiscordBot {
         timestamp: false,
     }): MessageEmbed {
         const embed = new MessageEmbed();
-        embed.setColor(SpindaColors.spots.base.hexString);
+        
+        if (options.error) {
+            embed.setColor(this.colors.error);
+        }
+        else if (options.success) {
+            embed.setColor(this.colors.success);
+        }
+        else {
+            embed.setColor(this.colors.default);
+        }
         
         if (options.timestamp) {
             embed.setTimestamp();
@@ -67,6 +83,14 @@ export class DiscordBot {
         const match = DiscordUtil.userMentionRegex.exec(mention);
         if (match) {
             return this.client.users.cache.get(match[1]) || null;
+        }
+        return null;
+    }
+
+    public getChannelFromMention(mention: string): Channel | null {
+        const match = DiscordUtil.channelMentionRegex.exec(mention);
+        if (match) {
+            return this.client.channels.cache.get(match[1]) || null;
         }
         return null;
     }

@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, TextChannel } from 'discord.js';
 import { BaseEvent } from './base';
 import { DiscordBot } from '../bot';
 
@@ -13,7 +13,15 @@ export class MessageDeleteEvent extends BaseEvent<typeof event> {
     
     public async run(msg: Message) {
         const guild = await this.bot.dataService.getGuild(msg.guild.id);
-        if (!msg.author.bot && guild.logDeletedMessages) {
+        if (!msg.author.bot && guild.logChannelId && guild.logDeletedMessages) {
+            // Log channel must exist
+            const channel = msg.guild.channels.cache.get(guild.logChannelId);
+            if (!channel) {
+                guild.logChannelId = null;
+                await this.bot.dataService.updateGuild(guild);
+                return;
+            }
+
             const embed = this.bot.createEmbed();
             embed.setTimestamp(msg.createdTimestamp);
             
@@ -29,7 +37,7 @@ export class MessageDeleteEvent extends BaseEvent<typeof event> {
                 embed.setImage(attachment.proxyURL || attachment.url);
             }
 
-            await msg.channel.send(embed);
+            await (channel as TextChannel).send(embed);
         }
     }
 }
