@@ -2,6 +2,7 @@ import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
 import { Message } from 'discord.js';
 import { GuildAttributes } from '../../../data/model/guild';
+import { DiscordUtil } from '../../../util/discord';
 
 export class HelpCommand implements Command {
     public name = 'help';
@@ -11,44 +12,48 @@ export class HelpCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     // Cache for list of command names by category
-    public commandListByCategory: Map<CommandCategory, string[]> = null;
+    private commandListByCategory: Map<CommandCategory, string[]> = null;
 
     public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
         const embed = bot.createEmbed();
         embed.setAuthor(bot.name + ' Commands', bot.iconUrl);
         const prefix = guild.prefix;
 
+        if (!this.commandListByCategory) {
+            this.commandListByCategory = new Map();
+            bot.commands.forEach((cmd, name) => {
+                if (!this.commandListByCategory.has(cmd.category)) {
+                    this.commandListByCategory.set(cmd.category, []);
+                }
+                this.commandListByCategory.get(cmd.category).push(`${name} ${cmd.args}`);
+            });
+        }
+
         // Get all commands by category
         if (args.length === 0) {
             embed.setTitle('All Commands');
             embed.setDescription(`You may also use \`@${bot.name} cmd\` to run any command.`);
-
-            if (!this.commandListByCategory) {
-                this.commandListByCategory = new Map();
-                bot.commands.forEach((cmd, name) => {
-                    if (cmd.category !== CommandCategory.Secret) {
-                        if (!this.commandListByCategory.has(cmd.category)) {
-                            this.commandListByCategory.set(cmd.category, []);
-                        }
-                        this.commandListByCategory.get(cmd.category).push(`${name} ${cmd.args}`);
-                    }
-                });
-            }
             
             this.commandListByCategory.forEach((value, key) => {
-                value = value.map(value => `${prefix}${value}`);
-                embed.addField(CommandCategory[key], value.join('\n'), true);
+                if (key !== CommandCategory.Secret) {
+                    value = value.map(value => `${prefix}${value}`);
+                    embed.addField(key, value.join('\n'), true);
+                }
             });
         }
-        // Show details for one command
+        // Show details for one command or category
         else {
             const needHelp = args[0];
+            let category: CommandCategory;
             if (bot.commands.has(needHelp)) {
                 const cmd = bot.commands.get(needHelp);
                 embed.setTitle(`${prefix}${needHelp} ${cmd.args}`);
                 embed.addField('Description', cmd.description);
                 embed.addField('Category', CommandCategory[cmd.category], true);
                 embed.addField('Permission', CommandPermission[cmd.permission], true);
+            }
+            else if (category = Object.values(CommandCategory).find(val => DiscordUtil.baseStringEqual(needHelp, val))) {
+                embed.addField(category, this.commandListByCategory.get(category).map(value => `${prefix}${value}`).join('\n'));
             }
             else {
                 embed.setTitle('No Command Found');

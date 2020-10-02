@@ -35,4 +35,8 @@ export namespace DiscordUtil {
         }
         return result;
     }
+
+    export function baseStringEqual(a: string, b: string): boolean {
+        return a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
+    }
 }

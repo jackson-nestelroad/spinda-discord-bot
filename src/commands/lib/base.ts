@@ -3,11 +3,11 @@ import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 
 export enum CommandCategory {
-    Config,
-    Utility,
-    Fun,
-    Pokengine,
-    Secret,
+    Config = 'Config',
+    Utility = 'Utility',
+    Fun = 'Fun',
+    Pokengine = 'Pok\u00E9ngine',
+    Secret = 'Secret',
 }
 
 export enum CommandPermission {

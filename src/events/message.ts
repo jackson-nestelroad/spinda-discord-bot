@@ -35,6 +35,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
         if (!msg.content.startsWith(prefix)) {
             // Bot is mentioned
             if (msg.mentions.users.has(this.bot.client.user.id)) {
+                // Bot mention is the message's prefix
                 const mentionIndex = msg.content.indexOf(this.bot.client.user.id);
                 if (mentionIndex === 2 || mentionIndex === 3) {
                     const args = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim().split(' ');
