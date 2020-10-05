@@ -7,7 +7,8 @@ export class ReadyEvent extends BaseEvent<typeof event> {
     constructor(bot: DiscordBot) {
         super(bot, event);
     }
-    run() {
+
+    public async run() {
         console.log(`Bot is logged in as ${this.bot.client.user.tag}`);
         this.bot.client.user.setActivity(`@${this.bot.name} help`, { 
             type: 'PLAYING',

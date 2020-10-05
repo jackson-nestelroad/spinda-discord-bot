@@ -1,24 +1,58 @@
 import { Model, Sequelize, DataTypes, Optional } from 'sequelize';
 
+export enum LogOptionBit {
+    None = -1,
+    Enabled = 1 << 0,
+    MemberJoined = 1 << 1,
+    MemberLeft = 1 << 2,
+    MemberUpdated = 1 << 3,
+    MemberBanned = 1 << 4,
+    MemberUnbanned = 1 << 5,
+    MessageEdited = 1 << 6,
+    MessageDeleted = 1 << 7,
+    BulkMessageDeletion = 1 << 8,
+    ChannelCreated = 1 << 9,
+    ChannelDeleted = 1 << 10,
+    RoleCreated = 1 << 11,
+    RoleDeleted = 1 << 12,
+    RoleUpdated = 1 << 13,
+}
+
 export interface GuildAttributes {
     readonly internalId: number;
     readonly id: string;
     prefix: string;
     logChannelId?: string;
-    logDeletedMessages: boolean;
+    logOptions: number;
 }
 
-interface GuildCreationAttributes extends Optional<GuildAttributes, 'internalId' |'logDeletedMessages'> { };
+interface GuildCreationAttributes extends Optional<GuildAttributes, 'internalId' | 'logOptions'> { };
 
 export class Guild extends Model<GuildAttributes, GuildCreationAttributes> implements GuildAttributes {
     public readonly internalId!: number;
     public readonly id!: string;
     public prefix!: string;
     public logChannelId?: string;
-    public logDeletedMessages: boolean;
+    public logOptions: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    public hasLogOption(option: LogOptionBit): boolean {
+        return !!(this.logOptions & option);
+    }
+
+    public setLogOption(option: LogOptionBit): void {
+        this.logOptions |= option;
+    }
+
+    public unsetLogOption(option: LogOptionBit): void {
+        this.logOptions &= ~option;
+    }
+
+    public toggleLogOption(option: LogOptionBit): void {
+        this.logOptions ^= option;
+    }
 
     static initialize(sequelize: Sequelize) {
         Guild.init({
@@ -41,11 +75,12 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                 allowNull: true,
                 defaultValue: null,
             },
-            logDeletedMessages: {
-                type: DataTypes.BOOLEAN,
+            logOptions: {
+                type: DataTypes.INTEGER,
                 allowNull: false,
-                defaultValue: false,
+                defaultValue: 0,
             },
+
         }, {
             sequelize,
             tableName: 'guilds'

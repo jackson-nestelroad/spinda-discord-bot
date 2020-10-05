@@ -27,7 +27,7 @@ export class DiscordBot {
     public readonly client: Client;
     public readonly dataService: DataService;
 
-    private events: Map<string, BaseEvent<any>> = new Map();
+    private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
         default: SpindaColors.spots.base.hexString,
         error: '#F04947',
@@ -40,9 +40,9 @@ export class DiscordBot {
         this.dataService = new DataService();
 
         this.dataService.initialize().then(() => {
-            this.events.set('ready', new ReadyEvent(this));
-            this.events.set('message', new MessageEvent(this));
-            this.events.set('messageDelete', new MessageDeleteEvent(this));
+            this.events.push(new ReadyEvent(this));
+            this.events.push(new MessageEvent(this));
+            this.events.push(new MessageDeleteEvent(this));
     
             this.refreshCommands();
         });

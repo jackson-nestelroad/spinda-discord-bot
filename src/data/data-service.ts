@@ -46,13 +46,14 @@ export class DataService {
 
     public async getGuild(id: string): Promise<GuildAttributes> {
         if (!this.cache.guilds.has(id)) {
-            this.cache.guilds.set(id, (await this.getGuildModel(id)).get());
+            const model = await this.getGuildModel(id);
+            this.cache.guilds.set(id, model.get());
         }
         return this.cache.guilds.get(id);
     }
 
-    public async updateGuild(guild: GuildAttributes) {
-        const result = await this.guilds.upsert(guild);
-        this.cache.guilds.set(guild.id, result[0].get());
+    public async updateGuild(guild: GuildAttributes): Promise<void> {
+        const updated = (await this.guilds.upsert(guild))[0];
+        this.cache.guilds.set(updated.id, updated.get());
     }
 }

@@ -1,39 +1,70 @@
 import { Command, CommandCategory, CommandPermission } from '../base';
 import { DiscordBot } from '../../../bot';
 import { Message, TextChannel } from 'discord.js';
-import { GuildAttributes } from '../../../data/model/guild';
-import { DiscordUtil } from '../../../util/discord';
+import { GuildAttributes, LogOptionBit } from '../../../data/model/guild';
 
-enum LogOption {
+enum LogCommandOption {
     Channel = 'channel',
-    Deleted = 'deleted',
+    Enable = 'enable',
+    Disable = 'disable',
     Reset = 'reset',
 }
 
-type LogOptionType = 'channel' | 'boolean' | 'none';
-type LogOptionMap = { [name: string]: LogOptionType };
+enum LogOptionType {
+    Channel = 'channel',
+    Boolean = 'boolean',
+    Events = 'event1, event2, ...',
+    None = 'none'
+}
+
+const LogEvents: { [name: string]: LogOptionBit } = {
+    'message-deleted': LogOptionBit.MessageDeleted,
+} as const;
+
+type LogOptionMap = { [name: string]: LogOptionType[] };
+
 
 export class LogsCommand implements Command {
     private readonly options: LogOptionMap = {
-        [LogOption.Channel]: 'channel',
-        [LogOption.Deleted]: 'boolean',
-        [LogOption.Reset]: 'none',
-    } as const;
+        [LogCommandOption.Channel]: [LogOptionType.Channel],
+        [LogCommandOption.Enable]: [LogOptionType.None, LogOptionType.Events],
+        [LogCommandOption.Disable]: [LogOptionType.None, LogOptionType.Events],
+        [LogCommandOption.Reset]: [LogOptionType.None],
+    };
 
     public name = 'logs';
-    public args = '(setting = value;)*';
+    public args = '(option = value;)*';
     public description = `
 Manages the guild's logging configuration.
 
 Available options:
-${Object.entries(this.options).map(([key, val]) => val === 'none' ? `\`${key}\`` : `\`${key} = [${val}]\``).join('\n')}
+${this.formatOptions()}
+
+Available events:
+${this.formatBitOptions()}
 `;
 
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
 
-    private valueIsTrue(str: string): boolean {
-        return DiscordUtil.baseStringEqual(str, 'true');
+    private formatOptions(): string {
+        return Object.entries(this.options)
+            .map(([key, val]) => {
+                const ways = [];
+                for (const type of val) {
+                    if (type === LogOptionType.None) {
+                        ways.push(`\`${key};\``);
+                    }
+                    else {
+                        ways.push(`\`${key} = [${type}];\``);
+                    }
+                }
+                return ways.join('\n');
+            }).join('\n');
+    }
+
+    private formatBitOptions(): string {
+        return Object.keys(LogEvents).map(key => `\`${key}\``).join(', ');
     }
 
     public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
@@ -41,8 +72,11 @@ ${Object.entries(this.options).map(([key, val]) => val === 'none' ? `\`${key}\``
             const embed = bot.createEmbed();
             embed.setTitle(`Log Configuration for ${msg.guild.name}`);
             let fields = [];
-            fields.push(`${LogOption.Channel} = ${guild.logChannelId ? bot.client.channels.cache.get(guild.logChannelId)?.toString() ?? 'None' : 'None'}`);
-            fields.push(`${LogOption.Deleted} = ${guild.logDeletedMessages}`);
+            fields.push(`${LogCommandOption.Channel} = ${guild.logChannelId ? bot.client.channels.cache.get(guild.logChannelId)?.toString() ?? 'None' : 'None'}`);
+            fields.push(`enabled = ${guild.logOptions & LogOptionBit.Enabled ? 'on' : 'off'}`);
+            for (const [event, bit] of Object.entries(LogEvents)) {
+                fields.push(`${event} = ${guild.logOptions & bit ? 'on' : 'off'}`);
+            }
             embed.setDescription(fields.join('\n'));
             await msg.channel.send(embed);
         }
@@ -50,21 +84,25 @@ ${Object.entries(this.options).map(([key, val]) => val === 'none' ? `\`${key}\``
             const changes = args.join(' ').split(';').map(val => val.trim());
             for (const change of changes) {
                 const split = change.split('=').map(val => val.trim());
+
                 if (split.length > 2 || split.length === 0) {
                     throw new Error(`Invalid format: \`${change}\``);
                 }
                 
                 const option = split[0];
                 const value = split.length === 2 ? split[1] : null;
+                if (!option) {
+                    break;
+                }
                 if (!this.options[option]) {
                     throw new Error(`Invalid option \`${option}\`. Use \`>help logs\` to see list of options.`);
                 }
-                if (this.options[option] !== 'none' && !value) {
+                if (!value && !this.options[option].includes(LogOptionType.None)) {
                     throw new Error(`Invalid format: \`${change}\``);
                 }
 
-                switch (option as LogOption) {
-                    case LogOption.Channel: {
+                switch (option as LogCommandOption) {
+                    case LogCommandOption.Channel: {
                         const channel = bot.getChannelFromMention(value);
                         if (!channel) {
                             throw new Error(`Invalid channel: ${value} (\`${value}\`)`);
@@ -82,13 +120,41 @@ ${Object.entries(this.options).map(([key, val]) => val === 'none' ? `\`${key}\``
                         guild.logChannelId = channel.id;
                     } break;
 
-                    case LogOption.Deleted: {
-                        guild.logDeletedMessages = this.valueIsTrue(value);
+                    case LogCommandOption.Enable: {
+                        if (!value) {
+                            guild.logOptions |= LogOptionBit.Enabled;
+                        }
+                        // Given a list of options to enable
+                        else {
+                            const events = value.split(',').map(event => event.trim());
+                            for (const event of events) {
+                                if (!LogEvents[event]) {
+                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`>help logs\` to see list of events.`);
+                                }
+                                guild.logOptions |= LogEvents[event];
+                            }
+                        }
                     } break;
 
-                    case LogOption.Reset: {
+                    case LogCommandOption.Disable: {
+                        if (!value) {
+                            guild.logOptions &= ~LogOptionBit.Enabled;
+                        }
+                        // Given a list of options to enable
+                        else {
+                            const events = value.split(',').map(event => event.trim());
+                            for (const event of events) {
+                                if (!LogEvents[event]) {
+                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`>help logs\` to see list of events.`);
+                                }
+                                guild.logOptions &= ~LogEvents[event];
+                            }
+                        }
+                    } break;
+
+                    case LogCommandOption.Reset: {
                         guild.logChannelId = null;
-                        guild.logDeletedMessages = false;
+                        guild.logOptions = 0;
                     } break;
                 }
             }

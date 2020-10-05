@@ -1,27 +1,20 @@
-import { Message, TextChannel } from 'discord.js';
-import { BaseEvent } from './base';
+import { Message, TextChannel, Channel } from 'discord.js';
+import { BaseLogEvent } from './base';
 import { DiscordBot } from '../bot';
+import { LogOptionBit } from '../data/model/guild';
 
 const event = 'messageDelete';
 
-export class MessageDeleteEvent extends BaseEvent<typeof event> {
+export class MessageDeleteEvent extends BaseLogEvent<typeof event> {
     private readonly noneText = 'None';
     
     constructor(bot: DiscordBot) {
-        super(bot, event);
+        super(bot, event, LogOptionBit.MessageDeleted);
     }
     
     public async run(msg: Message) {
-        const guild = await this.bot.dataService.getGuild(msg.guild.id);
-        if (!msg.author.bot && guild.logChannelId && guild.logDeletedMessages) {
-            // Log channel must exist
-            const channel = msg.guild.channels.cache.get(guild.logChannelId);
-            if (!channel) {
-                guild.logChannelId = null;
-                await this.bot.dataService.updateGuild(guild);
-                return;
-            }
-
+        const channel = await this.getDestination(msg.guild.id);
+        if (channel && !msg.author.bot) {
             const embed = this.bot.createEmbed();
             embed.setTimestamp(msg.createdTimestamp);
             
