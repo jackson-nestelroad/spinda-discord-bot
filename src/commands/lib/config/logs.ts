@@ -95,7 +95,7 @@ ${this.formatBitOptions()}
                     break;
                 }
                 if (!this.options[option]) {
-                    throw new Error(`Invalid option \`${option}\`. Use \`>help logs\` to see list of options.`);
+                    throw new Error(`Invalid option \`${option}\`. Use \`${guild.prefix}help logs\` to see list of options.`);
                 }
                 if (!value && !this.options[option].includes(LogOptionType.None)) {
                     throw new Error(`Invalid format: \`${change}\``);
@@ -129,7 +129,7 @@ ${this.formatBitOptions()}
                             const events = value.split(',').map(event => event.trim());
                             for (const event of events) {
                                 if (!LogEvents[event]) {
-                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`>help logs\` to see list of events.`);
+                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`);
                                 }
                                 guild.logOptions |= LogEvents[event];
                             }
@@ -145,7 +145,7 @@ ${this.formatBitOptions()}
                             const events = value.split(',').map(event => event.trim());
                             for (const event of events) {
                                 if (!LogEvents[event]) {
-                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`>help logs\` to see list of events.`);
+                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`);
                                 }
                                 guild.logOptions &= ~LogEvents[event];
                             }
