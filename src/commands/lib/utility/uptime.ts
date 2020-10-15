@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import * as moment from 'moment';
 
 export class UptimeCommand implements Command {
@@ -10,7 +8,7 @@ export class UptimeCommand implements Command {
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ bot, msg }: CommandParameters) {
         const now = new Date();
         const diff = (now as any) - (bot.startedAt as any);
         const duration = moment.duration(diff);

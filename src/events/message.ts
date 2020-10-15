@@ -3,6 +3,7 @@ import { BaseEvent } from './base';
 import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
+import { CommandParameters } from '../commands/lib/base';
 
 const event = 'message';
 
@@ -11,17 +12,17 @@ export class MessageEvent extends BaseEvent<typeof event> {
         super(bot, event);
     }
 
-    private async runCommand(cmd: string, msg: Message, args: string[], guild: GuildAttributes) {
+    private async runCommand(cmd: string, params: CommandParameters) {
         if (this.bot.commands.has(cmd)) {
             try {
                 const command = this.bot.commands.get(cmd)
-                if (Validation.validate(this.bot, command, msg.member)) {
-                    await command.run(this.bot, msg, args, guild);
+                if (Validation.validate(this.bot, command, params.msg.member)) {
+                    await command.run(params);
                 }
             } catch (error) {
                 const embed = this.bot.createEmbed({ footer: false, timestamp: false, error: true });
                 embed.setDescription(error.message || error.toString());
-                await msg.channel.send(embed);
+                await params.msg.channel.send(embed);
             }
         }
     }
@@ -40,18 +41,22 @@ export class MessageEvent extends BaseEvent<typeof event> {
                 // Bot mention is the message's prefix
                 const mentionIndex = msg.content.indexOf(this.bot.client.user.id);
                 if (mentionIndex === 2 || mentionIndex === 3) {
-                    const args = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim().split(' ');
+                    let content = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim();
+                    const args = content.split(' ');
                     const cmd = args.shift();
+                    content = content.substr(cmd.length).trimLeft();
 
-                    await this.runCommand(cmd, msg, args, guild);
+                    await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
                 }
             }
         }
         else {
-            const args = msg.content.substr(prefix.length).split(' ');
+            let content = msg.content.substr(prefix.length);
+            const args = content.split(' ');
             const cmd = args.shift();
+            content = content.substr(cmd.length).trimLeft();
             
-            await this.runCommand(cmd, msg, args, guild);
+            await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
         }
     }
 }

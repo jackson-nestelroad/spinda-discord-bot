@@ -33,6 +33,10 @@ export class DataService {
         this.sequelize.sync({ alter: true });
     }
 
+    public async clearCache() {
+        this.cache.guilds.clear();
+    }
+
     private async getGuildModel(id: string): Promise<Guild> {
         let entry = await this.guilds.findOne({ where: { id: id }});
         if (entry === null) {

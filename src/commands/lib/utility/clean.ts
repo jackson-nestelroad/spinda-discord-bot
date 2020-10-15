@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 
 export class CleanCommand implements Command {
@@ -13,7 +11,7 @@ export class CleanCommand implements Command {
     public readonly defaultNumberToDelete: number = 100;
     public readonly ageLimit: number = 14 * 24 * 60 * 60 * 1000;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ bot, msg, args }: CommandParameters) {
         let numberToDelete = parseInt(args[0]);
         if (isNaN(numberToDelete)) {
             numberToDelete = this.defaultNumberToDelete;

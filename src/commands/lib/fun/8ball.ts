@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 export class EightBallCommand implements Command {
     public readonly prefix = ':8ball: - ';
@@ -34,7 +32,7 @@ export class EightBallCommand implements Command {
         'Very doubtful.'
     ];
 
-    public async run(bot: DiscordBot, msg: Message) {
+    public async run({ msg }: CommandParameters) {
         await msg.channel.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
     }
 }

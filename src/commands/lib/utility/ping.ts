@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 export class PingCommand implements Command {
     public name = 'ping';
@@ -9,7 +7,7 @@ export class PingCommand implements Command {
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
 
-    public async run(bot: DiscordBot, msg: Message) {
+    public async run({ msg }: CommandParameters) {
         const start = new Date();
         const newMsg = await msg.channel.send('Pong!');
         const end = new Date();

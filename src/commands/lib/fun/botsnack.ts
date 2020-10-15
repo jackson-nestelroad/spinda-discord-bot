@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 export class BotsnackCommand implements Command {
     public name = 'botsnack';
@@ -9,7 +7,7 @@ export class BotsnackCommand implements Command {
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
 
-    public async run(bot: DiscordBot, msg: Message) {
+    public async run({ msg }: CommandParameters) {
         await msg.channel.send('botsnack, mmmmmm...')
     }
 }

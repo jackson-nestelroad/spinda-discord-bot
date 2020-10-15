@@ -1,5 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { Message, MessageAttachment } from 'discord.js';
 import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { resolve } from 'path';
@@ -200,7 +199,7 @@ export class SpindaCommand implements Command {
         }
     }
 
-    public async run(bot: DiscordBot, msg: Message) {
+    public async run({ msg }: CommandParameters) {
         await this.runForPid(msg, this.getRandomPID());
     }
 

@@ -1,7 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
-import { GuildAttributes } from '../../../data/model/guild';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 
 export class HelpCommand implements Command {
@@ -14,7 +11,7 @@ export class HelpCommand implements Command {
     // Cache for list of command names by category
     private commandListByCategory: Map<CommandCategory, string[]> = null;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
+    public async run({ bot, msg, args, guild }: CommandParameters) {
         const embed = bot.createEmbed();
         embed.setAuthor(bot.name + ' Commands', bot.iconUrl);
         const prefix = guild.prefix;

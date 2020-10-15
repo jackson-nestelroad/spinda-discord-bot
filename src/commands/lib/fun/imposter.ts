@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
 
@@ -64,14 +62,14 @@ export class ImposterCommand implements Command {
         return line;
     }
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ msg, args, content }: CommandParameters) {
         let name: string;
         if (args.length > 0) {
             if (msg.mentions.users.size > 0) {
                 name = msg.mentions.users.first().username;
             }
             else {
-                name = args.join(' ');
+                name = content;
             }
         }
         else {

@@ -1,16 +1,15 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 export class RefreshCommand implements Command {
     public name = 'refresh';
     public args = '';
-    public description = 'Refreshes the bot commands, clearing out all cached data.';
+    public description = 'Refreshes the bot commands and data service, clearing out all cached data.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
 
-    public async run(bot: DiscordBot, msg: Message) {
+    public async run({ bot, msg }: CommandParameters) {
         bot.refreshCommands();
+        bot.dataService.clearCache();
         await msg.channel.send('Refresh successful.');
     }
 }

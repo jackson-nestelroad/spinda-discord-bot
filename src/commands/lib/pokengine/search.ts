@@ -1,5 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { Message, MessageEmbed } from 'discord.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -40,8 +39,8 @@ export class SearchCommand implements Command {
         await msg.channel.send(embed);
     }
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
-        const query = args.join(' ');
+    public async run({ bot, msg, content }: CommandParameters) {
+        const query = content;
         const searchUrl = this.searchFor(query);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
         const searchResults = cheerio(searchResponse.data);

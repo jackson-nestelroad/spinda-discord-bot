@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { FunUtil } from './util';
 
 export class ConchCommand implements Command {
@@ -17,8 +15,8 @@ export class ConchCommand implements Command {
     public readonly secondLine = `\n${this.prefix}`;
     public readonly editedHeader = this.header + this.secondLine;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
-        const question = args.join(' ').toLowerCase().trim();
+    public async run({ msg, content }: CommandParameters) {
+        const question = content.toLowerCase().trim();
         let response = await msg.channel.send(this.header);
 
         response = await FunUtil.addSuspense(response, this.editedHeader, 2);

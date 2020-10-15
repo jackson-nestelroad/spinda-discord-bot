@@ -1,7 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
-import { GuildAttributes } from '../../../data/model/guild';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 
 export class PrefixCommand implements Command {
@@ -11,10 +8,10 @@ export class PrefixCommand implements Command {
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
+    public async run({ bot, msg, content, guild }: CommandParameters) {
         const embed = bot.createEmbed({ footer: false, timestamp: false });
         
-        let newPrefix = args.join(' ');
+        let newPrefix = content;
         
         const codeLine = DiscordUtil.getCodeLine(newPrefix);
         if (codeLine.match) {

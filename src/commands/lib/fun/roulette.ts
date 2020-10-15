@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { FunUtil } from './util';
 
 export class RoutletteCommand implements Command {
@@ -19,7 +17,7 @@ export class RoutletteCommand implements Command {
 
     public readonly timeToRevive: number = 1;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ msg, args }: CommandParameters) {
         if (this.dead.has(msg.author.id)) {
             const diedAt = this.dead.get(msg.author.id);
             if ((new Date() as any) - (diedAt as any) > this.timeToRevive * 60 * 1000) {

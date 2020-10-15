@@ -1,6 +1,5 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message, Channel, TextChannel } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Channel, TextChannel } from 'discord.js';
 
 export class SayCommand implements Command {
     public name = 'say';
@@ -9,12 +8,13 @@ export class SayCommand implements Command {
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Administrator;
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ msg, args, content }: CommandParameters) {
         let channel: Channel = msg.channel;
         
         // First argument may be a channel mention
         if (msg.mentions.channels.size > 0 && args.length > 0 && args[0] === msg.mentions.channels.first().toString()) {
             const channelMention = args.shift();
+            content = content.substr(channelMention.length).trimLeft();
             const id = channelMention.substring(2, channelMention.length - 1);
             channel = msg.guild.channels.cache.get(id);
             if (!channel) {
@@ -29,7 +29,7 @@ export class SayCommand implements Command {
             throw new Error(`Cannot send a message to a ${channel.type} channel.`);
         }
 
-        await (channel as TextChannel).send(args.join(' '));
+        await (channel as TextChannel).send(content);
         if (msg.deletable) {
             await msg.delete();
         }

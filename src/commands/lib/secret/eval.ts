@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { inspect } from 'util';
 import { Environment } from '../../../data/environment';
 import { runInContext, createContext } from 'vm';
@@ -39,15 +37,19 @@ export class EvalCommand implements Command {
         return res;
     }
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ bot, msg, content }: CommandParameters) {
         let silent = false;
+
+        // Code block may be on a different line, so allow parameters to be split by any whitespace
+        const args = content.split(/\s+/);
+        
         if (args[0] === this.silentArg) {
             silent = true;
-            args.shift();
+            content = content.substr(this.silentArg.length).trimLeft();
         }
 
         // Parse code from code blocks/lines
-        let code = args.join(' ').trim();
+        let code = content;
         const codeBlock = DiscordUtil.getCodeBlock(code);
         if (codeBlock.match) {
             code = codeBlock.content;

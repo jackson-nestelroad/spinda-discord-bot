@@ -1,6 +1,4 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message, MessageEmbed } from 'discord.js';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';
@@ -15,7 +13,7 @@ export class CertifiedCommand implements Command {
     public readonly pokedexPath: string = '/pok\u00E9dex';
     public certifiedDexNames: WebScrapedPokedex[];
 
-    public async run(bot: DiscordBot, msg: Message, args: string[]) {
+    public async run({ bot, msg, args }: CommandParameters) {
         // Retrieve certified dex information
         // We cache this data since it is very unlikely to change
         if (!this.certifiedDexNames) {

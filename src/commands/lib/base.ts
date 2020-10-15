@@ -16,8 +16,16 @@ export enum CommandPermission {
     Everyone,
 }
 
+export interface CommandParameters {
+    bot: DiscordBot,
+    msg: Message,
+    args: string[],
+    content: string,
+    guild: GuildAttributes,
+}
+
 export interface Command {
-    run: (bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) => Promise<void>;
+    run: (params: CommandParameters) => Promise<void>;
     readonly name: string;
     readonly args: string;
     readonly description: string;

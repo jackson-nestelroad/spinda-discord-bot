@@ -1,7 +1,6 @@
-import { Command, CommandCategory, CommandPermission } from '../base';
-import { DiscordBot } from '../../../bot';
-import { Message, TextChannel } from 'discord.js';
-import { GuildAttributes, LogOptionBit } from '../../../data/model/guild';
+import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { TextChannel } from 'discord.js';
+import { LogOptionBit } from '../../../data/model/guild';
 
 enum LogCommandOption {
     Channel = 'channel',
@@ -67,7 +66,7 @@ ${this.formatBitOptions()}
         return Object.keys(LogEvents).map(key => `\`${key}\``).join(', ');
     }
 
-    public async run(bot: DiscordBot, msg: Message, args: string[], guild: GuildAttributes) {
+    public async run({ bot, msg, args, content, guild }: CommandParameters) {
         if (args.length === 0) {
             const embed = bot.createEmbed();
             embed.setTitle(`Log Configuration for ${msg.guild.name}`);
@@ -81,7 +80,7 @@ ${this.formatBitOptions()}
             await msg.channel.send(embed);
         }
         else {
-            const changes = args.join(' ').split(';').map(val => val.trim());
+            const changes = content.split(';').map(val => val.trim());
             for (const change of changes) {
                 const split = change.split('=').map(val => val.trim());
 
