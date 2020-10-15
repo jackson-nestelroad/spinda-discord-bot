@@ -47,7 +47,7 @@ export class EvalCommand implements Command {
         }
 
         // Parse code from code blocks/lines
-        let code = args.join(' ');
+        let code = args.join(' ').trim();
         const codeBlock = DiscordUtil.getCodeBlock(code);
         if (codeBlock.match) {
             code = codeBlock.content;
