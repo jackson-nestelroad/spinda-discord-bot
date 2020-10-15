@@ -12,7 +12,12 @@ export class MessageEvent extends BaseEvent<typeof event> {
         super(bot, event);
     }
 
+    private async runCustomCommand(msg: Message, args: string[], response: string) {
+        await msg.channel.send(response);
+    }
+
     private async runCommand(cmd: string, params: CommandParameters) {
+        // Global command
         if (this.bot.commands.has(cmd)) {
             try {
                 const command = this.bot.commands.get(cmd)
@@ -23,6 +28,13 @@ export class MessageEvent extends BaseEvent<typeof event> {
                 const embed = this.bot.createEmbed({ footer: false, timestamp: false, error: true });
                 embed.setDescription(error.message || error.toString());
                 await params.msg.channel.send(embed);
+            }
+        }
+        // Could be a custom (guild) command
+        else {
+            const customCommands = await this.bot.dataService.getCustomCommands(params.msg.guild.id);
+            if (customCommands[cmd]) {
+                await this.runCustomCommand(params.msg, params.args, customCommands[cmd]);
             }
         }
     }

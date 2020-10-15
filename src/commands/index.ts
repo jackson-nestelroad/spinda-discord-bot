@@ -15,6 +15,9 @@ import { UptimeCommand } from './lib/utility/uptime';
 import { ImposterCommand } from './lib/fun/imposter';
 import { PrefixCommand } from './lib/config/prefix';
 import { LogsCommand } from './lib/config/logs';
+import { SetCommandCommand } from './lib/config/set-command';
+import { RemoveCommandCommand } from './lib/config/remove-command';
+import { CustomHelpCommand } from './lib/utility/custom';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -34,9 +37,12 @@ const CommandTypes: Array<{ new(): Command }> = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
+    CustomHelpCommand,
 
     PrefixCommand,
     LogsCommand,
+    SetCommandCommand,
+    RemoveCommandCommand,
 ];
 
 export namespace Commands {
