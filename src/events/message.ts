@@ -4,16 +4,13 @@ import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
 import { CommandParameters } from '../commands/lib/base';
+import { CustomCommandParser } from './util/custom-command-parser';
 
 const event = 'message';
 
 export class MessageEvent extends BaseEvent<typeof event> {
     constructor(bot: DiscordBot) {
         super(bot, event);
-    }
-
-    private async runCustomCommand(msg: Message, args: string[], response: string) {
-        await msg.channel.send(response);
     }
 
     private async runCommand(cmd: string, params: CommandParameters) {
@@ -34,7 +31,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
         else {
             const customCommands = await this.bot.dataService.getCustomCommands(params.msg.guild.id);
             if (customCommands[cmd]) {
-                await this.runCustomCommand(params.msg, params.args, customCommands[cmd]);
+                await params.msg.channel.send(CustomCommandParser.parse(params.msg, params.args, customCommands[cmd]));
             }
         }
     }
