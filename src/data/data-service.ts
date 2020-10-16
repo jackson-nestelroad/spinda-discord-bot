@@ -82,18 +82,18 @@ export class DataService {
     }
 
     public async getCustomCommands(guildId: string): Promise<ReadonlyDictionary<string>> {
-        this.assureCustomCommandsCache(guildId);
+        await this.assureCustomCommandsCache(guildId);
         return this.cache.customCommands.get(guildId);
     }
 
     public async setCustomCommand(guildId: string, name: string, message: string): Promise<void> {
-        this.assureCustomCommandsCache(guildId);
+        await this.assureCustomCommandsCache(guildId);
         const updated = (await this.customCommands.upsert({ guildId, name, message }))[0];
         this.cache.customCommands.get(guildId)[updated.name] = updated.message;
     }
 
     public async removeCustomCommand(guildId: string, name: string): Promise<boolean> {
-        this.assureCustomCommandsCache(guildId);
+        await this.assureCustomCommandsCache(guildId);
         const removed = (await this.customCommands.destroy({ where: { guildId: guildId, name: name }})) === 1;
         if (removed) {
             delete this.cache.customCommands.get(guildId)[name];
