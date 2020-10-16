@@ -42,10 +42,10 @@ export class DataService {
     }
 
     private async getGuildModel(id: string): Promise<Guild> {
-        let entry = await this.guilds.findOne({ where: { id: id }});
+        let entry = await this.guilds.findOne({ where: { id }});
         if (entry === null) {
             entry = await this.guilds.create({
-                id: id,
+                id,
                 prefix: this.defaultPrefix,
             });
         }
@@ -66,7 +66,7 @@ export class DataService {
     }
 
     private async getCustomCommandModels(guildId: string): Promise<CustomCommand[]> {
-        let entries = await this.customCommands.findAll({ where: { guildId: guildId }});
+        let entries = await this.customCommands.findAll({ where: { guildId }});
         return entries;
     }
 
@@ -88,16 +88,20 @@ export class DataService {
 
     public async setCustomCommand(guildId: string, name: string, message: string): Promise<void> {
         await this.assureCustomCommandsCache(guildId);
-        const updated = (await this.customCommands.upsert({ guildId, name, message }))[0];
-        this.cache.customCommands.get(guildId)[updated.name] = updated.message;
+        const map = this.cache.customCommands.get(guildId);
+        if (map[name]) {
+            await this.customCommands.update({ message }, { where: { guildId, name } });
+        }
+        else {
+            await this.customCommands.create({ guildId, name, message });
+        }
+        map[name] = message;
     }
 
     public async removeCustomCommand(guildId: string, name: string): Promise<boolean> {
         await this.assureCustomCommandsCache(guildId);
-        const removed = (await this.customCommands.destroy({ where: { guildId: guildId, name: name }})) === 1;
-        if (removed) {
-            delete this.cache.customCommands.get(guildId)[name];
-        }
+        const removed = (await this.customCommands.destroy({ where: { guildId, name }})) !== 0;
+        delete this.cache.customCommands.get(guildId)[name];
         return removed;
     }
 }
