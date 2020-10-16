@@ -1,5 +1,6 @@
 import { User, GuildMember, Guild, Channel } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
+import { Validation } from './validate';
 
 export namespace CustomCommandEngine {
     const variableRegex = new RegExp(
@@ -122,8 +123,7 @@ export namespace CustomCommandEngine {
                         [response, delta] = replaceMatch(match, response, userParams[attribute](msg.author), delta);
                     }
                     else if (memberParams[attribute]) {
-                        const member = msg.guild.members.cache.get(msg.author.id);
-                        [response, delta] = replaceMatch(match, response, memberParams[attribute](member), delta);
+                        [response, delta] = replaceMatch(match, response, memberParams[attribute](msg.member), delta);
                     }
                 }
                 else {
@@ -161,9 +161,12 @@ export namespace CustomCommandEngine {
                 const content = match[VariableMatchGroups.CommandArgs].trim();
                 const args = content.split(' ');
                 if (bot.commands.has(cmd)) {
-                    bot.commands.get(cmd).run({ bot, msg, args, content, guild }).catch(err => bot.sendError(msg, err));
-                    [response, delta] = replaceMatch(match, response, '', delta);
+                    const command = bot.commands.get(cmd);
+                    if (Validation.validate(bot, command, msg.member)) {   
+                        command.run({ bot, msg, args, content, guild }).catch(err => bot.sendError(msg, err));
+                    }
                 }
+                [response, delta] = replaceMatch(match, response, '', delta);
             }
             else if (match[VariableMatchGroups.SilentOption]) {
                 silent = true;
