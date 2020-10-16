@@ -1,8 +1,8 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 
 export class CustomHelpCommand implements Command {
-    public name = 'custom (command)';
-    public args = '';
+    public name = 'custom';
+    public args = '(command)';
     public description = 'Gives a list of all custom commands registered in this guild.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
