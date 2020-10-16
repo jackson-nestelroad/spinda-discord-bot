@@ -8,8 +8,8 @@ export namespace CustomCommandEngine {
         + '|(\\{user(?:\\.([a-zA-Z]+))?\\})'
         + '|(\\{(?:guild|server)(?:\\.([a-zA-Z]+))?\\})'
         + '|(\\{channel(?:\\.([a-zA-Z]+))?\\})'
-        + '|(\\{choose:(?:\\s+)?(.+(?:,(?:\\s+)?.+)*)\\})'
-        + '|(\\{>([a-z]+)(.+)?\\})'
+        + '|(\\{choose:(?:\\s+)?((?:[^\\}]+)?(?:,(?:\\s+)?.+)*)\\})'
+        + '|(\\{>([a-z]+)(?:[^\\}]+)?\\})'
         + '|(\\{silent\\})'
         + '|(\\{time\\})'
         + '|(\\{date\\})'
@@ -167,6 +167,7 @@ export namespace CustomCommandEngine {
                     }
                 }
                 [response, delta] = replaceMatch(match, response, '', delta);
+                console.log(match);
             }
             else if (match[VariableMatchGroups.SilentOption]) {
                 silent = true;
