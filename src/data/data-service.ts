@@ -70,7 +70,7 @@ export class DataService {
         return entries;
     }
 
-    public async getCustomCommands(guildId: string): Promise<ReadonlyDictionary<string>> {
+    private async assureCustomCommandsCache(guildId: string) {
         if (!this.cache.customCommands.has(guildId)) {
             const models = await this.getCustomCommandModels(guildId);
             const map: Dictionary<string> = { };
@@ -79,20 +79,21 @@ export class DataService {
             }
             this.cache.customCommands.set(guildId, map);
         }
+    }
+
+    public async getCustomCommands(guildId: string): Promise<ReadonlyDictionary<string>> {
+        this.assureCustomCommandsCache(guildId);
         return this.cache.customCommands.get(guildId);
     }
 
     public async setCustomCommand(guildId: string, name: string, message: string): Promise<void> {
+        this.assureCustomCommandsCache(guildId);
         const updated = (await this.customCommands.upsert({ guildId, name, message }))[0];
-        if (!this.cache.customCommands.has(guildId)) {
-            this.cache.customCommands.set(guildId, { [updated.name]: updated.message });
-        }
-        else {
-            this.cache.customCommands.get(guildId)[updated.name] = updated.message;
-        }
+        this.cache.customCommands.get(guildId)[updated.name] = updated.message;
     }
 
     public async removeCustomCommand(guildId: string, name: string): Promise<boolean> {
+        this.assureCustomCommandsCache(guildId);
         const removed = (await this.customCommands.destroy({ where: { guildId: guildId, name: name }})) === 1;
         if (removed) {
             delete this.cache.customCommands.get(guildId)[name];
