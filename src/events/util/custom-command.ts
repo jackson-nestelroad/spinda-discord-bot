@@ -97,6 +97,7 @@ export class CustomCommandEngine {
         ],
         'Functions': [
             `{>command arg1 arg2 ...}`,
+            `{random a b}`,
             `{silent}`,
             `{delete}`,
         ],
