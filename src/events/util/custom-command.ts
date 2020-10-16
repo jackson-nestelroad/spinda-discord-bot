@@ -56,7 +56,7 @@ export namespace CustomCommandEngine {
     const guildParams: ReadonlyDictionary<(guild: Guild) => string> = {
         id: guild => guild.id,
         name: guild => guild.name,
-        icon: guild => guild.icon,
+        icon: guild => guild.iconURL(),
         memberCount: guild => guild.memberCount.toString(),
         ownerId: guild => guild.ownerID,
         createdAt: guild => guild.createdAt.toLocaleDateString(),
@@ -78,7 +78,7 @@ export namespace CustomCommandEngine {
         ],
         'Server Variables': [
             '{server}',
-            ...Object.keys(guildParams).map(key => `{guild.${key}}`),
+            ...Object.keys(guildParams).map(key => `{server.${key}}`),
         ],
         'Channel Variables': [
             '{channel}',

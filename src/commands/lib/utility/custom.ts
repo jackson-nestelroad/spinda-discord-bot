@@ -10,7 +10,7 @@ export class CustomHelpCommand implements Command {
     public async run({ bot, msg, guild }: CommandParameters) {
         const commands = await bot.dataService.getCustomCommands(msg.guild.id);
         const embed = bot.createEmbed();
-        embed.setAuthor(`Custom Commands for ${msg.guild.name}`, bot.iconUrl);
+        embed.setAuthor(`Custom Commands for ${msg.guild.name}`, msg.guild.iconURL());
 
         const keys = Object.keys(commands);
         if (keys.length === 0) {
