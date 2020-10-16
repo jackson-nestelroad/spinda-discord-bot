@@ -20,7 +20,10 @@ enum VariableMatchGroups {
     TimeFunction = 15,
     DateFunction = 16,
     DeleteFunction = 17,
-    PrefixFunction = 18
+    PrefixFunction = 18,
+    RandomFunction = 19,
+    RandomFirstNum = 20,
+    RandomSecondNum = 21,
 }
 
 export class CustomCommandEngine {
@@ -36,6 +39,7 @@ export class CustomCommandEngine {
         + '|(\\{date\\})'
         + '|(\\{delete\\})'
         + '|(\\{prefix\\})'
+        + '|(\\{random(?:(?:\\s+)(\\d+)(?:(?:\\s+)(\\d+))?)?\\})'
     , 'g');
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
@@ -187,6 +191,30 @@ export class CustomCommandEngine {
             }
             else if (match[VariableMatchGroups.PrefixFunction]) {
                 [response, delta] = this.replaceMatch(match, response, guild.prefix, delta);
+            }
+            else if (match[VariableMatchGroups.RandomFunction]) {
+                let first = parseInt(match[VariableMatchGroups.RandomFirstNum]);
+                let second = parseInt(match[VariableMatchGroups.RandomSecondNum]);
+                if (isNaN(second)) {
+                    if (!isNaN(first)) {
+                        second = first;
+                    }
+                    else {
+                        second = 10;
+                    }
+                    first = 0;
+                }
+                else if (isNaN(first)) {
+                    first = 0;
+                    second = 10;
+                }
+                else if (second < first) {
+                    let temp = first;
+                    first = second;
+                    second = temp;
+                }
+                const num = Math.floor((Math.random() * (second - first + 1) + first));
+                [response, delta] = this.replaceMatch(match, response, num.toString(), delta);
             }
         }
 
