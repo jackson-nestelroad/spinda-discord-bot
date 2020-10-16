@@ -158,7 +158,7 @@ export namespace CustomCommandEngine {
             }
             else if (match[VariableMatchGroups.CommandFunction]) {
                 const cmd = match[VariableMatchGroups.CommandName];
-                const content = match[VariableMatchGroups.CommandArgs].trim();
+                const content = (match[VariableMatchGroups.CommandArgs] || '').trim();
                 const args = content.split(' ');
                 if (bot.commands.has(cmd)) {
                     const command = bot.commands.get(cmd);
@@ -167,7 +167,6 @@ export namespace CustomCommandEngine {
                     }
                 }
                 [response, delta] = replaceMatch(match, response, '', delta);
-                console.log(match);
             }
             else if (match[VariableMatchGroups.SilentOption]) {
                 silent = true;
@@ -187,6 +186,7 @@ export namespace CustomCommandEngine {
             }
         }
 
+        response = response.trim();
         if (!silent && response.length !== 0) {
             await msg.channel.send(response);
         }

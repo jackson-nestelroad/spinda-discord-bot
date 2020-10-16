@@ -21,16 +21,18 @@ export class MessageEvent extends BaseEvent<typeof event> {
                     await command.run(params);
                 }
             } catch (error) {
-                const embed = this.bot.createEmbed({ footer: false, timestamp: false, error: true });
-                embed.setDescription(error.message || error.toString());
-                await params.msg.channel.send(embed);
+                await params.bot.sendError(params.msg, error);
             }
         }
         // Could be a custom (guild) command
         else {
             const customCommands = await this.bot.dataService.getCustomCommands(params.msg.guild.id);
             if (customCommands[cmd]) {
-                await CustomCommandEngine.run(params, customCommands[cmd]);
+                try {
+                    await CustomCommandEngine.run(params, customCommands[cmd]);
+                } catch (error) {
+                    await params.bot.sendError(params.msg, error);
+                }
             }
         }
     }
