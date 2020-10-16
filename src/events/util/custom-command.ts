@@ -61,7 +61,7 @@ export class CustomCommandEngine {
     private static readonly guildParams: ReadonlyDictionary<(guild: Guild) => string> = {
         id: guild => guild.id,
         name: guild => guild.name,
-        icon: guild => guild.iconURL(),
+        icon: guild => guild.iconURL() || 'undefined',
         memberCount: guild => guild.memberCount.toString(),
         ownerId: guild => guild.ownerID,
         createdAt: guild => guild.createdAt.toLocaleDateString(),
