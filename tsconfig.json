@@ -5,6 +5,7 @@
         "lib": [
             "ES2018",
             "DOM",
+            "ES2020.String",
         ],
         "types": [],
         "isolatedModules": false,

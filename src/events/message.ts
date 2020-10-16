@@ -2,9 +2,8 @@ import { Message } from 'discord.js';
 import { BaseEvent } from './base';
 import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
-import { GuildAttributes } from '../data/model/guild';
 import { CommandParameters } from '../commands/lib/base';
-import { CustomCommandParser } from './util/custom-command-parser';
+import { CustomCommandEngine } from './util/custom-command';
 
 const event = 'message';
 
@@ -31,7 +30,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
         else {
             const customCommands = await this.bot.dataService.getCustomCommands(params.msg.guild.id);
             if (customCommands[cmd]) {
-                await params.msg.channel.send(CustomCommandParser.parse(params.msg, params.args, customCommands[cmd]));
+                await CustomCommandEngine.run(params, customCommands[cmd]);
             }
         }
     }

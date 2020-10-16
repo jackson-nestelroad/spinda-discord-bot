@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User, Channel } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, Message } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -77,6 +77,12 @@ export class DiscordBot {
         }
 
         return embed;
+    }
+
+    public async sendError(msg: Message, error: any) {
+        const embed = this.createEmbed({ footer: false, timestamp: false, error: true });
+        embed.setDescription(error.message || error.toString());
+        await msg.channel.send(embed);
     }
 
     public getUserFromMention(mention: string): User | null {
