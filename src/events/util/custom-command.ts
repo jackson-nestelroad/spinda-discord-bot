@@ -32,7 +32,7 @@ export class CustomCommandEngine {
         + '|(\\{user(?:\\.([a-zA-Z]+))?\\})'
         + '|(\\{(?:guild|server)(?:\\.([a-zA-Z]+))?\\})'
         + '|(\\{channel(?:\\.([a-zA-Z]+))?\\})'
-        + '|(\\{choose:(?:\\s+)?((?:[^\\}]+)?(?:,(?:\\s+)?.+)*)\\})'
+        + '|(\\{choose ((?:(?:\\{[^\}]+\\})|(?:[^\\}]))+)\\})'
         + '|(\\{>([a-z]+)((?:(?:\\{[^\\}]+\\})|(?:[^\\}]))*)\\})'
         + '|(\\{silent\\})'
         + '|(\\{time\\})'
@@ -90,7 +90,7 @@ export class CustomCommandEngine {
             ...Object.keys(CustomCommandEngine.channelParams).map(key => `{channel.${key}}`),
         ],
         'Other Variables': [
-            `{choose:item1,item2,...}`,
+            `{choose item1;item2;...}`,
             `{time}`,
             `{date}`,
             `{prefix}`,
@@ -161,7 +161,7 @@ export class CustomCommandEngine {
                 }
             }
             else if (match[VariableMatchGroups.ChooseFunction]) {
-                const options = match[VariableMatchGroups.ChooseList].split(',').map(val => val.trim());
+                const options = match[VariableMatchGroups.ChooseList].split(';').map(val => this.parse(params, val.trim()));
                 [response, delta] = this.replaceMatch(match, response, options[Math.floor(Math.random() * options.length)], delta);
             }
             else if (match[VariableMatchGroups.CommandFunction]) {
