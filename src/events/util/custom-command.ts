@@ -19,6 +19,7 @@ enum SpecialChars {
 export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
+    private static readonly allArgumentsVar = 'ALL';
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
@@ -53,7 +54,7 @@ export class CustomCommandEngine {
     };
 
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
-        'Arguments': ['$N'],
+        'Arguments': ['$N', `\$${CustomCommandEngine.allArgumentsVar}`],
         'User Variables': [
             '{user}',
             ...Object.keys(CustomCommandEngine.userParams).map(key => `{user.${key}}`),
@@ -68,6 +69,8 @@ export class CustomCommandEngine {
             ...Object.keys(CustomCommandEngine.channelParams).map(key => `{channel.${key}}`),
         ],
         'Other Variables': [
+            `$var`,
+            `{$var}`,
             `{$var = value}`,
             `{$var = {function}}`,
             `{$var = $1 or $var2 or ...}`,
@@ -91,6 +94,9 @@ export class CustomCommandEngine {
         if (name.match(/^\d+$/)) {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? params.args[argIndex - 1] : undefined;
+        }
+        else if (name === CustomCommandEngine.allArgumentsVar) {
+            return params.content;
         }
         return this.vars.get(name);
     }
@@ -132,7 +138,7 @@ export class CustomCommandEngine {
                     this.vars.set(varName, potentialValues[i]);
                 }
                 else {
-                    this.vars.set(varName, rightSide);
+                    this.vars.set(varName, rightSide.trimLeft());
                 }
                 return '';
             }
