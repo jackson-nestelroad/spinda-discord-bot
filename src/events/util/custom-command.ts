@@ -96,7 +96,7 @@ export class CustomCommandEngine {
             return !isNaN(argIndex) ? params.args[argIndex - 1] : undefined;
         }
         else if (name === CustomCommandEngine.allArgumentsVar) {
-            return params.content;
+            return params.content ? params.content : undefined;
         }
         return this.vars.get(name);
     }
