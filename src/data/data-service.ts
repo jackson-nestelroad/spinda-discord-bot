@@ -5,7 +5,7 @@ import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
 
 export class DataService {
-    public readonly defaultPrefix: string = '>';
+    public static readonly defaultPrefix: string = '>';
 
     private sequelize: Sequelize;
     private guilds = Guild;
@@ -46,7 +46,7 @@ export class DataService {
         if (entry === null) {
             entry = await this.guilds.create({
                 id,
-                prefix: this.defaultPrefix,
+                prefix: DataService.defaultPrefix,
             });
         }
         return entry;

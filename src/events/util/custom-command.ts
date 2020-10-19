@@ -1,46 +1,24 @@
 import { User, GuildMember, Guild, Channel } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
+import { DataService } from '../../data/data-service';
 
-enum VariableMatchGroups {
-    CommandParam = 1,
-    ParamNumber = 2,
-    UserVar = 3,
-    UserAttribute = 4,
-    GuildVar = 5,
-    GuildAttribute = 6,
-    ChannelVar = 7,
-    ChannelAttribute = 8,
-    ChooseFunction = 9,
-    ChooseList = 10,
-    CommandFunction = 11,
-    CommandName = 12,
-    CommandArgs = 13,
-    SilentOption = 14,
-    TimeFunction = 15,
-    DateFunction = 16,
-    DeleteFunction = 17,
-    PrefixFunction = 18,
-    RandomFunction = 19,
-    RandomFirstNum = 20,
-    RandomSecondNum = 21,
+interface ResponseParseResult {
+    response: string;
+    index: number;
+}
+
+enum SpecialChars {
+    FunctionBegin = '{',
+    FunctionEnd = '}',
+    VarBegin = '$',
+    VarAssign = '=',
+    AttributeSeparator = '.',
 }
 
 export class CustomCommandEngine {
-    private static readonly variableRegex = new RegExp(
-        '(\\$(\\d+))'
-        + '|(\\{user(?:\\.([a-zA-Z]+))?\\})'
-        + '|(\\{(?:guild|server)(?:\\.([a-zA-Z]+))?\\})'
-        + '|(\\{channel(?:\\.([a-zA-Z]+))?\\})'
-        + '|(\\{choose ((?:(?:\\{[^\}]+\\})|(?:[^\\}]))+)\\})'
-        + '|(\\{>([a-z]+)((?:(?:\\{[^\\}]+\\})|(?:[^\\}]))*)\\})'
-        + '|(\\{silent\\})'
-        + '|(\\{time\\})'
-        + '|(\\{date\\})'
-        + '|(\\{delete\\})'
-        + '|(\\{prefix\\})'
-        + '|(\\{random(?:(?:\\s+)(\\d+)(?:(?:\\s+)(\\d+))?)?\\})'
-    , 'g');
+    private static readonly undefinedVar = 'undefined';
+    private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
@@ -90,13 +68,16 @@ export class CustomCommandEngine {
             ...Object.keys(CustomCommandEngine.channelParams).map(key => `{channel.${key}}`),
         ],
         'Other Variables': [
-            `{choose item1;item2;...}`,
+            `{$var = value}`,
+            `{$var = {function}}`,
+            `{$var = $1 or $var2 or ...}`,
             `{time}`,
             `{date}`,
             `{prefix}`,
         ],
         'Functions': [
             `{>command arg1 arg2 ...}`,
+            `{choose item1;item2;...}`,
             `{random a b}`,
             `{silent}`,
             `{delete}`,
@@ -104,126 +85,260 @@ export class CustomCommandEngine {
     };
 
     private silent: boolean = false;
+    private vars: Map<string, string> = new Map();
 
-    private replaceMatch(match: RegExpMatchArray, src: string, replacement: string, delta: number): [string, number] {
-        return [
-            src.substr(0, match.index + delta) + replacement + src.substr(match.index + match[0].length + delta),
-            delta + (replacement.length - match[0].length),
-        ];
+    private handleVariableNative(params: CommandParameters, name: string): string | undefined {
+        if (name.match(/^\d+$/)) {
+            const argIndex = parseInt(name);
+            return !isNaN(argIndex) ? params.args[argIndex - 1] : undefined;
+        }
+        return this.vars.get(name);
     }
 
-    // Parse a response string
-    private parse(params: CommandParameters, response: string): string {
-        const { bot, msg, args, guild } = params;
+    private handleVariable(params: CommandParameters, name: string): string {
+        return this.handleVariableNative(params, name) ?? CustomCommandEngine.undefinedVar;
+    }
 
-        // Replace all parameters and variables
-        let delta = 0;
-        const varMatches = [...response.matchAll(CustomCommandEngine.variableRegex)];
-        for (const match of varMatches) {
-            if (match[VariableMatchGroups.CommandParam]) {
-                const index = parseInt(match[VariableMatchGroups.ParamNumber]);
-                [response, delta] = this.replaceMatch(match, response, args[index - 1] || 'undefined', delta);
-            }
-            else if (match[VariableMatchGroups.UserVar]) {
-                const attribute = match[VariableMatchGroups.UserAttribute];
-                if (attribute) {
-                    if (CustomCommandEngine.userParams[attribute]) {
-                        [response, delta] = this.replaceMatch(match, response, CustomCommandEngine.userParams[attribute](msg.author), delta);
-                    }
-                    else if (CustomCommandEngine.memberParams[attribute]) {
-                        [response, delta] = this.replaceMatch(match, response, CustomCommandEngine.memberParams[attribute](msg.member), delta);
-                    }
-                }
-                else {
-                    [response, delta] = this.replaceMatch(match, response, msg.author.toString(), delta);
-                }
-            }
-            else if (match[VariableMatchGroups.GuildVar]) {
-                const attribute = match[VariableMatchGroups.GuildAttribute];
-                if (attribute) {
-                    if (CustomCommandEngine.guildParams[attribute]) {
-                        [response, delta] = this.replaceMatch(match, response, CustomCommandEngine.guildParams[attribute](msg.guild), delta);
-                    }
-                }
-                else {
-                    [response, delta] = this.replaceMatch(match, response, msg.guild.toString(), delta);
-                }
-            }
-            else if (match[VariableMatchGroups.ChannelVar]) {
-                const attribute = match[VariableMatchGroups.ChannelAttribute];
-                if (attribute) {
-                    if (CustomCommandEngine.channelParams[attribute]) {
-                        [response, delta] = this.replaceMatch(match, response, CustomCommandEngine.channelParams[attribute](msg.channel), delta);
-                    }
-                }
-                else {
-                    [response, delta] = this.replaceMatch(match, response, msg.channel.toString(), delta);
-                }
-            }
-            else if (match[VariableMatchGroups.ChooseFunction]) {
-                const options = match[VariableMatchGroups.ChooseList].split(';').map(val => this.parse(params, val.trim()));
-                [response, delta] = this.replaceMatch(match, response, options[Math.floor(Math.random() * options.length)], delta);
-            }
-            else if (match[VariableMatchGroups.CommandFunction]) {
-                const cmd = match[VariableMatchGroups.CommandName];
-                let content = match[VariableMatchGroups.CommandArgs] || '';
-                content = this.parse(params, content);
-                const args = content.split(' ');
-                if (bot.commands.has(cmd)) {
-                    const command = bot.commands.get(cmd);
-                    if (Validation.validate(bot, command, msg.member)) {   
-                        command.run({ bot, msg, args, content, guild }).catch(err => bot.sendError(msg, err));
-                    }
-                }
-                [response, delta] = this.replaceMatch(match, response, '', delta);
-            }
-            else if (match[VariableMatchGroups.SilentOption]) {
-                this.silent = true;
-            }
-            else if (match[VariableMatchGroups.TimeFunction]) {
-                [response, delta] = this.replaceMatch(match, response, new Date().toLocaleTimeString(), delta);
-            }
-            else if (match[VariableMatchGroups.DateFunction]) {
-                [response, delta] = this.replaceMatch(match, response, new Date().toLocaleDateString(), delta);
-            }
-            else if (match[VariableMatchGroups.DeleteFunction]) {
-                msg.delete().catch(err => bot.sendError(msg, err));
-                [response, delta] = this.replaceMatch(match, response, '', delta);
-            }
-            else if (match[VariableMatchGroups.PrefixFunction]) {
-                [response, delta] = this.replaceMatch(match, response, guild.prefix, delta);
-            }
-            else if (match[VariableMatchGroups.RandomFunction]) {
-                let first = parseInt(match[VariableMatchGroups.RandomFirstNum]);
-                let second = parseInt(match[VariableMatchGroups.RandomSecondNum]);
-                if (isNaN(second)) {
-                    if (!isNaN(first)) {
-                        second = first;
-                    }
-                    else {
-                        second = 10;
-                    }
-                    first = 0;
-                }
-                else if (isNaN(first)) {
-                    first = 0;
-                    second = 10;
-                }
-                else if (second < first) {
-                    let temp = first;
-                    first = second;
-                    second = temp;
-                }
-                const num = Math.floor((Math.random() * (second - first + 1) + first));
-                [response, delta] = this.replaceMatch(match, response, num.toString(), delta);
-            }
+    private handleFunction(params: CommandParameters, call: string): string | null {
+        let name = '';
+        let args = '';
+
+        // Split name and arguments if applicable
+        const separator = call.match(CustomCommandEngine.nonVarChar);
+        if (separator) {
+            name = call.slice(0, separator.index);
+            args = call.slice(separator.index).trim();
+        }
+        else {
+            name = call;
         }
 
-        return response.trim();
+        // Variable function
+        if (name.startsWith(SpecialChars.VarBegin)) {
+            const varName = name.substr(1);
+            // Assignment
+            if (args.startsWith(SpecialChars.VarAssign)) {
+                const rightSide = args.substr(1);
+                const potentialValues = rightSide.split(/\s+or\s+/).map(val => val.trim());
+                if (potentialValues.length > 1) {
+                    // Pick first non-undefined value
+                    let i = 0; 
+                    for (i; i < potentialValues.length - 1; ++i) {
+                        const potential = potentialValues[i];
+                        if (potential !== CustomCommandEngine.undefinedVar) {
+                            break;
+                        }
+                    }
+                    this.vars.set(varName, potentialValues[i]);
+                }
+                else {
+                    this.vars.set(varName, rightSide);
+                }
+                return '';
+            }
+            // Text replacement
+            else if (!args) {
+                return this.handleVariable(params, varName);
+            }
+            // Error
+            else {
+                return null;
+            }
+        }
+        // Nested command call
+        else if (name.startsWith(DataService.defaultPrefix)) {
+            const cmd = name.substr(1);
+            if (params.bot.commands.has(cmd)) {
+                const command = params.bot.commands.get(cmd);
+                if (Validation.validate(params.bot, command, params.msg.member)) {   
+                    command.run({
+                        bot: params.bot,
+                        msg: params.msg,
+                        guild: params.guild,
+                        content: args,
+                        args: args.split(' '),
+                    }).catch(err => params.bot.sendError(params.msg, err));
+                }
+                return '';
+            }
+        }
+        // Some other built-in function
+        else {
+            switch (name) {
+                case 'choose': {
+                    const options = args.split(';');
+                    return options[Math.floor(Math.random() * options.length)];
+                } break;
+                case 'time': {
+                    return new Date().toLocaleDateString();
+                } break;
+                case 'date': {
+                    return new Date().toTimeString();
+                } break;
+                case 'prefix': {
+                    return params.guild.prefix;
+                } break;
+                case 'silent': {
+                    this.silent = true;
+                    return '';
+                } break;
+                case 'delete': {
+                    if (params.msg.deletable) {
+                        params.msg.delete().catch(err => params.bot.sendError(params.msg, err));
+                    }
+                    return '';
+                } break;
+                case 'random': {
+                    const nums = args.split(/\s+/);
+                    let low = 0;
+                    let high = 10;
+                    if (nums.length === 1) {
+                        high = parseInt(nums[0]);
+                    }
+                    else if (nums.length > 1) {
+                        low = parseInt(nums[0]);
+                        high = parseInt(nums[1]);
+                    }
+
+                    if (low > high) {
+                        let temp = low;
+                        low = high;
+                        high = temp;
+                    }
+
+                    // Error
+                    if (isNaN(high) || isNaN(low)) {
+                        return null;
+                    }
+                    return Math.floor((Math.random() * (high - low + 1) + low)).toString();
+                } break;
+                case 'user': {
+                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                        const attr = args.substr(1);
+                        if (CustomCommandEngine.userParams[attr]) {
+                            return CustomCommandEngine.userParams[attr](params.msg.author);
+                        }
+                        else if (CustomCommandEngine.memberParams[attr]) {
+                            return CustomCommandEngine.memberParams[attr](params.msg.member);
+                        }
+                        return null;
+                    }
+                    else {
+                        return params.msg.author.toString();
+                    }
+                } break;
+                case 'guild':
+                case 'server': {
+                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                        const attr = args.substr(1);
+                        if (CustomCommandEngine.guildParams[attr]) {
+                            return CustomCommandEngine.guildParams[attr](params.msg.guild);
+                        }
+                        return null;
+                    }
+                    else {
+                        return params.msg.guild.toString();
+                    }
+                } break;
+                case 'channel': {
+                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                        const attr = args.substr(1);
+                        if (CustomCommandEngine.channelParams[attr]) {
+                            return CustomCommandEngine.channelParams[attr](params.msg.channel);
+                        }
+                        return null;
+                    }
+                    else {
+                        return params.msg.channel.toString();
+                    }
+                } break;
+                // This is not a function
+                default: {
+                    return null;
+                } break;
+            }
+        }
+    }
+
+    private parseFunction(params: CommandParameters, code: string, index: number): ResponseParseResult {
+        let functionCall = '';
+        let paired = false;
+        const startIndex = index;
+        while (index < code.length) {
+            const char = code.charAt(index);
+            if (char === SpecialChars.FunctionBegin) {
+                const nested = this.parseFunction(params, code, index + 1);
+                functionCall += nested.response;
+                index = nested.index;
+            }
+            else if (char === SpecialChars.FunctionEnd) {
+                paired = true;
+                ++index;
+                break;
+            }
+            else if (char === SpecialChars.VarBegin && index !== startIndex) {
+                const variable = this.parseVariable(params, code, index + 1);
+                functionCall += variable.response;
+                index = variable.index;
+            }
+            else {
+                functionCall += char;
+                ++index;
+            }
+        }
+        let response: string;
+        if (!paired) {
+            response = code.slice(startIndex - 1, index);
+        }
+        else {
+            response = this.handleFunction(params, functionCall.trimLeft()) ?? code.slice(startIndex - 1, index);
+        }
+        return { response, index };
+    }
+
+    private parseVariable(params: CommandParameters, code: string, index: number): ResponseParseResult {
+        let name = '';
+        while (index < code.length) {
+            const char = code.charAt(index);
+            if (char.match(CustomCommandEngine.nonVarChar)) {
+                break;
+            }
+            else {
+                name += char;
+                ++index;
+            }
+        }
+        return {
+            response: this.handleVariable(params, name),
+            index,
+        };
+    }
+
+    // First level of parsing
+    private parse(params: CommandParameters, code: string, index: number = 0): string {
+        let response = '';
+        while (index < code.length) {
+            const char = code.charAt(index);
+            if (char === SpecialChars.FunctionBegin) {
+                const nested = this.parseFunction(params, code, index + 1);
+                response += nested.response;
+                index = nested.index;
+            }
+            else if (char === SpecialChars.VarBegin) {
+                const variable = this.parseVariable(params, code, index + 1);
+                response += variable.response;
+                index = variable.index;
+            }
+            else {
+                response += char;
+                ++index;
+            }
+        }
+        return response;
     }
 
     public async run(params: CommandParameters, response: string) {
-        response = this.parse(params, response);
+        response = this.parse(params, response).trim();
         if (!this.silent && response.length !== 0) {
             await params.msg.channel.send(response);
         }
