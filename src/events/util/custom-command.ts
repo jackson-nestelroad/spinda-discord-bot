@@ -40,7 +40,7 @@ export class CustomCommandEngine {
     private static readonly guildParams: ReadonlyDictionary<(guild: Guild) => string> = {
         id: guild => guild.id,
         name: guild => guild.name,
-        icon: guild => guild.iconURL() || 'undefined',
+        icon: guild => guild.iconURL() || CustomCommandEngine.undefinedVar,
         memberCount: guild => guild.memberCount.toString(),
         ownerId: guild => guild.ownerID,
         createdAt: guild => guild.createdAt.toLocaleDateString(),
@@ -49,7 +49,7 @@ export class CustomCommandEngine {
 
     private static readonly channelParams: ReadonlyDictionary<(channel: Channel) => string> = {
         id: channel => channel.id,
-        name: channel => (channel as any).name || 'undefined',
+        name: channel => (channel as any).name || CustomCommandEngine.undefinedVar,
         mention: channel => channel.toString(),
     };
 
@@ -176,10 +176,10 @@ export class CustomCommandEngine {
                     return options[Math.floor(Math.random() * options.length)];
                 } break;
                 case 'time': {
-                    return new Date().toLocaleDateString();
+                    return new Date().toLocaleTimeString();
                 } break;
                 case 'date': {
-                    return new Date().toTimeString();
+                    return new Date().toLocaleDateString();
                 } break;
                 case 'prefix': {
                     return params.guild.prefix;
