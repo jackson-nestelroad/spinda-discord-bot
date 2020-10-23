@@ -21,6 +21,8 @@ export class CustomCommandEngine {
     private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
     private static readonly allArgumentsVar = 'ALL';
 
+    private static readonly comparisonOperators = /\s*(!?==?|[<>]=?)\s*/g;
+
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
         id: user => user.id,
@@ -81,6 +83,8 @@ export class CustomCommandEngine {
         'Functions': [
             `{>command arg1 arg2 ...}`,
             `{choose item1;item2;...}`,
+            `{if val1 [=|!=|<|>|<=|>=] val2 and val3 [op] val4;then;else}`,
+            `{if val1 [op] val2 [op] val3 ...;then;else}`,
             `{random a b}`,
             `{silent}`,
             `{delete}`,
@@ -214,9 +218,65 @@ export class CustomCommandEngine {
 
                     // Error
                     if (isNaN(high) || isNaN(low)) {
-                        return null;
+                        return CustomCommandEngine.undefinedVar;
                     }
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
+                } break;
+                case 'if': {
+                    const [condition, then, other] = args.split(';');
+                    if (condition === undefined || then === undefined) {
+                        return null;
+                    }
+                    // Parse condition
+                    const conditions = condition.split(/\s+and\s+/);
+                    let result = true;
+                    for (const condition of conditions) {
+                        // Number of expressions to evaluate
+                        const matches = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
+                        for (let i = 0; i < matches.length; ++i) {
+                            // A single condition may be chained, such as 0 < $val < 10
+                            const operator = matches[i][1];
+                            const nested = condition.substring(matches[i - 1]?.index + matches[i - 1]?.[0].length ?? 0, matches[i + 1]?.index ?? undefined);
+                            const values = nested.split(matches[i][0]);
+
+                            // Use number comparison if both strings can be parsed as integers
+                            // If not, use string comparison
+                            let a: number | string, b: number | string;
+                            [a, b] = values;
+                            const num1 = parseInt(a);
+                            const num2 = parseInt(b);
+                            if (!isNaN(num1) && !isNaN(num2)) {
+                                a = num1;
+                                b = num2;
+                            }
+                            switch (operator) {
+                                case '=':
+                                case '==':
+                                    result = result && a === b;
+                                    break;
+                                case '!=':
+                                    result = result && a != b;
+                                    break;
+                                case '<':
+                                    result = result && a < b;
+                                    break;
+                                case '>':
+                                    result = result && a > b;
+                                    break;
+                                case '<=':
+                                    result = result && a <= b;
+                                    break;
+                                case '>=':
+                                    result = result && a >= b;
+                                    break;
+                                default:
+                                    result = false;
+                                    break;
+                            }
+                        }
+                    }
+
+                    return result ? then : (other || null);
                 } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
