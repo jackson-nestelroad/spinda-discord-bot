@@ -18,6 +18,7 @@ enum SpecialChars {
 
 export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
+    private static readonly trueVar = 'true';
     private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
     private static readonly allArgumentsVar = 'ALL';
 
@@ -83,7 +84,7 @@ export class CustomCommandEngine {
         'Functions': [
             `{>command arg1 arg2 ...}`,
             `{choose item1;item2;...}`,
-            `{if val1 [=|!=|<|>|<=|>=] val2 and val3 [op] val4;then;else}`,
+            `{if val1 [=|!=|<|>|<=|>=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
             `{random a b}`,
             `{silent}`,
@@ -169,8 +170,8 @@ export class CustomCommandEngine {
                         args: args.split(' '),
                     }).catch(err => params.bot.sendError(params.msg, err));
                 }
-                return '';
             }
+            return '';
         }
         // Some other built-in function
         else {
@@ -223,21 +224,38 @@ export class CustomCommandEngine {
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
                 } break;
                 case 'if': {
-                    const [condition, then, other] = args.split(';');
-                    if (condition === undefined || then === undefined) {
+                    const [wholeCondition, then, other] = args.split(';');
+                    if (wholeCondition === undefined || then === undefined) {
                         return null;
                     }
-                    // Parse condition
-                    const conditions = condition.split(/\s+and\s+/);
-                    let result = true;
-                    for (const condition of conditions) {
-                        // Number of expressions to evaluate
-                        const matches = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
-                        for (let i = 0; i < matches.length; ++i) {
+                    // Parse condition by logical separators
+                    let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
+                   
+                    // The global result of the function
+                    let globalResult = true;
+
+                    // Start at -1, because separators are not required
+                    for (let i = -1; i < separators.length; ++i) {
+                        // Get the current separator and condition
+                        const separator: string | undefined = separators[i]?.[1];
+                        const condition = wholeCondition.substring(
+                            separators[i] ? separators[i].index + separators[i][0].length : 0,
+                            separators[i + 1] ? separators[i + 1].index : undefined
+                        );
+
+                        // Number of operators to evaluate
+                        const conditions = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
+                        
+                        // Result of the nested condition
+                        let localResult = true;
+                        for (let j = 0; j < conditions.length; ++j) {
                             // A single condition may be chained, such as 0 < $val < 10
-                            const operator = matches[i][1];
-                            const nested = condition.substring(matches[i - 1]?.index + matches[i - 1]?.[0].length ?? 0, matches[i + 1]?.index ?? undefined);
-                            const values = nested.split(matches[i][0]);
+                            const operator = conditions[j][1];
+                            const nested = condition.substring(
+                                conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
+                                conditions[j + 1] ? conditions[j + 1].index : undefined
+                            );
+                            const values = nested.split(conditions[j][0]);
 
                             // Use number comparison if both strings can be parsed as integers
                             // If not, use string comparison
@@ -252,31 +270,38 @@ export class CustomCommandEngine {
                             switch (operator) {
                                 case '=':
                                 case '==':
-                                    result = result && a === b;
+                                    localResult = localResult && a === b;
                                     break;
                                 case '!=':
-                                    result = result && a != b;
+                                    localResult = localResult && a != b;
                                     break;
                                 case '<':
-                                    result = result && a < b;
+                                    localResult = localResult && a < b;
                                     break;
                                 case '>':
-                                    result = result && a > b;
+                                    localResult = localResult && a > b;
                                     break;
                                 case '<=':
-                                    result = result && a <= b;
+                                    localResult = localResult && a <= b;
                                     break;
                                 case '>=':
-                                    result = result && a >= b;
+                                    localResult = localResult && a >= b;
                                     break;
                                 default:
-                                    result = false;
+                                    localResult = false;
                                     break;
                             }
                         }
+
+                        if (separator === 'or') {
+                            globalResult = globalResult || localResult;
+                        }
+                        else {
+                            globalResult = globalResult && localResult;
+                        }
                     }
 
-                    return result ? then : (other || null);
+                    return globalResult ? (then || CustomCommandEngine.trueVar) : (other || null);
                 } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
