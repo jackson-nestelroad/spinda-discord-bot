@@ -18,6 +18,7 @@ import { LogsCommand } from './lib/config/logs';
 import { SetCommandCommand } from './lib/config/set-command';
 import { RemoveCommandCommand } from './lib/config/remove-command';
 import { CustomHelpCommand } from './lib/utility/custom';
+import { RunCustomCommand } from './lib/secret/run-custom';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -38,6 +39,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     RefreshCommand,
     SayCommand,
     CustomHelpCommand,
+    RunCustomCommand,
 
     PrefixCommand,
     LogsCommand,
