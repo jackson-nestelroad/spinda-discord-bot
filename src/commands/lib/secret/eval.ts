@@ -37,7 +37,8 @@ export class EvalCommand implements Command {
         return res;
     }
 
-    public async run({ bot, msg, content }: CommandParameters) {
+    public async run(params: CommandParameters) {
+        let { bot, msg, content } = params;
         let silent = false;
 
         // Code block may be on a different line, so allow parameters to be split by any whitespace
@@ -61,7 +62,8 @@ export class EvalCommand implements Command {
             }
         }
 
-        let res = await this.runCode(code, { 
+        let res = await this.runCode(code, {
+            params,
             bot,
             msg,
             setTimeout,

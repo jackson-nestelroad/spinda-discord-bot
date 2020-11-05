@@ -12,6 +12,7 @@ export class ImposterCommand implements Command {
     private readonly imposter = '\u{D9E}';
     private readonly chanceForImposter = 0.1;
     private readonly linePadding = 3;
+    private readonly identity = 'An Imposter';
 
     private readonly stars: WeightedDistribution<string[] | string> = [
         { weight: 800, value: ' ' },
@@ -62,6 +63,24 @@ export class ImposterCommand implements Command {
         return line;
     }
 
+    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImposter()): string {
+        // Calculate line lengths
+        const revealMsg = `${subject} was ${isIdentity ? '' : 'not '}${identity}`;
+        const lineLength = revealMsg.length + this.linePadding * 2 + (revealMsg.length % 2 === 0 ? 1 : 0);
+        const halfLine = Math.floor(lineLength / 2);
+
+        let message: string[] = [];
+
+        message.push(this.generateSpaceLine(lineLength));
+        let line = this.generateSpaceLine(lineLength);
+        message.push(line.substr(0, halfLine) + this.imposter + line.substr(halfLine + 1));
+        message.push(' '.repeat(this.linePadding) + revealMsg + ' '.repeat(this.linePadding));
+        message.push(this.generateSpaceLine(lineLength));
+        message.push(this.generateSpaceLine(lineLength));
+
+        return `\`\`\`${message.join('\n')}\`\`\``;
+    }
+
     public async run({ msg, args, content }: CommandParameters) {
         let name: string;
         if (args.length > 0) {
@@ -76,20 +95,6 @@ export class ImposterCommand implements Command {
             name = msg.guild.members.cache.random().user.username;
         }
 
-        // Calculate line lengths
-        const revealMsg = `${name} was ${this.isImposter() ? '' : 'not '}An Imposter.`;
-        const lineLength = revealMsg.length + this.linePadding * 2 + (revealMsg.length % 2 === 0 ? 1 : 0);
-        const halfLine = Math.floor(lineLength / 2);
-
-        let message: string[] = [];
-
-        message.push(this.generateSpaceLine(lineLength));
-        let line = this.generateSpaceLine(lineLength);
-        message.push(line.substr(0, halfLine) + this.imposter + line.substr(halfLine + 1));
-        message.push(' '.repeat(this.linePadding) + revealMsg + ' '.repeat(this.linePadding));
-        message.push(this.generateSpaceLine(lineLength));
-        message.push(this.generateSpaceLine(lineLength));
-
-        await msg.channel.send(`\`\`\`${message.join('\n')}\`\`\``);
+        await msg.channel.send(this.generateText(name, this.identity));
     }
 }
