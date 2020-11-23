@@ -95,6 +95,7 @@ export interface WebScrapedPost {
 }
 
 export namespace PokengineUtil {
+    const noneString: string = 'None';
     export const baseUrl: string = 'http://pokengine.org';
 
     export function formatNum(num: number, length: number = 3): string {
@@ -129,43 +130,43 @@ export namespace PokengineUtil {
     export function embedMove(embed: MessageEmbed, move: WebScrapedMove) {
         embed.setTitle(`#${move.num} ${move.name}`);
         embed.setURL(decodeURI(baseUrl + move.pagePath));
-        embed.addField('Description', move.description);
-        embed.addField('Type', move.type, true);
-        embed.addField('Category', move.category, true);
+        embed.addField('Description', move.description || noneString);
+        embed.addField('Type', move.type || noneString, true);
+        embed.addField('Category', move.category || noneString, true);
     }
 
     export function embedItem(embed: MessageEmbed, item: WebScrapedItem) {
         embed.setTitle(`#${item.num} ${item.name}`);
         embed.setURL(decodeURI(baseUrl + item.pagePath));
         embed.setThumbnail(baseUrl + item.imagePath);
-        embed.addField('Description', item.description);
+        embed.addField('Description', item.description || noneString);
     }
 
     export function embedAbility(embed: MessageEmbed, ability: WebScrapedAbility) {
         embed.setTitle(`#${ability.num} ${ability.name}`);
         embed.setURL(decodeURI(baseUrl + ability.pagePath));
-        embed.addField('Description', ability.description);
+        embed.addField('Description', ability.description || noneString);
     }
 
     export function embedPlayer(embed: MessageEmbed, player: WebScrapedPlayer) {
         embed.setTitle(`#${player.num} ${player.name}`);
         embed.setURL(decodeURI(baseUrl + player.pagePath));
         embed.setThumbnail(baseUrl + player.imagePath);
-        embed.addField('Joined', player.joined, true);
-        embed.addField('Last Active', player.lastActive, true);
+        embed.addField('Joined', player.joined || noneString, true);
+        embed.addField('Last Active', player.lastActive || noneString, true);
     }
 
     export function embedMap(embed: MessageEmbed, map: WebScrapedMap) {
         embed.setTitle(`#${map.num} ${map.name}`);
         embed.setURL(decodeURI(baseUrl + map.pagePath));
-        embed.addField('Owner', map.owner, true);
-        embed.addField('Region', map.region, true);
+        embed.addField('Owner', map.owner || noneString, true);
+        embed.addField('Region', map.region || noneString, true);
     }
 
     export function embedPost(embed: MessageEmbed, post: WebScrapedPost) {
         embed.setTitle(post.title);
         embed.setURL(decodeURI(baseUrl + post.pagePath));
-        embed.addField('Author', post.author, true);
-        embed.addField('Posted', post.posted, true);
+        embed.addField('Author', post.author || noneString, true);
+        embed.addField('Posted', post.posted || noneString, true);
     }
 }
