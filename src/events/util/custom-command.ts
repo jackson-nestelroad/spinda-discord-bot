@@ -161,7 +161,7 @@ export class CustomCommandEngine {
             const cmd = name.substr(1);
             if (params.bot.commands.has(cmd)) {
                 const command = params.bot.commands.get(cmd);
-                if (Validation.validate(params.bot, command, params.msg.member)) {   
+                if (Validation.validate(params, command, params.msg.member)) {   
                     command.run({
                         bot: params.bot,
                         msg: params.msg,

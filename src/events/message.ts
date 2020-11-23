@@ -17,7 +17,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
         if (this.bot.commands.has(cmd)) {
             try {
                 const command = this.bot.commands.get(cmd)
-                if (Validation.validate(this.bot, command, params.msg.member)) {
+                if (Validation.validate(params, command, params.msg.member)) {
                     await command.run(params);
                 }
             } catch (error) {

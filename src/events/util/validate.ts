@@ -1,23 +1,25 @@
 import { GuildMember } from 'discord.js';
 import { DiscordBot } from '../../bot';
-import { Command, CommandPermission } from '../../commands/lib/base';
+import { Command, CommandPermission, CommandParameters } from '../../commands/lib/base';
 import { Environment } from '../../data/environment';
 
 export namespace Validation {
-    export function validate(bot: DiscordBot, command: Command, member: GuildMember): boolean {
+    export class NotAllowedError extends Error { }
+    
+    export function validate(params: CommandParameters, command: Command, member: GuildMember): boolean {
         switch (command.permission) {
-            case CommandPermission.Owner: return isOwner(bot, member);
-            case CommandPermission.Administrator: return isAdministrator(bot, member);
+            case CommandPermission.Owner: return isOwner(member);
+            case CommandPermission.Administrator: return isAdministrator(member);
             case CommandPermission.Everyone:
             default: return true;
         }
     }
 
-    function isOwner(bot: DiscordBot, member: GuildMember): boolean {
+    export function isOwner(member: GuildMember): boolean {
         return member.id === Environment.getGlobalOwner();
     }
 
-    function isAdministrator(bot: DiscordBot, member: GuildMember): boolean {
+    export function isAdministrator(member: GuildMember): boolean {
         return member.hasPermission("ADMINISTRATOR");
     }
 }

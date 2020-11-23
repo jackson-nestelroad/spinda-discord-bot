@@ -56,5 +56,4 @@ export namespace Commands {
         }
         return map;
     }
-    
 }
