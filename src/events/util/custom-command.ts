@@ -22,7 +22,7 @@ export class CustomCommandEngine {
     private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
     private static readonly allArgumentsVar = 'ALL';
 
-    private static readonly comparisonOperators = /\s*(!?==?|[<>]=?)\s*/g;
+    private static readonly comparisonOperators = /\s*([!~]?==?|[<>]=?)\s*/g;
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
@@ -84,8 +84,11 @@ export class CustomCommandEngine {
         'Functions': [
             `{>command arg1 arg2 ...}`,
             `{choose item1;item2;...}`,
-            `{if val1 [=|!=|<|>|<=|>=] val2 [and|or] val3 [op] val4;then;else}`,
+            `{if val1 [=|!=|<|>|<=|>=|~=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
+            `{capitalize string}`,
+            `{lowercase string}`,
+            `{uppercase string}`,
             `{random a b}`,
             `{silent}`,
             `{delete}`,
@@ -223,6 +226,15 @@ export class CustomCommandEngine {
                     }
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
                 } break;
+                case 'capitalize': {
+                    return args[0].toUpperCase() + args.substr(1);
+                } break;
+                case 'lowercase': {
+                    return args.toLowerCase();
+                } break;
+                case 'uppercase': {
+                    return args.toUpperCase();
+                } break;
                 case 'if': {
                     const [wholeCondition, then, other] = args.split(';');
                     if (wholeCondition === undefined || then === undefined) {
@@ -286,6 +298,10 @@ export class CustomCommandEngine {
                                     break;
                                 case '>=':
                                     localResult = localResult && a >= b;
+                                    break;
+                                case '~=':
+                                    localResult = localResult 
+                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'base' }) === 0);
                                     break;
                                 default:
                                     localResult = false;
