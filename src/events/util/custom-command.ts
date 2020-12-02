@@ -301,7 +301,7 @@ export class CustomCommandEngine {
                                     break;
                                 case '~=':
                                     localResult = localResult 
-                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'base' }) === 0);
+                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
                                     break;
                                 default:
                                     localResult = false;
