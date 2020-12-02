@@ -1,5 +1,6 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
+import { MessageEmbed } from 'discord.js';
 
 export class SetCommandCommand implements Command {
     public name = 'set-command';
@@ -7,12 +8,15 @@ export class SetCommandCommand implements Command {
     public description = `
 Sets a custom command for the guild that responds with the given message.
 
-You may use the following variables in the command message to customize your command's response.
-
-${Object.entries(CustomCommandEngine.AllOptions).map(([category, options]) => `${category}:\n${options.map(opt => `\`${opt}\``).join(', ')}`).join('\n')}
-`;
+You may use the following variables in the command message to customize your command's response.`;
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
+
+    public addHelpFields(embed: MessageEmbed) {
+        Object.entries(CustomCommandEngine.AllOptions).map(([category, options]) => {
+            embed.addField(category, options.map(opt => `\`${opt}\``).join(', '));
+        });
+    }
 
     public async run({ bot, msg, content, guild }: CommandParameters) {
 

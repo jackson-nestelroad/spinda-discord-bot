@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 
@@ -31,4 +31,5 @@ export interface Command {
     readonly description: string;
     readonly category: CommandCategory;
     readonly permission: CommandPermission;
+    addHelpFields?: (embed: MessageEmbed) => void;
 }

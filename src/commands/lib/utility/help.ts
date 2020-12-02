@@ -48,6 +48,9 @@ export class HelpCommand implements Command {
                 embed.addField('Description', cmd.description);
                 embed.addField('Category', cmd.category, true);
                 embed.addField('Permission', CommandPermission[cmd.permission], true);
+                if (cmd.addHelpFields) {
+                    cmd.addHelpFields(embed);
+                }
             }
             else if (category = Object.values(CommandCategory).find(val => DiscordUtil.baseStringEqual(needHelp, val))) {
                 embed.addField(category, this.commandListByCategory.get(category).map(value => `${prefix}${value}`).join('\n'));
