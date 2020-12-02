@@ -28,7 +28,7 @@ ${Object.entries(CustomCommandEngine.AllOptions).map(([category, options]) => `$
 
         content = content.substr(command.length).trimLeft();
 
-        bot.dataService.setCustomCommand(msg.guild.id, command, content);
+        await bot.dataService.setCustomCommand(msg.guild.id, command, content);
         
         const embed = bot.createEmbed({ footer: false, timestamp: false, success: true });
         embed.setDescription(`Successfully set command \`${command}\`.`);

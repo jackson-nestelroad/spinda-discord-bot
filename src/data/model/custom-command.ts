@@ -35,7 +35,7 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
                 allowNull: false,
             },
             message: {
-                type: DataTypes.STRING,
+                type: DataTypes.TEXT,
                 allowNull: false,
             },
         }, {
