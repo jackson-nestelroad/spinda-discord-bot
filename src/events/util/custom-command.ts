@@ -19,10 +19,12 @@ enum SpecialChars {
 export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
-    private static readonly nonVarChar = /[^a-zA-Z\d\$>]/;
+    private static readonly falseVar = 'false';
+    private static readonly nonVarChar = /[^a-zA-Z\d_\$>]/;
     private static readonly allArgumentsVar = 'ALL';
 
-    private static readonly comparisonOperators = /\s*([!~]?==?|[<>]=?)\s*/g;
+    private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
+    private static readonly regexRegex = /\/(.*)\/([gimsuy]*) (.*)/;
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
@@ -84,8 +86,9 @@ export class CustomCommandEngine {
         'Functions': [
             `{>command arg1 arg2 ...}`,
             `{choose item1;item2;...}`,
-            `{if val1 [=|!=|<|>|<=|>=|~=] val2 [and|or] val3 [op] val4;then;else}`,
+            `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
+            `{regex /pattern/ string}`,
             `{capitalize string}`,
             `{lowercase string}`,
             `{uppercase string}`,
@@ -202,7 +205,8 @@ export class CustomCommandEngine {
                     }
                     return '';
                 } break;
-                case 'random': {
+                case 'random':
+                case 'rand': {
                     const nums = args.split(/\s+/);
                     let low = 0;
                     let high = 10;
@@ -260,52 +264,64 @@ export class CustomCommandEngine {
                         
                         // Result of the nested condition
                         let localResult = true;
-                        for (let j = 0; j < conditions.length; ++j) {
-                            // A single condition may be chained, such as 0 < $val < 10
-                            const operator = conditions[j][1];
-                            const nested = condition.substring(
-                                conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
-                                conditions[j + 1] ? conditions[j + 1].index : undefined
-                            );
-                            const values = nested.split(conditions[j][0]);
 
-                            // Use number comparison if both strings can be parsed as integers
-                            // If not, use string comparison
-                            let a: number | string, b: number | string;
-                            [a, b] = values;
-                            const num1 = parseInt(a);
-                            const num2 = parseInt(b);
-                            if (!isNaN(num1) && !isNaN(num2)) {
-                                a = num1;
-                                b = num2;
-                            }
-                            switch (operator) {
-                                case '=':
-                                case '==':
-                                    localResult = localResult && a === b;
-                                    break;
-                                case '!=':
-                                    localResult = localResult && a != b;
-                                    break;
-                                case '<':
-                                    localResult = localResult && a < b;
-                                    break;
-                                case '>':
-                                    localResult = localResult && a > b;
-                                    break;
-                                case '<=':
-                                    localResult = localResult && a <= b;
-                                    break;
-                                case '>=':
-                                    localResult = localResult && a >= b;
-                                    break;
-                                case '~=':
-                                    localResult = localResult 
-                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
-                                    break;
-                                default:
-                                    localResult = false;
-                                    break;
+                        // No operators, just a single value
+                        if (conditions.length == 0) {
+                            localResult = condition === CustomCommandEngine.trueVar;
+                        }
+                        // Perform operations
+                        else {
+                            for (let j = 0; j < conditions.length; ++j) {
+                                // A single condition may be chained, such as 0 < $val < 10
+                                const operator = conditions[j][1];
+                                const nested = condition.substring(
+                                    conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
+                                    conditions[j + 1] ? conditions[j + 1].index : undefined
+                                );
+                                const values = nested.split(conditions[j][0]);
+    
+                                // Use number comparison if both strings can be parsed as integers
+                                // If not, use string comparison
+                                let a: number | string, b: number | string;
+                                [a, b] = values;
+                                const num1 = parseInt(a);
+                                const num2 = parseInt(b);
+                                if (!isNaN(num1) && !isNaN(num2)) {
+                                    a = num1;
+                                    b = num2;
+                                }
+                                switch (operator) {
+                                    case '=':
+                                    case '==':
+                                        localResult = localResult && a === b;
+                                        break;
+                                    case '!=':
+                                        localResult = localResult && a != b;
+                                        break;
+                                    case '<':
+                                        localResult = localResult && a < b;
+                                        break;
+                                    case '>':
+                                        localResult = localResult && a > b;
+                                        break;
+                                    case '<=':
+                                        localResult = localResult && a <= b;
+                                        break;
+                                    case '>=':
+                                        localResult = localResult && a >= b;
+                                        break;
+                                    case '~=':
+                                        localResult = localResult 
+                                            && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
+                                        break;
+                                    case '!~=':
+                                        localResult = localResult 
+                                            && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !== 0);
+                                        break;
+                                    default:
+                                        localResult = false;
+                                        break;
+                                }
                             }
                         }
 
@@ -318,6 +334,14 @@ export class CustomCommandEngine {
                     }
 
                     return globalResult ? (then || CustomCommandEngine.trueVar) : (other || null);
+                } break;
+                case 'regex': {
+                    const match = CustomCommandEngine.regexRegex.exec(args);
+                    if (match) {
+                        const regex = new RegExp(match[1], match[2]);
+                        return regex.test(match[3]) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                    }
+                    return null;
                 } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
