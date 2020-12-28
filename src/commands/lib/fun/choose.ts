@@ -13,9 +13,9 @@ export class ChooseCommand implements Command {
     public readonly header = 'I choose... ';
 
     public async run({ msg, content }: CommandParameters) {
-        const choices = content.trim().split(this.separator);;
+        const choices = content.trim().split(this.separator);
         let choice = 'nothing!';
-        if (choices.length !== 0) {
+        if (choices.length > 1 || choices[0]) {
             choice = '"' + choices[Math.floor(Math.random() * choices.length)].trim() + '"';
         }
 
