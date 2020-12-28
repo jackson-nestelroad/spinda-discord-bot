@@ -8,6 +8,6 @@ export class BotsnackCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public async run({ msg }: CommandParameters) {
-        await msg.channel.send('botsnack, mmmmmm...')
+        await msg.channel.send('botsnack, mmmmmm...');
     }
 }
