@@ -26,6 +26,8 @@ export class CustomCommandEngine {
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /\/(.*)\/([gimsuy]*) (.*)/;
 
+    constructor(private params: CommandParameters) { }
+
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
         id: user => user.id,
@@ -101,22 +103,22 @@ export class CustomCommandEngine {
     private silent: boolean = false;
     private vars: Map<string, string> = new Map();
 
-    private handleVariableNative(params: CommandParameters, name: string): string | undefined {
+    private handleVariableNative(name: string): string | undefined {
         if (name.match(/^\d+$/)) {
             const argIndex = parseInt(name);
-            return !isNaN(argIndex) ? params.args[argIndex - 1] : undefined;
+            return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
         }
         else if (name === CustomCommandEngine.allArgumentsVar) {
-            return params.content ? params.content : undefined;
+            return this.params.content ? this.params.content : undefined;
         }
         return this.vars.get(name);
     }
 
-    private handleVariable(params: CommandParameters, name: string): string {
-        return this.handleVariableNative(params, name) ?? CustomCommandEngine.undefinedVar;
+    private handleVariable(name: string): string {
+        return this.handleVariableNative(name) ?? CustomCommandEngine.undefinedVar;
     }
 
-    private handleFunction(params: CommandParameters, call: string): string | null {
+    private handleFunction(call: string): string | null {
         let name = '';
         let args = '';
 
@@ -155,7 +157,7 @@ export class CustomCommandEngine {
             }
             // Text replacement
             else if (!args) {
-                return this.handleVariable(params, varName);
+                return this.handleVariable(varName);
             }
             // Error
             else {
@@ -165,16 +167,16 @@ export class CustomCommandEngine {
         // Nested command call
         else if (name.startsWith(DataService.defaultPrefix)) {
             const cmd = name.substr(1);
-            if (params.bot.commands.has(cmd)) {
-                const command = params.bot.commands.get(cmd);
-                if (Validation.validate(params, command, params.msg.member)) {   
+            if (this.params.bot.commands.has(cmd)) {
+                const command = this.params.bot.commands.get(cmd);
+                if (Validation.validate(this.params, command, this.params.msg.member)) {   
                     command.run({
-                        bot: params.bot,
-                        msg: params.msg,
-                        guild: params.guild,
+                        bot: this.params.bot,
+                        msg: this.params.msg,
+                        guild: this.params.guild,
                         content: args,
                         args: args.split(' '),
-                    }).catch(err => params.bot.sendError(params.msg, err));
+                    }).catch(err => this.params.bot.sendError(this.params.msg, err));
                 }
             }
             return '';
@@ -193,15 +195,15 @@ export class CustomCommandEngine {
                     return new Date().toLocaleDateString();
                 } break;
                 case 'prefix': {
-                    return params.guild.prefix;
+                    return this.params.guild.prefix;
                 } break;
                 case 'silent': {
                     this.silent = true;
                     return '';
                 } break;
                 case 'delete': {
-                    if (params.msg.deletable) {
-                        params.msg.delete().catch(err => params.bot.sendError(params.msg, err));
+                    if (this.params.msg.deletable) {
+                        this.params.msg.delete().catch(err => this.params.bot.sendError(this.params.msg, err));
                     }
                     return '';
                 } break;
@@ -347,15 +349,15 @@ export class CustomCommandEngine {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.userParams[attr]) {
-                            return CustomCommandEngine.userParams[attr](params.msg.author);
+                            return CustomCommandEngine.userParams[attr](this.params.msg.author);
                         }
                         else if (CustomCommandEngine.memberParams[attr]) {
-                            return CustomCommandEngine.memberParams[attr](params.msg.member);
+                            return CustomCommandEngine.memberParams[attr](this.params.msg.member);
                         }
                         return null;
                     }
                     else {
-                        return params.msg.author.toString();
+                        return this.params.msg.author.toString();
                     }
                 } break;
                 case 'guild':
@@ -363,24 +365,24 @@ export class CustomCommandEngine {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.guildParams[attr]) {
-                            return CustomCommandEngine.guildParams[attr](params.msg.guild);
+                            return CustomCommandEngine.guildParams[attr](this.params.msg.guild);
                         }
                         return null;
                     }
                     else {
-                        return params.msg.guild.toString();
+                        return this.params.msg.guild.toString();
                     }
                 } break;
                 case 'channel': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.channelParams[attr]) {
-                            return CustomCommandEngine.channelParams[attr](params.msg.channel);
+                            return CustomCommandEngine.channelParams[attr](this.params.msg.channel);
                         }
                         return null;
                     }
                     else {
-                        return params.msg.channel.toString();
+                        return this.params.msg.channel.toString();
                     }
                 } break;
                 // This is not a function
@@ -391,24 +393,24 @@ export class CustomCommandEngine {
         }
     }
 
-    private parseFunction(params: CommandParameters, code: string, index: number): ResponseParseResult {
+    private parseFunction(code: string, index: number): ResponseParseResult {
         let functionCall = '';
         let paired = false;
         const startIndex = index;
         while (index < code.length) {
             const char = code.charAt(index);
             if (char === SpecialChars.FunctionBegin) {
-                const nested = this.parseFunction(params, code, index + 1);
+                const nested = this.parseFunction(code, index + 1);
                 functionCall += nested.response;
                 index = nested.index;
             }
             else if (char === SpecialChars.FunctionEnd) {
                 paired = true;
-                ++index;
-                break;
+                    ++index;
+                    break;
             }
             else if (char === SpecialChars.VarBegin && index !== startIndex) {
-                const variable = this.parseVariable(params, code, index + 1);
+                const variable = this.parseVariable(code, index + 1);
                 functionCall += variable.response;
                 index = variable.index;
             }
@@ -422,12 +424,12 @@ export class CustomCommandEngine {
             response = code.slice(startIndex - 1, index);
         }
         else {
-            response = this.handleFunction(params, functionCall.trimLeft()) ?? code.slice(startIndex - 1, index);
+            response = this.handleFunction(functionCall.trimLeft()) ?? code.slice(startIndex - 1, index);
         }
         return { response, index };
     }
 
-    private parseVariable(params: CommandParameters, code: string, index: number): ResponseParseResult {
+    private parseVariable(code: string, index: number): ResponseParseResult {
         let name = '';
         while (index < code.length) {
             const char = code.charAt(index);
@@ -440,23 +442,23 @@ export class CustomCommandEngine {
             }
         }
         return {
-            response: this.handleVariable(params, name),
+            response: this.handleVariable(name),
             index,
         };
     }
 
     // First level of parsing
-    private parse(params: CommandParameters, code: string, index: number = 0): string {
+    private parse(code: string, index: number = 0): string {
         let response = '';
         while (index < code.length) {
             const char = code.charAt(index);
             if (char === SpecialChars.FunctionBegin) {
-                const nested = this.parseFunction(params, code, index + 1);
+                const nested = this.parseFunction(code, index + 1);
                 response += nested.response;
                 index = nested.index;
             }
             else if (char === SpecialChars.VarBegin) {
-                const variable = this.parseVariable(params, code, index + 1);
+                const variable = this.parseVariable(code, index + 1);
                 response += variable.response;
                 index = variable.index;
             }
@@ -468,10 +470,10 @@ export class CustomCommandEngine {
         return response;
     }
 
-    public async run(params: CommandParameters, response: string) {
-        response = this.parse(params, response).trim();
+    public async run(response: string) {
+        response = this.parse(response).trim();
         if (!this.silent && response.length !== 0) {
-            await params.msg.channel.send(response);
+            await this.params.msg.channel.send(response);
         }
     }
 }

@@ -9,12 +9,12 @@ export class RunCustomCommand implements Command {
     public permission = CommandPermission.Administrator;
 
     public async run(params: CommandParameters) {
-        await new CustomCommandEngine().run({
+        await new CustomCommandEngine({
             bot: params.bot,
             msg: params.msg,
             args: [],
             content: 'content',
             guild: params.guild,
-        }, params.content);
+        }).run(params.content);
     }
 }
