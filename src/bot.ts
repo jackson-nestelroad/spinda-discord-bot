@@ -29,7 +29,7 @@ export class DiscordBot {
 
     private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
-        default: SpindaColors.spots.base.hexString,
+        default: SpindaColors.spots.base.hexString(),
         error: '#F04947',
         success: '#43B581',
     } as const;

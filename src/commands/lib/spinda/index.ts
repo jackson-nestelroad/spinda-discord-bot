@@ -115,7 +115,7 @@ export class SpindaCommand implements Command {
 
     private drawOutline() {
         if (this.outlineThickness > 0) {
-            this.ctx.strokeStyle = SpindaColors.white.rgb;
+            this.ctx.strokeStyle = SpindaColors.white.rgb();
             this.ctx.lineWidth = this.outlineThickness * 2;
             this.ctx.beginPath();
             this.ctx.moveTo(this.outlinePolygon[0].x, this.outlinePolygon[0].y);
@@ -172,7 +172,7 @@ export class SpindaCommand implements Command {
                             default: newPixel = SpindaColors.transparent;
                         }
                         if (newPixel.alpha !== 0) {
-                            this.ctx.fillStyle = newPixel.rgba;
+                            this.ctx.fillStyle = newPixel.rgba();
                             this.ctx.fillRect(newPos.x, newPos.y, 1, 1);
                         }
                     }

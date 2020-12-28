@@ -19,15 +19,21 @@ export class Color {
         this.hex = (this.red << 16) + (this.green << 8) + this.blue;
     }
 
-    public get rgb(): string {
+    public rgb(): string {
         return `rgb(${this.red}, ${this.green}, ${this.blue})`;
     }
 
-    public get rgba(): string {
+    public rgba(): string {
         return `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.alpha / 0xFF})`;
     }
 
-    public get hexString(): string {
-        return `#${this.red.toString(16)}${this.green.toString(16)}${this.blue.toString(16)}`;
+    public hexString(): string {
+        let r = this.red.toString(16);
+        let g = this.green.toString(16);
+        let b = this.blue.toString(16);
+        if (this.red < 0x10) r = '0' + r;
+        if (this.green < 0x10) g = '0' + g;
+        if (this.blue < 0x10) b ='0' + b;
+        return `#${r}${g}${b}`;
     }
 }
