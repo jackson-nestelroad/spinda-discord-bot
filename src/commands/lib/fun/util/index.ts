@@ -6,9 +6,12 @@ export namespace FunUtil {
     }
 
     export async function addSuspense(msg: Message, content: string, iterations: number): Promise<Message> {
+        let ellipses = '...';
         for (let i = 0; i < iterations; ++i) {
             await wait(1000);
-            msg = await msg.edit(content + '... '.repeat(i + 1));
+            content += ellipses;
+            msg = await msg.edit(content);
+            content += ' ';
         }
         await wait(1500 * Math.random());
         return msg;
