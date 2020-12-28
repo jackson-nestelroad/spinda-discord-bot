@@ -8,6 +8,8 @@ import { CustomCommandEngine } from './util/custom-command';
 const event = 'message';
 
 export class MessageEvent extends BaseEvent<typeof event> {
+    private forbiddenMentionRegex = /@(everyone|here)/g;
+
     constructor(bot: DiscordBot) {
         super(bot, event);
     }
@@ -65,6 +67,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
             const args = content.split(' ');
             const cmd = args.shift();
             content = content.substr(cmd.length).trimLeft();
+            content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
             
             await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
         }
