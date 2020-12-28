@@ -20,6 +20,7 @@ import { RemoveCommandCommand } from './lib/config/remove-command';
 import { CustomHelpCommand } from './lib/utility/custom';
 import { RunCustomCommand } from './lib/secret/run-custom';
 import { ChooseCommand } from './lib/fun/choose';
+import { ColorCommand } from './lib/fun/color';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -34,6 +35,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     RoutletteCommand,
     ImposterCommand,
     ChooseCommand,
+    ColorCommand,
 
     ...PokengineCommands,
 
