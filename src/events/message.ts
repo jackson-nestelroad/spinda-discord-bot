@@ -56,7 +56,8 @@ export class MessageEvent extends BaseEvent<typeof event> {
                     let content = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim();
                     const args = content.split(' ');
                     const cmd = args.shift();
-                    content = content.substr(cmd.length).trimLeft();
+                    content = content.substr(cmd.length).trim();
+                    content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
 
                     await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
                 }
@@ -66,7 +67,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
             let content = msg.content.substr(prefix.length);
             const args = content.split(' ');
             const cmd = args.shift();
-            content = content.substr(cmd.length).trimLeft();
+            content = content.substr(cmd.length).trim();
             content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
             
             await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
