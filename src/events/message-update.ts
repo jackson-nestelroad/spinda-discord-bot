@@ -9,7 +9,7 @@ export class MessageUpdateEvent extends BaseLogEvent<typeof event> {
     private readonly noneText = 'None';
     
     constructor(bot: DiscordBot) {
-        super(bot, event, LogOptionBit.MessageDeleted);
+        super(bot, event, LogOptionBit.MessageEdited);
     }
     
     public async run(oldMsg: Message, newMsg: Message) {

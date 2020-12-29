@@ -9,7 +9,7 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<typeof event> {
     private readonly noneText = 'None';
     
     constructor(bot: DiscordBot) {
-        super(bot, event, LogOptionBit.MessageDeleted);
+        super(bot, event, LogOptionBit.BulkMessageDeletion);
     }
     
     public async run(messages: Collection<Snowflake, Message>) {
