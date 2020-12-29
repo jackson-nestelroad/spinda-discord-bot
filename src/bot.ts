@@ -9,6 +9,13 @@ import { Environment } from './data/environment';
 import { SpindaColors } from './commands/lib/spinda/spinda-colors';
 import { MessageDeleteEvent } from './events/message-delete';
 import { DiscordUtil } from './util/discord';
+import { GuildMemberAddEvent } from './events/guild-member-add';
+import { GuildMemberRemoveEvent } from './events/guild-member-remove';
+import { GuildMemberUpdateEvent } from './events/guild-member-update';
+import { GuildBanAddEvent } from './events/guild-ban-add';
+import { GuildBanRemoveEvent } from './events/guild-ban-remove';
+import { MessageUpdateEvent } from './events/message-update';
+import { MessageDeleteBulkEvent } from './events/message-delete-bulk';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -42,8 +49,15 @@ export class DiscordBot {
         this.dataService.initialize().then(() => {
             this.events.push(new ReadyEvent(this));
             this.events.push(new MessageEvent(this));
+            this.events.push(new GuildMemberAddEvent(this));
+            this.events.push(new GuildMemberRemoveEvent(this));
+            this.events.push(new GuildMemberUpdateEvent(this));
+            this.events.push(new GuildBanAddEvent(this));
+            this.events.push(new GuildBanRemoveEvent(this));
             this.events.push(new MessageDeleteEvent(this));
-    
+            this.events.push(new MessageUpdateEvent(this));
+            this.events.push(new MessageDeleteBulkEvent(this));
+
             this.refreshCommands();
         });
     }

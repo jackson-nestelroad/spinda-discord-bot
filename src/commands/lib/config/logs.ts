@@ -17,7 +17,14 @@ enum LogOptionType {
 }
 
 const LogEvents: { [name: string]: LogOptionBit } = {
+    'member-joined': LogOptionBit.MemberJoined,
+    'member-left': LogOptionBit.MemberLeft,
+    'member-updated': LogOptionBit.MemberUpdated,
+    'member-banned': LogOptionBit.MemberBanned,
+    'member-unbanned': LogOptionBit.MemberUnbanned,
+    'message-edited': LogOptionBit.MessageEdited,
     'message-deleted': LogOptionBit.MessageDeleted,
+    'bulk-deleted': LogOptionBit.BulkMessageDeletion,
 } as const;
 
 type LogOptionMap = { [name: string]: LogOptionType[] };

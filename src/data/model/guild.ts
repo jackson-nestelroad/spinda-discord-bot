@@ -11,11 +11,6 @@ export enum LogOptionBit {
     MessageEdited = 1 << 6,
     MessageDeleted = 1 << 7,
     BulkMessageDeletion = 1 << 8,
-    ChannelCreated = 1 << 9,
-    ChannelDeleted = 1 << 10,
-    RoleCreated = 1 << 11,
-    RoleDeleted = 1 << 12,
-    RoleUpdated = 1 << 13,
 }
 
 export interface GuildAttributes {

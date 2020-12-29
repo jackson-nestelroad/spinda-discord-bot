@@ -1,4 +1,4 @@
-import { ClientEvents, Channel } from 'discord.js';
+import { ClientEvents, Channel, MessageEmbed, User } from 'discord.js';
 import { DiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
 
@@ -22,6 +22,14 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
         super(bot, eventName);
     }
 
+    protected getUserString(user: User) {
+        return `${user.tag} (${user.id})`;
+    }
+
+    protected setAuthor(embed: MessageEmbed, user: User) {
+        embed.setAuthor(this.getUserString(user), user.avatarURL());
+    }
+    
     public async getDestination(guildId: string): Promise<Channel | null> {
         const guild = await this.bot.dataService.getGuild(guildId);
         

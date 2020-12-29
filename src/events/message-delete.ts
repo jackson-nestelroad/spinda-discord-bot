@@ -18,7 +18,7 @@ export class MessageDeleteEvent extends BaseLogEvent<typeof event> {
             const embed = this.bot.createEmbed();
             embed.setTimestamp(msg.createdTimestamp);
             
-            embed.setAuthor(`${msg.author.username}#${msg.author.discriminator} (${msg.author.id})`, msg.author.avatarURL());
+            this.setAuthor(embed, msg.author);
             embed.setTitle('Deleted Message');
             embed.addField('Content', msg.content || this.noneText);
             embed.addField('Channel', msg.channel.toString(), true);
