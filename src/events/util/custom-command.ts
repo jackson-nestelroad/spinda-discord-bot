@@ -14,13 +14,15 @@ enum SpecialChars {
     VarBegin = '$',
     VarAssign = '=',
     AttributeSeparator = '.',
+    ListSeparator = ';',
 }
 
 export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
     private static readonly falseVar = 'false';
-    private static readonly nonVarChar = /[^a-zA-Z\d_\$>]/;
+    private static readonly nonVarChar = /[^a-zA-Z\d_\$>-]/;
+    private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
@@ -60,6 +62,18 @@ export class CustomCommandEngine {
         mention: channel => channel.toString(),
     };
 
+    // Functions that use lazy evaluation
+    private static readonly lazyEvalFunctions: Set<string> = new Set([
+        'quote',
+    ]);
+
+    // Functions that use lazy evaluation to select one option from many
+    private static readonly selectorFunctions: Set<string> = new Set([
+        'choose',
+        'if',
+    ]);
+
+
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
         'Arguments': ['$N', `\$${CustomCommandEngine.allArgumentsVar}`],
         'User Variables': [
@@ -87,9 +101,6 @@ export class CustomCommandEngine {
         ],
         'Functions': [
             `{>command arg1 arg2 ...}`,
-            `{choose item1;item2;...}`,
-            `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
-            `{if val1 [op] val2 [op] val3 ...;then;else}`,
             `{regex /pattern/ string}`,
             `{capitalize string}`,
             `{lowercase string}`,
@@ -98,13 +109,22 @@ export class CustomCommandEngine {
             `{silent}`,
             `{delete}`,
         ],
+        'Selectors': [
+            `{choose item1;item2;...}`,
+            `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
+            `{if val1 [op] val2 [op] val3 ...;then;else}`,
+        ],
+        'Programming:': [
+            `{quote {function}}`,
+            `{eval [quoted function]}`,
+        ],
     };
 
     private silent: boolean = false;
     private vars: Map<string, string> = new Map();
 
     private handleVariableNative(name: string): string | undefined {
-        if (name.match(/^\d+$/)) {
+        if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
         }
@@ -118,20 +138,7 @@ export class CustomCommandEngine {
         return this.handleVariableNative(name) ?? CustomCommandEngine.undefinedVar;
     }
 
-    private handleFunction(call: string): string | null {
-        let name = '';
-        let args = '';
-
-        // Split name and arguments if applicable
-        const separator = call.match(CustomCommandEngine.nonVarChar);
-        if (separator) {
-            name = call.slice(0, separator.index);
-            args = call.slice(separator.index).trim();
-        }
-        else {
-            name = call;
-        }
-
+    private handleFunction(name: string, args: string): string | null {
         // Variable function
         if (name.startsWith(SpecialChars.VarBegin)) {
             const varName = name.substr(1);
@@ -184,10 +191,6 @@ export class CustomCommandEngine {
         // Some other built-in function
         else {
             switch (name) {
-                case 'choose': {
-                    const options = args.split(';');
-                    return options[Math.floor(Math.random() * options.length)];
-                } break;
                 case 'time': {
                     return new Date().toLocaleTimeString();
                 } break;
@@ -206,6 +209,12 @@ export class CustomCommandEngine {
                         this.params.msg.delete().catch(err => this.params.bot.sendError(this.params.msg, err));
                     }
                     return '';
+                } break;
+                case 'quote': {
+                    return args;
+                } break;
+                case 'eval': {
+                    return this.parse(args);
                 } break;
                 case 'random':
                 case 'rand': {
@@ -240,102 +249,6 @@ export class CustomCommandEngine {
                 } break;
                 case 'uppercase': {
                     return args.toUpperCase();
-                } break;
-                case 'if': {
-                    const [wholeCondition, then, other] = args.split(';');
-                    if (wholeCondition === undefined || then === undefined) {
-                        return null;
-                    }
-                    // Parse condition by logical separators
-                    let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
-                   
-                    // The global result of the function
-                    let globalResult = true;
-
-                    // Start at -1, because separators are not required
-                    for (let i = -1; i < separators.length; ++i) {
-                        // Get the current separator and condition
-                        const separator: string | undefined = separators[i]?.[1];
-                        const condition = wholeCondition.substring(
-                            separators[i] ? separators[i].index + separators[i][0].length : 0,
-                            separators[i + 1] ? separators[i + 1].index : undefined
-                        );
-
-                        // Number of operators to evaluate
-                        const conditions = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
-                        
-                        // Result of the nested condition
-                        let localResult = true;
-
-                        // No operators, just a single value
-                        if (conditions.length == 0) {
-                            localResult = condition === CustomCommandEngine.trueVar;
-                        }
-                        // Perform operations
-                        else {
-                            for (let j = 0; j < conditions.length; ++j) {
-                                // A single condition may be chained, such as 0 < $val < 10
-                                const operator = conditions[j][1];
-                                const nested = condition.substring(
-                                    conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
-                                    conditions[j + 1] ? conditions[j + 1].index : undefined
-                                );
-                                const values = nested.split(conditions[j][0]);
-    
-                                // Use number comparison if both strings can be parsed as integers
-                                // If not, use string comparison
-                                let a: number | string, b: number | string;
-                                [a, b] = values;
-                                const num1 = parseInt(a);
-                                const num2 = parseInt(b);
-                                if (!isNaN(num1) && !isNaN(num2)) {
-                                    a = num1;
-                                    b = num2;
-                                }
-                                switch (operator) {
-                                    case '=':
-                                    case '==':
-                                        localResult = localResult && a === b;
-                                        break;
-                                    case '!=':
-                                        localResult = localResult && a != b;
-                                        break;
-                                    case '<':
-                                        localResult = localResult && a < b;
-                                        break;
-                                    case '>':
-                                        localResult = localResult && a > b;
-                                        break;
-                                    case '<=':
-                                        localResult = localResult && a <= b;
-                                        break;
-                                    case '>=':
-                                        localResult = localResult && a >= b;
-                                        break;
-                                    case '~=':
-                                        localResult = localResult 
-                                            && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
-                                        break;
-                                    case '!~=':
-                                        localResult = localResult 
-                                            && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !== 0);
-                                        break;
-                                    default:
-                                        localResult = false;
-                                        break;
-                                }
-                            }
-                        }
-
-                        if (separator === 'or') {
-                            globalResult = globalResult || localResult;
-                        }
-                        else {
-                            globalResult = globalResult && localResult;
-                        }
-                    }
-
-                    return globalResult ? (then || CustomCommandEngine.trueVar) : (other || '');
                 } break;
                 case 'regex': {
                     const match = CustomCommandEngine.regexRegex.exec(args);
@@ -393,29 +306,159 @@ export class CustomCommandEngine {
         }
     }
 
-    private parseFunction(code: string, index: number): ResponseParseResult {
-        let functionCall = '';
+    // Selector functions select an option, then evaluate it using another parse
+    private handleSelectorFunction(name: string, args: string[]): string | null {
+        switch (name) {
+            case 'choose': {
+                if (args.length === 0) {
+                    return '';
+                }
+                // Evaluate the choice
+                return this.parse(args[Math.floor(Math.random() * args.length)]);
+            } break;
+            case 'if': {
+                let [wholeCondition, then, other] = args;
+                if (wholeCondition === undefined || then === undefined) {
+                    return null;
+                }
+
+                // Evaluate condition
+                wholeCondition = this.parse(wholeCondition);
+
+                // Parse condition by logical separators
+                let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
+               
+                // The global result of the function
+                let globalResult = true;
+
+                // Start at -1, because separators are not required
+                for (let i = -1; i < separators.length; ++i) {
+                    // Get the current separator and condition
+                    const separator: string | undefined = separators[i]?.[1];
+                    const condition = wholeCondition.substring(
+                        separators[i] ? separators[i].index + separators[i][0].length : 0,
+                        separators[i + 1] ? separators[i + 1].index : undefined
+                    );
+
+                    // Number of operators to evaluate
+                    const conditions = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
+                    
+                    // Result of the nested condition
+                    let localResult = true;
+
+                    // No operators, just a single value
+                    if (conditions.length == 0) {
+                        localResult = condition === CustomCommandEngine.trueVar;
+                    }
+                    // Perform operations
+                    else {
+                        for (let j = 0; j < conditions.length; ++j) {
+                            // A single condition may be chained, such as 0 < $val < 10
+                            const operator = conditions[j][1];
+                            const nested = condition.substring(
+                                conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
+                                conditions[j + 1] ? conditions[j + 1].index : undefined
+                            );
+                            const values = nested.split(conditions[j][0]);
+
+                            // Use number comparison if both strings can be parsed as integers
+                            // If not, use string comparison
+                            let a: number | string, b: number | string;
+                            [a, b] = values;
+                            const num1 = parseInt(a);
+                            const num2 = parseInt(b);
+                            if (!isNaN(num1) && !isNaN(num2)) {
+                                a = num1;
+                                b = num2;
+                            }
+                            switch (operator) {
+                                case '=':
+                                case '==':
+                                    localResult = localResult && a === b;
+                                    break;
+                                case '!=':
+                                    localResult = localResult && a != b;
+                                    break;
+                                case '<':
+                                    localResult = localResult && a < b;
+                                    break;
+                                case '>':
+                                    localResult = localResult && a > b;
+                                    break;
+                                case '<=':
+                                    localResult = localResult && a <= b;
+                                    break;
+                                case '>=':
+                                    localResult = localResult && a >= b;
+                                    break;
+                                case '~=':
+                                    localResult = localResult 
+                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
+                                    break;
+                                case '!~=':
+                                    localResult = localResult 
+                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !== 0);
+                                    break;
+                                default:
+                                    localResult = false;
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (separator === 'or') {
+                        globalResult = globalResult || localResult;
+                    }
+                    else {
+                        globalResult = globalResult && localResult;
+                    }
+                }
+
+                return globalResult ? (then ? this.parse(then) : CustomCommandEngine.trueVar) : (other ? this.parse(other) : '');
+            } break;
+
+            default: return null;
+        }
+    }
+
+    private parseSelectorFunction(code: string, index: number, functionName: string): ResponseParseResult {
+        let nextOption: string = '';
+        let options: string[] = [];
+        let nestedDepth = 0;
         let paired = false;
         const startIndex = index;
+
         while (index < code.length) {
             const char = code.charAt(index);
-            if (char === SpecialChars.FunctionBegin) {
-                const nested = this.parseFunction(code, index + 1);
-                functionCall += nested.response;
-                index = nested.index;
-            }
-            else if (char === SpecialChars.FunctionEnd) {
-                paired = true;
-                    ++index;
-                    break;
-            }
-            else if (char === SpecialChars.VarBegin && index !== startIndex) {
-                const variable = this.parseVariable(code, index + 1);
-                functionCall += variable.response;
-                index = variable.index;
+
+            // Options are separated by list separators at depth 0
+            if (char === SpecialChars.ListSeparator && nestedDepth === 0) {
+                options.push(nextOption);
+                nextOption = '';
+                ++index;
             }
             else {
-                functionCall += char;
+                // Nested function, ignore it for now
+                if (char === SpecialChars.FunctionBegin) {
+                    ++nestedDepth;
+                }
+                // End of a function
+                else if (char === SpecialChars.FunctionEnd) {
+                    // Parse until a function end at depth 0 is encountered
+                    if (nestedDepth === 0) {
+                        // Add next option if it is not empty
+                        if (nextOption) {
+                            options.push(nextOption);
+                        }
+                        paired = true;
+                        ++index;
+                        break;
+                    }
+                    --nestedDepth;
+                }
+
+                // Add every character to the response
+                nextOption += char;
                 ++index;
             }
         }
@@ -424,7 +467,122 @@ export class CustomCommandEngine {
             response = code.slice(startIndex - 1, index);
         }
         else {
-            response = this.handleFunction(functionCall.trimLeft()) ?? code.slice(startIndex - 1, index);
+            response = this.handleSelectorFunction(functionName, options);
+        }
+        return { response, index };
+    }
+
+    private parseLazyEvalCode(code: string, index: number): ResponseParseResult | null {
+        let response = '';
+        let nestedDepth = 0;
+        let paired = false;
+        while (index < code.length) {
+            const char = code.charAt(index);
+
+            // Nested function, ignore it for now
+            if (char === SpecialChars.FunctionBegin) {
+                ++nestedDepth;
+            }
+            // End of a function
+            else if (char === SpecialChars.FunctionEnd) {
+                // Parse until a function end at depth 0 is encountered
+                if (nestedDepth === 0) {
+                    paired = true;
+                    ++index;
+                    break;
+                }
+                --nestedDepth;
+            }
+
+            // Add every character to the response
+            response += char;
+            ++index;
+        }
+
+        // The end was never reached
+        if (!paired) {
+            return null;
+        }
+        return { response, index };
+    }
+
+    private parseFunction(code: string, index: number): ResponseParseResult {
+        let foundFunctionName = false;
+        let functionName: string;
+        let functionCall = '';
+        let paired = false;
+        const startIndex = index;
+
+        while (index < code.length) {
+            const char = code.charAt(index);
+
+            // Nested function call
+            if (char === SpecialChars.FunctionBegin) {
+                const nested = this.parseFunction(code, index + 1);
+                functionCall += nested.response;
+                index = nested.index;
+            }
+            // End of this function, finished parsing at this level
+            else if (char === SpecialChars.FunctionEnd) {
+                if (!foundFunctionName) {
+                    functionName = functionCall;
+                    functionCall = '';
+                }
+                paired = true;
+                ++index;
+                break;
+            }
+            // Variable replacement
+            else if (char === SpecialChars.VarBegin && index !== startIndex) {
+                const variable = this.parseVariable(code, index + 1);
+                functionCall += variable.response;
+                index = variable.index;
+            }
+            // Just a regular character
+            else {
+                // Found where function name ends
+                if (!foundFunctionName && CustomCommandEngine.nonVarChar.test(char)) {
+                    // Move function name into functionName variable
+                    // Keep adding characters (arguments) to functionCall
+                    foundFunctionName = true;
+                    functionName = functionCall;
+                    functionCall = '';
+
+                    // Remove whitespace between function name and arguments
+                    while (CustomCommandEngine.whitespaceRegex.test(code.charAt(index))) {
+                        ++index;
+                    }
+
+                    // Some functions use different evaluation
+
+                    if (CustomCommandEngine.selectorFunctions.has(functionName)) {
+                        return this.parseSelectorFunction(code, index, functionName);
+                    }
+                    else if (CustomCommandEngine.lazyEvalFunctions.has(functionName)) {
+                        const lazyEval = this.parseLazyEvalCode(code, index);
+
+                        // null means the parse was unsuccessful
+                        if (lazyEval !== null) {
+                            functionCall += lazyEval.response;
+                            index = lazyEval.index;
+                            paired = true;
+                        }
+
+                        break;
+                    }
+                }
+                else {
+                    functionCall += char;
+                    ++index;
+                }
+            }
+        }
+        let response: string;
+        if (!paired) {
+            response = code.slice(startIndex - 1, index);
+        }
+        else {
+            response = this.handleFunction(functionName.trimLeft(), functionCall.trim()) ?? code.slice(startIndex - 1, index);
         }
         return { response, index };
     }
@@ -433,7 +591,9 @@ export class CustomCommandEngine {
         let name = '';
         while (index < code.length) {
             const char = code.charAt(index);
-            if (char.match(CustomCommandEngine.nonVarChar)) {
+
+            // End of variable
+            if (CustomCommandEngine.nonVarChar.test(char)) {
                 break;
             }
             else {
@@ -452,16 +612,20 @@ export class CustomCommandEngine {
         let response = '';
         while (index < code.length) {
             const char = code.charAt(index);
+
+            // Beginning of a function
             if (char === SpecialChars.FunctionBegin) {
                 const nested = this.parseFunction(code, index + 1);
                 response += nested.response;
                 index = nested.index;
             }
+            // Beginning of a variable
             else if (char === SpecialChars.VarBegin) {
                 const variable = this.parseVariable(code, index + 1);
                 response += variable.response;
                 index = variable.index;
             }
+            // Any other character
             else {
                 response += char;
                 ++index;
