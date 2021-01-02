@@ -65,6 +65,7 @@ export class CustomCommandEngine {
     // Functions that use lazy evaluation
     private static readonly lazyEvalFunctions: Set<string> = new Set([
         'quote',
+        'function',
     ]);
 
     // Functions that use lazy evaluation to select one option from many
@@ -115,8 +116,9 @@ export class CustomCommandEngine {
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
         ],
         'Programming:': [
-            `{quote {function}}`,
-            `{eval [quoted function]}`,
+            `{$function-name = {function {code}}}`,
+            `{eval [code]}`,
+            `{eval $function-name}`
         ],
     };
 
@@ -210,7 +212,8 @@ export class CustomCommandEngine {
                     }
                     return '';
                 } break;
-                case 'quote': {
+                case 'quote':
+                case 'function': {
                     return args;
                 } break;
                 case 'eval': {
