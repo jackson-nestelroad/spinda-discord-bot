@@ -116,7 +116,7 @@ export class CustomCommandEngine {
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
         ],
         'Programming:': [
-            `{$function-name = {function {code}}}`,
+            `{$function-name = {function [code]}}`,
             `{eval [code]}`,
             `{eval $function-name}`
         ],
