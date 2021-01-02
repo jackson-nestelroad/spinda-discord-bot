@@ -335,7 +335,7 @@ export class CustomCommandEngine {
                         }
                     }
 
-                    return globalResult ? (then || CustomCommandEngine.trueVar) : (other || null);
+                    return globalResult ? (then || CustomCommandEngine.trueVar) : (other || '');
                 } break;
                 case 'regex': {
                     const match = CustomCommandEngine.regexRegex.exec(args);
