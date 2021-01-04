@@ -50,7 +50,7 @@ export class AccessCommand implements Command {
                 if (msg.channel.id !== this.accessChannel.id) {
                     await msg.reply(`please go to ${this.accessChannel.toString()}.`);
                 }
-                if (!content) {
+                else if (!content) {
                     await msg.reply('please provide your Pok\u00E9ngine username.');
                 }
                 else {
