@@ -14,4 +14,16 @@ export namespace Environment {
     export function getDatabaseUrl(): string {
         return process.env.DATABASE_URL;
     }
+
+    export function getPokengineCookie(): string {
+        return process.env.POKENGINE_COOKIE;
+    }
+
+    export function getPokengineGuildId(): string {
+        return process.env.POKENGINE_GUILD_ID;
+    }
+
+    export function getPokengineGrantRole(): string {
+        return process.env.POKENGINE_GRANT_ROLE;
+    }
 }
