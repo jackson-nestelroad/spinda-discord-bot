@@ -27,7 +27,7 @@ export namespace Environment {
         return process.env.POKENGINE_ACCESS_CHANNEL_ID;
     }
 
-    export function getPokengineGrantRole(): string {
-        return process.env.POKENGINE_GRANT_ROLE;
+    export function getPokengineAccessRoleId(): string {
+        return process.env.POKENGINE_ACCESS_ROLE_ID;
     }
 }

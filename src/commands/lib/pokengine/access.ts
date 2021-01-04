@@ -2,8 +2,7 @@ import { Command, CommandCategory, CommandPermission, CommandParameters } from '
 import { Environment } from '../../../data/environment';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { Role } from 'discord.js';
-import { DiscordUtil } from '../../../util/discord';
+import { Role, TextChannel } from 'discord.js';
 
 export class AccessCommand implements Command {
     private readonly serverName = 'Official Pok\u00E9ngine Discord Server';
@@ -11,6 +10,7 @@ export class AccessCommand implements Command {
     private readonly playerPath = '/players/';
 
     private accessRole: Role = null;
+    private accessChannel: TextChannel = null;
 
     public name = 'access';
     public args = '(Pok\u00E9ngine username)';
@@ -27,15 +27,29 @@ export class AccessCommand implements Command {
         else {
             // Make sure the role we are granting exists
             if (!this.accessRole) {
-                const id = Environment.getPokengineGrantRole();
+                const id = Environment.getPokengineAccessRoleId();
                 this.accessRole = msg.guild.roles.cache.find(role => role.id === id);
                 if (!this.accessRole) {
                     throw new Error(`Role id \`${id}\` does not exist in this server.`);
                 }
             }
+            // Make sure access channel exists and is a text channel
+            if (!this.accessChannel) {
+                const id = Environment.getPokengineAccessChannelId();
+                this.accessChannel = msg.guild.channels.cache.find(channel => channel.id === id) as TextChannel;
+                if (!this.accessChannel) {
+                    throw new Error(`Channel id \`${id}\` does not exist in this server.`);
+                }
+                if (this.accessChannel.type !== 'text') {
+                    throw new Error(`Access channel must be a text channel.`);
+                }
+            }
 
-            // Ignore members that already have access or use in a different channel
-            if (!msg.member.roles.cache.has(this.accessRole.id) && msg.channel.id === Environment.getPokengineAccessChannelId()) {
+            // Ignore members that already have access
+            if (!msg.member.roles.cache.has(this.accessRole.id)) {
+                if (msg.channel.id !== this.accessChannel.id) {
+                    await msg.reply(`please go to ${this.accessChannel.toString()}.`);
+                }
                 if (!content) {
                     await msg.reply('please provide your Pok\u00E9ngine username.');
                 }
