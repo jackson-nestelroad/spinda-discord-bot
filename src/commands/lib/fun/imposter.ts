@@ -81,7 +81,7 @@ export class ImposterCommand implements Command {
         return `\`\`\`${message.join('\n')}\`\`\``;
     }
 
-    public async run({ msg, args, content }: CommandParameters) {
+    public async run({ bot, msg, args, content }: CommandParameters) {
         let name: string;
         if (args.length > 0) {
             if (msg.mentions.users.size > 0) {
@@ -92,7 +92,7 @@ export class ImposterCommand implements Command {
             }
         }
         else {
-            name = msg.guild.members.cache.random().user.username;
+            name = (await bot.memberListService.getMemberListForGuild(msg.guild.id)).random().user.username;
         }
 
         await msg.channel.send(this.generateText(name, this.identity));
