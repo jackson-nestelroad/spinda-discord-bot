@@ -52,7 +52,6 @@ export class AccessCommand implements Command {
                         });
                     } catch (error) {
                         throw new Error(`Player ${username} does not exist.`);
-                        return;
                     }
 
                     const profile = cheerio(response.data).find('.content-inner.profile');
@@ -69,11 +68,16 @@ export class AccessCommand implements Command {
                     try {
                         newMember = await newMember.setNickname(siteName);
                     } catch (error) {
-                        await msg.reply('your nickname could not be updated. Please contact a staff member for help.');
+                        await msg.reply('your nickname could not be updated. Please contact a staff member.');
                     }
 
                     // Submit update to site
-                    const addBetaResponse = await axios.get(url + betaNode.attr('href'));
+                    try {
+                        await axios.get(url + betaNode.attr('href'));
+                    } catch (error) {
+                        throw new Error(`Failed to give beta access to ${username}. Please contact a staff member.`);
+                    }
+
                     await msg.reply('access granted.');
                 }
             }
