@@ -74,7 +74,13 @@ export class AccessCommand implements Command {
 
                     // Submit update to site
                     try {
-                        await axios.get(url + betaNode.attr('href'));
+                        await axios.request({
+                            url: url + betaNode.attr('href'),
+                            method: 'get',
+                            headers: {
+                                'Cookie': Environment.getPokengineCookie(),
+                            },
+                        });
                     } catch (error) {
                         throw new Error(`Failed to give beta access to ${username}. Please contact a staff member.`);
                     }
