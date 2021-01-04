@@ -25,21 +25,21 @@ export class AccessCommand implements Command {
             await msg.channel.send(embed);
         }
         else {
+            // Make sure the role we are granting exists
+            if (!this.accessRole) {
+                const id = Environment.getPokengineGrantRole();
+                this.accessRole = msg.guild.roles.cache.find(role => role.id === id);
+                if (!this.accessRole) {
+                    throw new Error(`Role id \`${id}\` does not exist in this server.`);
+                }
+            }
+
             // Ignore members that already have access or use in a different channel
             if (!msg.member.roles.cache.has(this.accessRole.id) && msg.channel.id === Environment.getPokengineAccessChannelId()) {
                 if (!content) {
                     await msg.reply('please provide your Pok\u00E9ngine username.');
                 }
                 else {
-                    // Make sure the role we are granting exists
-                    if (!this.accessRole) {
-                        const id = Environment.getPokengineGrantRole();
-                        this.accessRole = msg.guild.roles.cache.find(role => role.id === id);
-                        if (!this.accessRole) {
-                            throw new Error(`Role id \`${id}\` does not exist in this server.`);
-                        }
-                    }
-
                     const username = content;
                     const url = this.site + this.playerPath + username;
                     let response;
