@@ -23,6 +23,10 @@ export namespace Environment {
         return process.env.POKENGINE_GUILD_ID;
     }
 
+    export function getPokengineAccessChannelId(): string {
+        return process.env.POKENGINE_ACCESS_CHANNEL_ID;
+    }
+
     export function getPokengineGrantRole(): string {
         return process.env.POKENGINE_GRANT_ROLE;
     }
