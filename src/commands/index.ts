@@ -21,6 +21,7 @@ import { CustomHelpCommand } from './lib/utility/custom';
 import { RunCustomCommand } from './lib/secret/run-custom';
 import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
+import { ExternalCommands } from './lib/external';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -37,6 +38,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     ChooseCommand,
     ColorCommand,
 
+    ...ExternalCommands,
     ...PokengineCommands,
 
     EvalCommand,

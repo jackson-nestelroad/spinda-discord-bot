@@ -17,6 +17,7 @@ import { GuildBanRemoveEvent } from './events/guild-ban-remove';
 import { MessageUpdateEvent } from './events/message-update';
 import { MessageDeleteBulkEvent } from './events/message-delete-bulk';
 import { MemberListService } from './services/member-list';
+import { MediaWikiService } from './services/media-wiki';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -35,6 +36,7 @@ export class DiscordBot {
     public readonly client: Client;
     public readonly dataService: DataService;
     public readonly memberListService: MemberListService;
+    public readonly mediaWikiService: MediaWikiService;
 
     private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
@@ -48,6 +50,7 @@ export class DiscordBot {
         this.client = new Client();
         this.dataService = new DataService();
         this.memberListService = new MemberListService(this);
+        this.mediaWikiService = new MediaWikiService(this);
 
         this.dataService.initialize().then(() => {
             this.events.push(new ReadyEvent(this));

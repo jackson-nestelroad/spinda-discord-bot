@@ -6,6 +6,7 @@ export enum CommandCategory {
     Config = 'Config',
     Utility = 'Utility',
     Fun = 'Fun',
+    External = 'External',
     Pokengine = 'Pok\u00E9ngine',
     Secret = 'Secret',
 }
