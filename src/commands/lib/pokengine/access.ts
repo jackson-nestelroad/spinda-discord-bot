@@ -66,7 +66,7 @@ export class AccessCommand implements Command {
                             },
                         });
                     } catch (error) {
-                        throw new Error(`Player ${username} does not exist.`);
+                        throw new Error(`Player ${username} does not exist on ${this.site}.`);
                     }
 
                     const profile = cheerio(response.data).find('.content-inner.profile');
