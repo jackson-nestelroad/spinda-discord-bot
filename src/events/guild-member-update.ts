@@ -28,8 +28,9 @@ export class GuildMemberUpdateEvent extends BaseLogEvent<typeof event> {
                 embed.setTitle(`Role ${added ? 'Added' : 'Removed'}`);
                 embed.setDescription(difference.map(role => role.toString()).join('\n'));
             }
+            // Unknown event, log nothing
             else {
-                embed.setTitle('Member Updated');
+                return;
             }
 
             await (channel as TextChannel).send(embed);
