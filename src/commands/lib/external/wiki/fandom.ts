@@ -8,16 +8,23 @@ export class FandomCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public async run({ bot, msg, args }: CommandParameters) {
-        if (args.length < 2) {
-            throw new Error(`Fandom wiki subdomain and search query is required.`);
+        if (args.length < 1) {
+            throw new Error(`Fandom wiki subdomain is required.`);
         }
+
         const site = args.shift();
         const search = args.join(' ');
+        const fandomURL = `https://${site}.fandom.com`;
 
-        if (/^https?:\/\//.test(site)) {
-            throw new Error(`Only the Fandom wiki's subdomain (**example**.fandom.com) is required.`)
+        if (args.length === 0) {
+            await msg.channel.send(fandomURL);
         }
-        
-        await bot.mediaWikiService.searchSite(msg, `https://${site}.fandom.com`, search);
+        else {
+            if (/^https?:\/\//.test(site)) {
+                throw new Error(`Only the Fandom wiki's subdomain (**example**.fandom.com) is required.`)
+            }
+            
+            await bot.mediaWikiService.searchSite(msg, fandomURL, search);
+        }
     }
 }
