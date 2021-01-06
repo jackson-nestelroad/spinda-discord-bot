@@ -99,7 +99,12 @@ export class AccessCommand implements Command {
                         throw new Error(`Failed to give beta access to ${username}. Please contact a staff member.`);
                     }
 
-                    await msg.reply('access granted.');
+                    const embed = bot.createEmbed();
+                    embed.setTitle(this.serverName);
+                    embed.setDescription(`You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`);
+                    await msg.author.send(embed);
+
+                    await msg.react('\u2705');
                 }
             }
         }
