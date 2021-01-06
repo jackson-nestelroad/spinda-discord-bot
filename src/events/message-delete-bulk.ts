@@ -15,7 +15,7 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<typeof event> {
     public async run(messages: Collection<Snowflake, Message>) {
         if (messages.size > 0) {
             const firstMessage = messages.first();
-            const channel = await this.getDestination(firstMessage.guild.id);
+            const channel = await this.getDestination(firstMessage.guild?.id ?? null);
             if (channel) {
                 const embed = this.bot.createEmbed({ footer: true, timestamp: true });
                 

@@ -13,7 +13,7 @@ export class MessageDeleteEvent extends BaseLogEvent<typeof event> {
     }
     
     public async run(msg: Message) {
-        const channel = await this.getDestination(msg.guild.id);
+        const channel = await this.getDestination(msg.guild?.id ?? null);
         if (channel && !msg.author.bot) {
             const embed = this.bot.createEmbed();
             embed.setTimestamp(msg.createdTimestamp);

@@ -31,6 +31,10 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
     }
     
     public async getDestination(guildId: string): Promise<Channel | null> {
+        if (!guildId) {
+            return null;
+        }
+        
         const guild = await this.bot.dataService.getGuild(guildId);
         
         // Check that there is a log channel, logging is enabled, and this event is enabled

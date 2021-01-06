@@ -13,7 +13,7 @@ export class MessageUpdateEvent extends BaseLogEvent<typeof event> {
     }
     
     public async run(oldMsg: Message, newMsg: Message) {
-        const channel = await this.getDestination(newMsg.guild.id);
+        const channel = await this.getDestination(newMsg.guild?.id ?? null);
         if (channel && !newMsg.author.bot) {
             const embed = this.bot.createEmbed();
             embed.setTimestamp(newMsg.editedTimestamp);
