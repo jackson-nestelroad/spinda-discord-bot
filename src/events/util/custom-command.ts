@@ -24,6 +24,7 @@ export class CustomCommandEngine {
     private static readonly nonVarChar = /[^a-zA-Z\d_\$>-]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
+    private static readonly maxParseDepth = 16;
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /\/(.*)\/([gimsuy]*) (.*)/;
@@ -125,6 +126,7 @@ export class CustomCommandEngine {
 
     private silent: boolean = false;
     private vars: Map<string, string> = new Map();
+    private depth: number = 0;
 
     private handleVariableNative(name: string): string | undefined {
         if (/^\d+$/.test(name)) {
@@ -613,6 +615,9 @@ export class CustomCommandEngine {
 
     // First level of parsing
     private parse(code: string, index: number = 0): string {
+        if (++this.depth > CustomCommandEngine.maxParseDepth) {
+            throw new Error(`Maximum parse depth (${CustomCommandEngine.maxParseDepth}) exceeded`);
+        }
         let response = '';
         while (index < code.length) {
             const char = code.charAt(index);
@@ -635,6 +640,7 @@ export class CustomCommandEngine {
                 ++index;
             }
         }
+        --this.depth;
         return response;
     }
 
