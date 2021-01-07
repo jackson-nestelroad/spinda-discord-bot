@@ -27,7 +27,7 @@ export class CustomCommandEngine {
     private static readonly maxParseDepth = 16;
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
-    private static readonly regexRegex = /\/(.*)\/([gimsuy]*) (.*)/;
+    private static readonly regexRegex = /\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*) (.*)/;
 
     constructor(private params: CommandParameters) { }
 
