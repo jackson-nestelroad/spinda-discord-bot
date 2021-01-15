@@ -134,7 +134,7 @@ export class CustomCommandEngine {
             return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
         }
         else if (name === CustomCommandEngine.allArgumentsVar) {
-            return this.params.content ? this.params.content : undefined;
+            return this.params.content;
         }
         return this.vars.get(name);
     }
