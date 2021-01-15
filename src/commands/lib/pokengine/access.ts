@@ -73,7 +73,7 @@ export class AccessCommand implements Command {
                     const siteName = profile.find('.scroll').eq(0).find('b').text();
                     const betaNode = profile.find('.flavor.other').eq(1).find('a').eq(0);
                     if (betaNode.text() === 'take it') {
-                        throw new Error(`${siteName} already has access!`);
+                        throw new Error(`${siteName} already has access. If you already have MMO access or are rejoining the server, please contact a staff member for access.`);
                     }
 
                     // Update guild member
