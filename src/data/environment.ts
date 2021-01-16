@@ -15,19 +15,21 @@ export namespace Environment {
         return process.env.DATABASE_URL;
     }
 
-    export function getPokengineCookie(): string {
-        return process.env.POKENGINE_COOKIE;
-    }
-
-    export function getPokengineGuildId(): string {
-        return process.env.POKENGINE_GUILD_ID;
-    }
-
-    export function getPokengineAccessChannelId(): string {
-        return process.env.POKENGINE_ACCESS_CHANNEL_ID;
-    }
-
-    export function getPokengineAccessRoleId(): string {
-        return process.env.POKENGINE_ACCESS_ROLE_ID;
+    export namespace Pokengine {
+        export function getCookie(): string {
+            return process.env.POKENGINE_COOKIE;
+        }
+    
+        export function getGuildId(): string {
+            return process.env.POKENGINE_GUILD_ID;
+        }
+    
+        export function getAccessChannelId(): string {
+            return process.env.POKENGINE_ACCESS_CHANNEL_ID;
+        }
+    
+        export function getAccessRoleId(): string {
+            return process.env.POKENGINE_ACCESS_ROLE_ID;
+        }
     }
 }

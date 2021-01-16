@@ -19,7 +19,7 @@ export class AccessCommand implements Command {
     public permission = CommandPermission.Everyone;
 
     public async run({ bot, msg, guild, content }: CommandParameters) {
-        if (msg.guild.id !== Environment.getPokengineGuildId()) {
+        if (msg.guild.id !== Environment.Pokengine.getGuildId()) {
             const embed = bot.createEmbed();
             embed.setDescription(`Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`);
             await msg.channel.send(embed);
@@ -27,7 +27,7 @@ export class AccessCommand implements Command {
         else {
             // Make sure the role we are granting exists
             if (!this.accessRole) {
-                const id = Environment.getPokengineAccessRoleId();
+                const id = Environment.Pokengine.getAccessRoleId();
                 this.accessRole = msg.guild.roles.cache.find(role => role.id === id);
                 if (!this.accessRole) {
                     throw new Error(`Role id \`${id}\` does not exist in this server.`);
@@ -35,7 +35,7 @@ export class AccessCommand implements Command {
             }
             // Make sure access channel exists and is a text channel
             if (!this.accessChannel) {
-                const id = Environment.getPokengineAccessChannelId();
+                const id = Environment.Pokengine.getAccessChannelId();
                 this.accessChannel = msg.guild.channels.cache.find(channel => channel.id === id) as TextChannel;
                 if (!this.accessChannel) {
                     throw new Error(`Channel id \`${id}\` does not exist in this server.`);
@@ -62,7 +62,7 @@ export class AccessCommand implements Command {
                             url: url,
                             method: 'get',
                             headers: {
-                                'Cookie': Environment.getPokengineCookie(),
+                                'Cookie': Environment.Pokengine.getCookie(),
                             },
                         });
                     } catch (error) {
@@ -92,7 +92,7 @@ export class AccessCommand implements Command {
                             url: url + betaNode.attr('href'),
                             method: 'get',
                             headers: {
-                                'Cookie': Environment.getPokengineCookie(),
+                                'Cookie': Environment.Pokengine.getCookie(),
                             },
                         });
                     } catch (error) {
