@@ -102,7 +102,14 @@ export class AccessCommand implements Command {
                     const embed = bot.createEmbed();
                     embed.setTitle(this.serverName);
                     embed.setDescription(`You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`);
-                    await msg.author.send(embed);
+                    
+                    // Try to send a DM
+                    // If it fails, just reply in the channel
+                    try {
+                        await msg.author.send(embed);
+                    } catch (error) {
+                        await msg.reply(embed);
+                    }
 
                     await msg.react('\u2705');
                 }
