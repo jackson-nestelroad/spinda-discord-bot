@@ -156,7 +156,7 @@ export class CustomCommandEngine {
                     let i = 0; 
                     for (i; i < potentialValues.length - 1; ++i) {
                         const potential = potentialValues[i];
-                        if (potential !== CustomCommandEngine.undefinedVar) {
+                        if (potential.length !== 0 && potential !== CustomCommandEngine.undefinedVar) {
                             break;
                         }
                     }
