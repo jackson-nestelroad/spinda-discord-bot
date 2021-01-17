@@ -42,7 +42,7 @@ export class MediaWikiService {
     }
 
     private createSearchPath(query: string): string {
-        return `/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0|14&profile=engine_autoselect&format=json`;
+        return `/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0|14&format=json`;
     }
 
     public async searchSite(msg: Message, site: string, query: string) {
@@ -61,15 +61,10 @@ export class MediaWikiService {
                     this.throwNotMediaWiki(site);
                 }
 
-                const wikiInfo = response.data;
-                
-                if (wikiInfo.batchcomplete === undefined || wikiInfo.batchcomplete === null) {
-                    this.throwNotMediaWiki(site);
-                }
-                
-                const generalInfo = wikiInfo?.query?.general ?? this.throwNotMediaWiki(site);
-                const siteName = generalInfo?.sitename ?? this.throwNotMediaWiki(site);
-                const homePage = generalInfo?.base ?? this.throwNotMediaWiki(site);
+                const wikiInfo: any = response.data ?? this.throwNotMediaWiki(site);
+                const generalInfo: any = wikiInfo?.query?.general ?? this.throwNotMediaWiki(site);
+                const siteName: string = generalInfo?.sitename ?? this.throwNotMediaWiki(site);
+                const homePage: string = generalInfo?.base ?? this.throwNotMediaWiki(site);
 
                 // Save site as confirmed
                 this.confirmedSites.set(site, {
