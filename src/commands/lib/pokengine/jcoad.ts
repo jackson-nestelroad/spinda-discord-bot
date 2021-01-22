@@ -19,7 +19,7 @@ export class JcoadCommand implements Command {
         'jcoad:property': ':regional_indicator_p: ',
         'jcoad:trigger': ':regional_indicator_t: &',
         'jcoad:variable': ':regional_indicator_v: ',
-        'jcoad:type': ':regional_indicator_t: ',
+        'jcoad:type': ':regional_indicator_y: ',
         'jcoad:pokeoption': ':regional_indicator_o: ',
     } as const;
 
