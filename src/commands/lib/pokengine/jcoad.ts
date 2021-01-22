@@ -69,7 +69,8 @@ export class JcoadCommand implements Command {
                             const text = this.roles[block.role] + block.name.substr(block.name.indexOf('-') + 1);
                             codeResults.push(`[${text}](${blockUrl})`)
                         }
-                        else if (block.title) {
+                        // Other result, only add it if we will use it
+                        else if (nonCodeResults.length < this.resultsLength - codeResults.length && block.title) {
                             nonCodeResults.push(`[${block.title}](${blockUrl})`);
                         }
                     }
