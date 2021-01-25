@@ -29,6 +29,8 @@ export class CustomCommandEngine {
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*) (.*)/;
 
+    private updatedMember: GuildMember = null;
+
     constructor(private params: CommandParameters) { }
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
@@ -132,6 +134,10 @@ export class CustomCommandEngine {
     private vars: Map<string, string> = new Map();
     private depth: number = 0;
 
+    private getMember(): GuildMember {
+        return this.updatedMember ?? this.params.msg.member;
+    }
+
     private handleVariableNative(name: string): string | undefined {
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
@@ -195,7 +201,7 @@ export class CustomCommandEngine {
             const cmd = name.substr(1);
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
-                if (Validation.validate(this.params, command, this.params.msg.member)) {   
+                if (Validation.validate(this.params, command, this.getMember())) {   
                     await command.run({
                         bot: this.params.bot,
                         msg: this.params.msg,
@@ -284,12 +290,12 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    const memberRoles = this.params.msg.member.roles;
+                    const memberRoles = this.getMember().roles;
                     if (memberRoles.cache.has(role.id)) {
-                        await memberRoles.remove(role);
+                        this.updatedMember = await memberRoles.remove(role);
                     }
                     else {
-                        await memberRoles.add(role)
+                        this.updatedMember = await memberRoles.add(role)
                     }
                     return '';
                 } break;
@@ -299,7 +305,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    return this.params.msg.member.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                    return this.getMember().roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
                 } break;
                 case '+role': {
                     const role = this.getRole(args);
@@ -307,7 +313,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    await this.params.msg.member.roles.add(role);
+                    this.updatedMember = await this.getMember().roles.add(role);
                     return '';
                 } break;
                 case '-role': {
@@ -316,7 +322,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    await this.params.msg.member.roles.remove(role);
+                    this.updatedMember = await this.getMember().roles.remove(role);
                     return '';
                 } break;
                 case 'user': {
@@ -326,7 +332,7 @@ export class CustomCommandEngine {
                             return CustomCommandEngine.userParams[attr](this.params.msg.author);
                         }
                         else if (CustomCommandEngine.memberParams[attr]) {
-                            return CustomCommandEngine.memberParams[attr](this.params.msg.member);
+                            return CustomCommandEngine.memberParams[attr](this.getMember());
                         }
                         return null;
                     }
