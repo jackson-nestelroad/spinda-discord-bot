@@ -281,7 +281,7 @@ export class CustomCommandEngine {
                 case 'role': {
                     const role = this.getRole(args);
                     if (!role) {
-                        throw new Error(`Role ${args} could not be found`);
+                        throw new Error(`Role "${args}" could not be found`);
                     }
 
                     const memberRoles = this.params.msg.member.roles;
@@ -296,7 +296,7 @@ export class CustomCommandEngine {
                 case 'role?': {
                     const role = this.getRole(args);
                     if (!role) {
-                        throw new Error(`Role ${args} could not be found`);
+                        throw new Error(`Role "${args}" could not be found`);
                     }
 
                     return this.params.msg.member.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
@@ -304,7 +304,7 @@ export class CustomCommandEngine {
                 case '+role': {
                     const role = this.getRole(args);
                     if (!role) {
-                        throw new Error(`Role ${args} could not be found`);
+                        throw new Error(`Role "${args}" could not be found`);
                     }
 
                     await this.params.msg.member.roles.add(role);
@@ -313,7 +313,7 @@ export class CustomCommandEngine {
                 case '-role': {
                     const role = this.getRole(args);
                     if (!role) {
-                        throw new Error(`Role ${args} could not be found`);
+                        throw new Error(`Role "${args}" could not be found`);
                     }
 
                     await this.params.msg.member.roles.remove(role);
