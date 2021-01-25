@@ -15,8 +15,8 @@ export const SpindaColors = {
     },
     shinySpots: {
         base: new Color(172, 196, 78),
-        shadow: new Color(125, 142, 101),
-        outline: new Color(78, 86, 83),
+        shadow: new Color(121, 137, 85),
+        outline: new Color(69, 78, 79),
         highlight: new Color(217, 219, 87),
     },
     black: new Color(0, 0, 0),

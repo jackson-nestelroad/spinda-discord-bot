@@ -191,8 +191,9 @@ export class SpindaCommand implements Command {
                 const pixel = this.getPixel(imageData, x, y, width);
                 for (const key in SpindaColors.spots) {
                     if (pixel.hex === SpindaColors.spots[key].hex) {
-                        this.ctx.fillStyle = SpindaColors.shinySpots[key].rgba;
+                        this.ctx.fillStyle = SpindaColors.shinySpots[key].rgba();
                         this.ctx.fillRect(x, y, 1, 1);
+                        break;
                     }
                 }
             }
