@@ -1,4 +1,4 @@
-import { User, GuildMember, Guild, Channel } from 'discord.js';
+import { User, GuildMember, Guild, Channel, Role } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
@@ -21,7 +21,7 @@ export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
     private static readonly falseVar = 'false';
-    private static readonly nonVarChar = /[^a-zA-Z\d_\$>-]/;
+    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$>\+-]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
     private static readonly maxParseDepth = 16;
@@ -108,6 +108,10 @@ export class CustomCommandEngine {
             `{lowercase string}`,
             `{uppercase string}`,
             `{random a b}`,
+            `{role name}`,
+            `{+role name}`,
+            `{-role name}`,
+            `{role? name}`,
             `{silent}`,
             `{delete}`,
         ],
@@ -143,7 +147,17 @@ export class CustomCommandEngine {
         return this.handleVariableNative(name) ?? CustomCommandEngine.undefinedVar;
     }
 
-    private handleFunction(name: string, args: string): string | null {
+    private getRole(search: string): Role {
+        // Find role by ID
+        let role = this.params.msg.guild.roles.cache.get(search);
+        // Find role by name instead
+        if (!role) {
+            role = this.params.msg.guild.roles.cache.find(role => search.localeCompare(role.name, undefined, { sensitivity: 'accent'}) === 0);
+        }
+        return role;
+    }
+
+    private async handleFunction(name: string, args: string): Promise<string | null> {
         // Variable function
         if (name.startsWith(SpecialChars.VarBegin)) {
             const varName = name.substr(1);
@@ -182,13 +196,13 @@ export class CustomCommandEngine {
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
                 if (Validation.validate(this.params, command, this.params.msg.member)) {   
-                    command.run({
+                    await command.run({
                         bot: this.params.bot,
                         msg: this.params.msg,
                         guild: this.params.guild,
                         content: args,
                         args: args.split(' '),
-                    }).catch(err => this.params.bot.sendError(this.params.msg, err));
+                    });
                 }
             }
             return '';
@@ -211,7 +225,7 @@ export class CustomCommandEngine {
                 } break;
                 case 'delete': {
                     if (this.params.msg.deletable) {
-                        this.params.msg.delete().catch(err => this.params.bot.sendError(this.params.msg, err));
+                        await this.params.msg.delete();
                     }
                     return '';
                 } break;
@@ -264,6 +278,47 @@ export class CustomCommandEngine {
                     }
                     return null;
                 } break;
+                case 'role': {
+                    const role = this.getRole(args);
+                    if (!role) {
+                        throw new Error(`Role ${args} could not be found`);
+                    }
+
+                    const memberRoles = this.params.msg.member.roles;
+                    if (memberRoles.cache.has(role.id)) {
+                        await memberRoles.remove(role);
+                    }
+                    else {
+                        await memberRoles.add(role)
+                    }
+                    return '';
+                } break;
+                case 'role?': {
+                    const role = this.getRole(args);
+                    if (!role) {
+                        throw new Error(`Role ${args} could not be found`);
+                    }
+
+                    return this.params.msg.member.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                } break;
+                case '+role': {
+                    const role = this.getRole(args);
+                    if (!role) {
+                        throw new Error(`Role ${args} could not be found`);
+                    }
+
+                    await this.params.msg.member.roles.add(role);
+                    return '';
+                } break;
+                case '-role': {
+                    const role = this.getRole(args);
+                    if (!role) {
+                        throw new Error(`Role ${args} could not be found`);
+                    }
+
+                    await this.params.msg.member.roles.remove(role);
+                    return '';
+                } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
@@ -313,7 +368,7 @@ export class CustomCommandEngine {
     }
 
     // Selector functions select an option, then evaluate it using another parse
-    private handleSelectorFunction(name: string, args: string[]): string | null {
+    private async handleSelectorFunction(name: string, args: string[]): Promise<string | null> {
         switch (name) {
             case 'choose': {
                 if (args.length === 0) {
@@ -329,7 +384,7 @@ export class CustomCommandEngine {
                 }
 
                 // Evaluate condition
-                wholeCondition = this.parse(wholeCondition);
+                wholeCondition = await this.parse(wholeCondition);
 
                 // Parse condition by logical separators
                 let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
@@ -427,7 +482,7 @@ export class CustomCommandEngine {
         }
     }
 
-    private parseSelectorFunction(code: string, index: number, functionName: string): ResponseParseResult {
+    private async parseSelectorFunction(code: string, index: number, functionName: string): Promise<ResponseParseResult> {
         let nextOption: string = '';
         let options: string[] = [];
         let nestedDepth = 0;
@@ -473,12 +528,12 @@ export class CustomCommandEngine {
             response = code.slice(startIndex - 1, index);
         }
         else {
-            response = this.handleSelectorFunction(functionName, options);
+            response = await this.handleSelectorFunction(functionName, options);
         }
         return { response, index };
     }
 
-    private parseLazyEvalCode(code: string, index: number): ResponseParseResult | null {
+    private async parseLazyEvalCode(code: string, index: number): Promise<ResponseParseResult | null> {
         let response = '';
         let nestedDepth = 0;
         let paired = false;
@@ -512,7 +567,7 @@ export class CustomCommandEngine {
         return { response, index };
     }
 
-    private parseFunction(code: string, index: number): ResponseParseResult {
+    private async parseFunction(code: string, index: number): Promise<ResponseParseResult> {
         let foundFunctionName = false;
         let functionName: string;
         let functionCall = '';
@@ -524,7 +579,7 @@ export class CustomCommandEngine {
 
             // Nested function call
             if (char === SpecialChars.FunctionBegin) {
-                const nested = this.parseFunction(code, index + 1);
+                const nested = await this.parseFunction(code, index + 1);
                 functionCall += nested.response;
                 index = nested.index;
             }
@@ -565,7 +620,7 @@ export class CustomCommandEngine {
                         return this.parseSelectorFunction(code, index, functionName);
                     }
                     else if (CustomCommandEngine.lazyEvalFunctions.has(functionName)) {
-                        const lazyEval = this.parseLazyEvalCode(code, index);
+                        const lazyEval = await this.parseLazyEvalCode(code, index);
 
                         // null means the parse was unsuccessful
                         if (lazyEval !== null) {
@@ -588,7 +643,7 @@ export class CustomCommandEngine {
             response = code.slice(startIndex - 1, index);
         }
         else {
-            response = this.handleFunction(functionName.trimLeft(), functionCall.trim()) ?? code.slice(startIndex - 1, index);
+            response = await this.handleFunction(functionName.trimLeft(), functionCall.trim()) ?? code.slice(startIndex - 1, index);
         }
         return { response, index };
     }
@@ -614,7 +669,7 @@ export class CustomCommandEngine {
     }
 
     // First level of parsing
-    private parse(code: string, index: number = 0): string {
+    private async parse(code: string, index: number = 0): Promise<string> {
         if (++this.depth > CustomCommandEngine.maxParseDepth) {
             throw new Error(`Maximum parse depth (${CustomCommandEngine.maxParseDepth}) exceeded`);
         }
@@ -624,7 +679,7 @@ export class CustomCommandEngine {
 
             // Beginning of a function
             if (char === SpecialChars.FunctionBegin) {
-                const nested = this.parseFunction(code, index + 1);
+                const nested = await this.parseFunction(code, index + 1);
                 response += nested.response;
                 index = nested.index;
             }
@@ -645,7 +700,7 @@ export class CustomCommandEngine {
     }
 
     public async run(response: string) {
-        response = this.parse(response).trim();
+        response = (await this.parse(response)).trim();
         if (!this.silent && response.length !== 0) {
             await this.params.msg.channel.send(response);
         }
