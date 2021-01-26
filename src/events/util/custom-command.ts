@@ -25,8 +25,13 @@ export class CustomCommandEngine {
     private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
     private static readonly maxParseDepth = 16;
-    private static readonly repeatLimit = 16;
-    private static readonly waitLimit = 10000;
+
+    private static readonly limits: Dictionary<number> = {
+        repeat: 64,
+        wait: 10000,
+        message: 5,
+        command: 10
+    } as const;
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*) (.*)/;
@@ -139,7 +144,17 @@ export class CustomCommandEngine {
     private vars: Map<string, string> = new Map();
     private depth: number = 0;
     private updatedMember: GuildMember = null;
-    private totalWaited: number = 0;
+    private limitProgress: Dictionary<number> = { };
+
+    private assertLimit(name: string, increase: number) {
+        if (!this.limitProgress[name]) {
+            this.limitProgress[name] = 0;
+        }
+        if (increase + this.limitProgress[name] > CustomCommandEngine.limits[name]) {
+            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${CustomCommandEngine.limits[name]}) exceeded`);
+        }
+        this.limitProgress[name] += increase;
+    }
 
     private getMember(): GuildMember {
         return this.updatedMember ?? this.params.msg.member;
@@ -205,6 +220,7 @@ export class CustomCommandEngine {
         }
         // Nested command call
         else if (name.startsWith(DataService.defaultPrefix)) {
+            this.assertLimit('command', 1);
             const cmd = name.substr(1);
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
@@ -260,14 +276,12 @@ export class CustomCommandEngine {
                     if (isNaN(ms) || ms < 0) {
                         throw new Error('Invalid value for wait');
                     }
-                    if (this.totalWaited + ms > CustomCommandEngine.waitLimit) {
-                        throw new Error(`Wait limit (${CustomCommandEngine.waitLimit}) exceeded`);
-                    }
-                    this.totalWaited += ms;
+                    this.assertLimit(name, ms);
                     await new Promise(resolve => setTimeout(() => resolve(), ms));
                     return '';
                 } break;
                 case 'message': {
+                    this.assertLimit(name, 1);
                     await this.params.msg.channel.send(args);
                     return '';
                 }
@@ -521,9 +535,7 @@ export class CustomCommandEngine {
                 if (isNaN(n) || n < 0) {
                     throw new Error('Invalid repeat number');
                 }
-                if (n > CustomCommandEngine.repeatLimit) {
-                    throw new Error(`Repeat limit (${CustomCommandEngine.repeatLimit}) exceeded`);
-                }
+                this.assertLimit(name, n);
 
                 let result = '';
                 for (let i = 0; i < n; ++i) {
