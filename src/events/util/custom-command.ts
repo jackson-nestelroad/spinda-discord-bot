@@ -169,7 +169,6 @@ export class CustomCommandEngine {
     }
 
     private handleVariableNative(name: string): string | undefined {
-        console.log(name, this.vars);
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
@@ -351,14 +350,13 @@ export class CustomCommandEngine {
                     return str.substr(startIndex);
                 } break;
                 case 'regex': {
-                    console.log(args);
                     const match = args.match(CustomCommandEngine.regexRegex);
                     if (match) {
                         const regex = new RegExp(match[1], match[2]);
                         if (!match[3]) {
                             return CustomCommandEngine.falseVar;
                         }
-                        const results = match[3].match(regex);
+                        const results = regex.exec(match[3]);
                         if (!results) {
                             return CustomCommandEngine.falseVar;
                         }
