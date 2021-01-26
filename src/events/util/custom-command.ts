@@ -23,19 +23,24 @@ export class CustomCommandEngine {
     private static readonly falseVar = 'false';
     private static readonly nonVarChar = /[^a-zA-Z\d_!?\$>\+-]/;
     private static readonly whitespaceRegex = /\s/;
-    private static readonly allArgumentsVar = 'ALL';
-    private static readonly loopCounterVar = 'i';
     private static readonly maxParseDepth = 16;
 
-    private static readonly limits: Dictionary<number> = {
+    private static readonly specialVars = {
+        allArguments: 'ALL',
+        loopCounter: 'i',
+        regexMatchGroup: 'match-group-',
+        regexMatchIndex: 'match-index',
+    } as const;
+
+    private static readonly limits: ReadonlyDictionary<number> = {
         repeat: 64,
         wait: 10000,
         message: 5,
         command: 10
-    } as const;
+    };
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
-    private static readonly regexRegex = /\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*) (.*)/;
+    private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: (.*))?$/;
 
     constructor(private params: CommandParameters) { }
 
@@ -86,7 +91,7 @@ export class CustomCommandEngine {
 
 
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
-        'Arguments': ['$N', `\$${CustomCommandEngine.allArgumentsVar}`],
+        'Arguments': ['$N', `\$${CustomCommandEngine.specialVars.allArguments}`],
         'User Variables': [
             '{user}',
             ...Object.keys(CustomCommandEngine.userParams).map(key => `{user.${key}}`),
@@ -113,10 +118,12 @@ export class CustomCommandEngine {
         'Functions': [
             `{>command arg1 arg2 ...}`,
             `{message msg}`,
+            `{embed msg}`,
             `{regex /pattern/ string}`,
             `{capitalize string}`,
             `{lowercase string}`,
             `{uppercase string}`,
+            `{substring start string}`,
             `{random a b}`,
             `{role name}`,
             `{+role name}`,
@@ -162,11 +169,12 @@ export class CustomCommandEngine {
     }
 
     private handleVariableNative(name: string): string | undefined {
+        console.log(name, this.vars);
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
         }
-        else if (name === CustomCommandEngine.allArgumentsVar) {
+        else if (name === CustomCommandEngine.specialVars.allArguments) {
             return this.params.content;
         }
         return this.vars.get(name);
@@ -288,7 +296,14 @@ export class CustomCommandEngine {
                     this.assertLimit(name, 1);
                     await this.params.msg.channel.send(args);
                     return '';
-                }
+                } break;
+                case 'embed': {
+                    this.assertLimit('message', 1);
+                    const embed = this.params.bot.createEmbed();
+                    embed.setDescription(args);
+                    await this.params.msg.channel.send(embed);
+                    return '';
+                } break;
                 case 'random':
                 case 'rand': {
                     const nums = args.split(/\s+/);
@@ -323,11 +338,40 @@ export class CustomCommandEngine {
                 case 'uppercase': {
                     return args.toUpperCase();
                 } break;
+                case 'substring': {
+                    const whitespace = args.match(/\s+/);
+                    let startIndex = parseInt(args.substr(0, whitespace.index));
+                    const str = args.substr(whitespace.index + whitespace.length);
+                    if (isNaN(startIndex)) {
+                        throw new Error('Invalid value for substring');
+                    }
+                    if (startIndex < 0) {
+                        startIndex += str.length;
+                    }
+                    return str.substr(startIndex);
+                } break;
                 case 'regex': {
-                    const match = CustomCommandEngine.regexRegex.exec(args);
+                    console.log(args);
+                    const match = args.match(CustomCommandEngine.regexRegex);
                     if (match) {
                         const regex = new RegExp(match[1], match[2]);
-                        return regex.test(match[3]) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                        if (!match[3]) {
+                            return CustomCommandEngine.falseVar;
+                        }
+                        const results = match[3].match(regex);
+                        if (!results) {
+                            return CustomCommandEngine.falseVar;
+                        }
+                        else {
+                            // Set special regex variables
+                            this.vars.set(CustomCommandEngine.specialVars.regexMatchIndex, results.index.toString());
+                            for (let i = 0; i < results.length; ++i) {
+                                if (results[i]) {
+                                    this.vars.set(CustomCommandEngine.specialVars.regexMatchGroup + i.toString(), results[i]);
+                                }
+                            }
+                            return CustomCommandEngine.trueVar;
+                        }
                     }
                     return null;
                 } break;
@@ -543,10 +587,10 @@ export class CustomCommandEngine {
 
                 let result = '';
                 for (let i = 0; i < n; ++i) {
-                    this.vars.set(CustomCommandEngine.loopCounterVar, i.toString());
+                    this.vars.set(CustomCommandEngine.specialVars.loopCounter, i.toString());
                     result += await this.parse(args[i % args.length]);
                 }
-                this.vars.delete(CustomCommandEngine.loopCounterVar);
+                this.vars.delete(CustomCommandEngine.specialVars.loopCounter);
                 return result.trim();
             } break;    
             
@@ -667,7 +711,7 @@ export class CustomCommandEngine {
             }
             // Variable replacement
             else if (char === SpecialChars.VarBegin && index !== startIndex) {
-                const variable = this.parseVariable(code, index + 1);
+                const variable = await this.parseVariable(code, index + 1);
                 functionCall += variable.response;
                 index = variable.index;
             }
@@ -720,13 +764,19 @@ export class CustomCommandEngine {
         return { response, index };
     }
 
-    private parseVariable(code: string, index: number): ResponseParseResult {
+    private async parseVariable(code: string, index: number): Promise<ResponseParseResult> {
         let name = '';
         while (index < code.length) {
             const char = code.charAt(index);
 
+            // Function inside variable name
+            if (char === SpecialChars.FunctionBegin) {
+                const nested = await this.parseFunction(code, index + 1);
+                name += nested.response;
+                index = nested.index;
+            }
             // End of variable
-            if (CustomCommandEngine.nonVarChar.test(char)) {
+            else if (CustomCommandEngine.nonVarChar.test(char)) {
                 break;
             }
             else {
@@ -735,7 +785,8 @@ export class CustomCommandEngine {
             }
         }
         return {
-            response: this.handleVariable(name),
+            // Empty variable, give $ back
+            response: name ? this.handleVariable(name) : SpecialChars.VarBegin,
             index,
         };
     }
@@ -757,7 +808,7 @@ export class CustomCommandEngine {
             }
             // Beginning of a variable
             else if (char === SpecialChars.VarBegin) {
-                const variable = this.parseVariable(code, index + 1);
+                const variable = await this.parseVariable(code, index + 1);
                 response += variable.response;
                 index = variable.index;
             }
@@ -774,6 +825,7 @@ export class CustomCommandEngine {
     public async run(response: string) {
         response = (await this.parse(response)).trim();
         if (!this.silent && response.length !== 0) {
+            this.assertLimit('message', 1);
             await this.params.msg.channel.send(response);
         }
     }
