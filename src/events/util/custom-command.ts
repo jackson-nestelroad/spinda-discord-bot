@@ -25,11 +25,11 @@ export class CustomCommandEngine {
     private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
     private static readonly maxParseDepth = 16;
+    private static readonly repeatLimit = 16;
+    private static readonly waitLimit = 10000;
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*) (.*)/;
-
-    private updatedMember: GuildMember = null;
 
     constructor(private params: CommandParameters) { }
 
@@ -75,6 +75,7 @@ export class CustomCommandEngine {
     private static readonly selectorFunctions: Set<string> = new Set([
         'choose',
         'if',
+        'repeat',
     ]);
 
 
@@ -105,6 +106,7 @@ export class CustomCommandEngine {
         ],
         'Functions': [
             `{>command arg1 arg2 ...}`,
+            `{message msg}`,
             `{regex /pattern/ string}`,
             `{capitalize string}`,
             `{lowercase string}`,
@@ -114,6 +116,8 @@ export class CustomCommandEngine {
             `{+role name}`,
             `{-role name}`,
             `{role? name}`,
+            `{not boolean}`,
+            `{wait ms}`,
             `{silent}`,
             `{delete}`,
         ],
@@ -121,6 +125,7 @@ export class CustomCommandEngine {
             `{choose item1;item2;...}`,
             `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
+            `{repeat n;code1;code2;...}`,
         ],
         'Programming:': [
             `{quote text}`,
@@ -133,6 +138,8 @@ export class CustomCommandEngine {
     private silent: boolean = false;
     private vars: Map<string, string> = new Map();
     private depth: number = 0;
+    private updatedMember: GuildMember = null;
+    private totalWaited: number = 0;
 
     private getMember(): GuildMember {
         return this.updatedMember ?? this.params.msg.member;
@@ -242,6 +249,28 @@ export class CustomCommandEngine {
                 case 'eval': {
                     return this.parse(args);
                 } break;
+                case 'not': {
+                    if (!args || args === CustomCommandEngine.falseVar || args === CustomCommandEngine.undefinedVar) {
+                        return CustomCommandEngine.trueVar;
+                    }
+                    return CustomCommandEngine.falseVar;
+                } break;
+                case 'wait': {
+                    const ms = parseInt(args);
+                    if (isNaN(ms) || ms < 0) {
+                        throw new Error('Invalid value for wait');
+                    }
+                    if (this.totalWaited + ms > CustomCommandEngine.waitLimit) {
+                        throw new Error(`Wait limit (${CustomCommandEngine.waitLimit}) exceeded`);
+                    }
+                    this.totalWaited += ms;
+                    await new Promise(resolve => setTimeout(() => resolve(), ms));
+                    return '';
+                } break;
+                case 'message': {
+                    await this.params.msg.channel.send(args);
+                    return '';
+                }
                 case 'random':
                 case 'rand': {
                     const nums = args.split(/\s+/);
@@ -483,7 +512,26 @@ export class CustomCommandEngine {
 
                 return globalResult ? (then ? this.parse(then) : CustomCommandEngine.trueVar) : (other ? this.parse(other) : '');
             } break;
+            case 'repeat': {
+                if (args.length < 2) {
+                    throw new Error('Not enough parameters for repeat');
+                }
 
+                const n = parseInt(await this.parse(args.shift()));
+                if (isNaN(n) || n < 0) {
+                    throw new Error('Invalid repeat number');
+                }
+                if (n > CustomCommandEngine.repeatLimit) {
+                    throw new Error(`Repeat limit (${CustomCommandEngine.repeatLimit}) exceeded`);
+                }
+
+                let result = '';
+                for (let i = 0; i < n; ++i) {
+                    result += await this.parse(args[i % args.length]);
+                }
+                return result.trim();
+            } break;    
+            
             default: return null;
         }
     }
