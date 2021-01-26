@@ -4,7 +4,7 @@ import { CustomCommandEngine } from '../../../events/util/custom-command';
 export class RunCustomCommand implements Command {
     public name = 'run-custom';
     public args = 'message';
-    public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefiend.';
+    public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Administrator;
 
