@@ -24,6 +24,7 @@ export class CustomCommandEngine {
     private static readonly nonVarChar = /[^a-zA-Z\d_!?\$>\+-]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly allArgumentsVar = 'ALL';
+    private static readonly loopCounterVar = 'i';
     private static readonly maxParseDepth = 16;
 
     private static readonly limits: Dictionary<number> = {
@@ -542,8 +543,10 @@ export class CustomCommandEngine {
 
                 let result = '';
                 for (let i = 0; i < n; ++i) {
+                    this.vars.set(CustomCommandEngine.loopCounterVar, i.toString());
                     result += await this.parse(args[i % args.length]);
                 }
+                this.vars.delete(CustomCommandEngine.loopCounterVar);
                 return result.trim();
             } break;    
             
