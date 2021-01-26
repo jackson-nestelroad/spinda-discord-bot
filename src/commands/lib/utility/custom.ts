@@ -26,7 +26,7 @@ export class CustomHelpCommand implements Command {
             const cmd = args[0];
             if (commands[cmd]) {
                 embed.setTitle(`${guild.prefix}${cmd}`);
-                embed.setDescription(commands[cmd]);
+                embed.setDescription(`\`${commands[cmd]}\``);
             }
             else {
                 throw new Error(`Custom command \`${cmd}\` does not exist.`);
