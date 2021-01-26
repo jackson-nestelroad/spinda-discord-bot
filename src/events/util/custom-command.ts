@@ -225,6 +225,9 @@ export class CustomCommandEngine {
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
                 if (Validation.validate(this.params, command, this.getMember())) {   
+                    if (args === CustomCommandEngine.undefinedVar) {
+                        args = '';
+                    }
                     await command.run({
                         bot: this.params.bot,
                         msg: this.params.msg,
