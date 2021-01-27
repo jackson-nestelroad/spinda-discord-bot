@@ -31,7 +31,8 @@ export class CustomCommandEngine {
         allArguments: 'ALL',
         loopCounter: 'i',
         regexMatchGroup: 'match-group-',
-        regexMatchIndex: 'match-index',
+        regexMatchBegin: 'match-begin',
+        regexMatchEnd: 'match-end',
         functionArgument: 'arg-',
     } as const;
 
@@ -99,7 +100,8 @@ export class CustomCommandEngine {
             '$N',
             `\$${CustomCommandEngine.specialVars.allArguments}`,
             `\$${CustomCommandEngine.specialVars.loopCounter} (in repeat)`,
-            `\$${CustomCommandEngine.specialVars.regexMatchIndex} (after regex)`,
+            `\$${CustomCommandEngine.specialVars.regexMatchBegin} (after regex)`,
+            `\$${CustomCommandEngine.specialVars.regexMatchEnd} (after regex)`,
             `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
             `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
         ],
@@ -405,7 +407,8 @@ export class CustomCommandEngine {
                         }
                         else {
                             // Set special regex variables
-                            this.vars.set(CustomCommandEngine.specialVars.regexMatchIndex, results.index.toString());
+                            this.vars.set(CustomCommandEngine.specialVars.regexMatchBegin, results.index.toString());
+                            this.vars.set(CustomCommandEngine.specialVars.regexMatchEnd, results.index.toString());
                             for (let i = 0; i < results.length; ++i) {
                                 if (results[i]) {
                                     this.vars.set(CustomCommandEngine.specialVars.regexMatchGroup + i.toString(), results[i]);
