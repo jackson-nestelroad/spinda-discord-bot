@@ -135,13 +135,16 @@ export class CustomCommandEngine {
             `{lowercase string}`,
             `{uppercase string}`,
             `{substring start string}`,
+            `{length string}`,
+            `{not boolean}`,
+            `{undefined? var}`,
+            `{empty? string}`,
             `{random a b}`,
             `{math expression}`,
             `{role name}`,
             `{+role name}`,
             `{-role name}`,
             `{role? name}`,
-            `{not boolean}`,
             `{wait ms}`,
             `{silent}`,
             `{delete}`,
@@ -310,6 +313,12 @@ export class CustomCommandEngine {
                     }
                     return CustomCommandEngine.falseVar;
                 } break;
+                case 'undefined?': {
+                    return args === CustomCommandEngine.undefinedVar ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                } break;
+                case 'empty?': {
+                    return args.length === 0 ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                } break;
                 case 'wait': {
                     const ms = parseInt(args);
                     if (isNaN(ms) || ms < 0) {
@@ -379,6 +388,9 @@ export class CustomCommandEngine {
                         startIndex += str.length;
                     }
                     return str.substr(startIndex);
+                } break;
+                case 'length': {
+                    return args.length.toString();
                 } break;
                 case 'regex': {
                     const match = args.match(CustomCommandEngine.regexRegex);
