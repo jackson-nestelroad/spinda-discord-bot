@@ -245,7 +245,7 @@ export class CustomCommandEngine {
             // Function assignment, which means no null coalescing
             if (args.startsWith(SpecialChars.FunctionAssign)) {
                 const rightSide = args.substr(SpecialChars.FunctionAssign.length);
-                this.vars.set(varName, rightSide);
+                this.vars.set(varName, rightSide.trim());
                 return '';
             }
             // Text replacement
