@@ -2,6 +2,7 @@ import { User, GuildMember, Guild, Channel, Role } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
+import *  as mathjs from 'mathjs';
 
 interface ResponseParseResult {
     response: string;
@@ -91,7 +92,13 @@ export class CustomCommandEngine {
 
 
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
-        'Arguments': ['$N', `\$${CustomCommandEngine.specialVars.allArguments}`],
+        'Arguments': [
+            '$N',
+            `\$${CustomCommandEngine.specialVars.allArguments}`,
+            `\$${CustomCommandEngine.specialVars.loopCounter} (in repeat)`,
+            `\$${CustomCommandEngine.specialVars.regexMatchIndex} (after regex)`,
+            `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
+        ],
         'User Variables': [
             '{user}',
             ...Object.keys(CustomCommandEngine.userParams).map(key => `{user.${key}}`),
@@ -125,6 +132,7 @@ export class CustomCommandEngine {
             `{uppercase string}`,
             `{substring start string}`,
             `{random a b}`,
+            `{math expression}`,
             `{role name}`,
             `{+role name}`,
             `{-role name}`,
@@ -327,6 +335,9 @@ export class CustomCommandEngine {
                         return CustomCommandEngine.undefinedVar;
                     }
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
+                } break;
+                case 'math': {
+                    return mathjs.evaluate(args);
                 } break;
                 case 'capitalize': {
                     return args[0].toUpperCase() + args.substr(1);
