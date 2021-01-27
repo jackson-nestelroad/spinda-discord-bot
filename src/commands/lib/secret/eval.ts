@@ -27,7 +27,7 @@ export class EvalCommand implements Command {
     private async runCode(code: string, context: any): Promise<string> {
         let res: any;
         try {
-            res = await runInContext(code, createContext(context));
+            res = await runInContext(code, createContext(context, { codeGeneration: { strings: false, wasm: false }}));
         } catch (error) {
             res = `Error: ${error ? error.message || error : error}`;
         }
