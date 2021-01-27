@@ -14,6 +14,7 @@ enum SpecialChars {
     FunctionEnd = '}',
     VarBegin = '$',
     VarAssign = '=',
+    FunctionAssign = ':=',
     AttributeSeparator = '.',
     ListSeparator = ';',
 }
@@ -24,20 +25,21 @@ export class CustomCommandEngine {
     private static readonly falseVar = 'false';
     private static readonly nonVarChar = /[^a-zA-Z\d_!?\$>\+-]/;
     private static readonly whitespaceRegex = /\s/;
-    private static readonly maxParseDepth = 16;
+    private static readonly maxParseDepth = 32;
 
     private static readonly specialVars = {
         allArguments: 'ALL',
         loopCounter: 'i',
         regexMatchGroup: 'match-group-',
         regexMatchIndex: 'match-index',
+        functionArgument: 'arg-',
     } as const;
 
     private static readonly limits: ReadonlyDictionary<number> = {
         repeat: 64,
         wait: 10000,
         message: 5,
-        command: 10
+        command: 10,
     };
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
@@ -88,6 +90,7 @@ export class CustomCommandEngine {
         'choose',
         'if',
         'repeat',
+        'call',
     ]);
 
 
@@ -98,6 +101,7 @@ export class CustomCommandEngine {
             `\$${CustomCommandEngine.specialVars.loopCounter} (in repeat)`,
             `\$${CustomCommandEngine.specialVars.regexMatchIndex} (after regex)`,
             `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
+            `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
         ],
         'User Variables': [
             '{user}',
@@ -150,14 +154,17 @@ export class CustomCommandEngine {
         ],
         'Programming:': [
             `{quote text}`,
-            `{$function-name = {function code}}`,
+            `{$function-name := {function code}}`,
             `{eval code}`,
-            `{eval $function-name}`
+            `{eval $function-name}`,
+            `{call $function-name;arg1;arg2}`,
         ],
     };
 
     private silent: boolean = false;
     private vars: Map<string, string> = new Map();
+    private arguments: string[] = [];
+    private stack: Array<string[]> = [];
     private depth: number = 0;
     private updatedMember: GuildMember = null;
     private limitProgress: Dictionary<number> = { };
@@ -184,6 +191,13 @@ export class CustomCommandEngine {
         else if (name === CustomCommandEngine.specialVars.allArguments) {
             return this.params.content;
         }
+        else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
+            const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
+            if (isNaN(argNum) || argNum < 1 || argNum > this.arguments.length) {
+                return CustomCommandEngine.undefinedVar;
+            }
+            return this.arguments[argNum - 1];
+        }
         return this.vars.get(name);
     }
 
@@ -207,7 +221,7 @@ export class CustomCommandEngine {
             const varName = name.substr(1);
             // Assignment
             if (args.startsWith(SpecialChars.VarAssign)) {
-                const rightSide = args.substr(1);
+                const rightSide = args.substr(SpecialChars.VarAssign.length);
                 const potentialValues = rightSide.split(/\s+or\s+/).map(val => val.trim());
                 if (potentialValues.length > 1) {
                     // Pick first non-undefined value
@@ -223,6 +237,12 @@ export class CustomCommandEngine {
                 else {
                     this.vars.set(varName, rightSide.trimLeft());
                 }
+                return '';
+            }
+            // Function assignment, which means no null coalescing
+            if (args.startsWith(SpecialChars.FunctionAssign)) {
+                const rightSide = args.substr(SpecialChars.FunctionAssign.length);
+                this.vars.set(varName, rightSide);
                 return '';
             }
             // Text replacement
@@ -601,7 +621,37 @@ export class CustomCommandEngine {
                 }
                 this.vars.delete(CustomCommandEngine.specialVars.loopCounter);
                 return result.trim();
-            } break;    
+            } break;  
+            case 'call': {
+                if (args.length < 1) {
+                    throw new Error('Missing function call');
+                }
+
+                // The code to run
+                const code = args.shift();
+
+                // Parse new arguments, since this function was lazy evaluated
+                const newArguments = [];
+                for (let i = 0; i < args.length; ++i) {
+                    newArguments.push(await this.parse(args[i]));
+                }
+
+                // Push existing arguments onto the stack
+                this.stack.push([...this.arguments]);
+
+                // Set new argument context
+                this.arguments = newArguments;
+
+                // Double parse, because this function was lazy evaluated
+                // For example {call $function} needs to evaluate the $function variable
+                // to get the code, and then evaluate that stored code
+                const result = await this.parse(await this.parse(code));
+
+                // Pop old arguments back
+                this.arguments = this.stack.pop();
+
+                return result;
+            } break;
             
             default: return null;
         }
