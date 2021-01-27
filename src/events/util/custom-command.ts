@@ -408,7 +408,7 @@ export class CustomCommandEngine {
                         else {
                             // Set special regex variables
                             this.vars.set(CustomCommandEngine.specialVars.regexMatchBegin, results.index.toString());
-                            this.vars.set(CustomCommandEngine.specialVars.regexMatchEnd, results.index.toString());
+                            this.vars.set(CustomCommandEngine.specialVars.regexMatchEnd, (results.index + results[0].length).toString());
                             for (let i = 0; i < results.length; ++i) {
                                 if (results[i]) {
                                     this.vars.set(CustomCommandEngine.specialVars.regexMatchGroup + i.toString(), results[i]);
