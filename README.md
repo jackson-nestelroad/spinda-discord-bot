@@ -15,11 +15,17 @@ It is implemented using **TypeScript** and the **[Discord.JS](https://discord.js
 ## Custom Commands
 Spinda allows server admins to create custom commands for their servers. These commands are just text-replacement commands, so they are great for quickly accessing links and other server-related information. Custom commands are much more accessible, consistent, and flexible than pinning messages, which can often be hard to find or lost altogether.
 
-Furthermore, custom commands allow parameters to be used alongside built-in functions, including branching, random number generation, custom variables, and more. For instance, the following is the code for creating a command that emulates Rock Paper Scissors.
+Furthermore, custom commands allow parameters to be used alongside built-in functions, including branching, random number generation, custom variables, and more. The sky truly is the limit!
 
+### Examples
+
+#### Rock Paper Scissors (`>rps [rock|paper|scissors]`)
 ```
 >set-command rps {if $1 ~= rock or $1 ~= paper or $1 ~= scissors;{$yours = {capitalize {lowercase $1}}}{$mine = {choose Rock;Paper;Scissors}} You chose **$yours**. I chose **$mine**.
 {if $yours = $mine;It's a tie!;You {if $yours = Rock;{if $mine = Paper;lose;win};{if $yours = Paper;{if $mine = Rock;win;lose};{if $yours = Scissors;{if $mine = Rock;lose;win};lose}}}! };Choose `rock`, `paper`, or `scissors`.}
 ```
 
-Now any member in your server can use `>rps [rock|paper|scissors]` to play!
+#### Fibonacci Numbers (`>fib N`)
+```
+>set-command fib {if {regex /^\d+$/ $ALL};{$fib := {function {if {math $arg-1 < 2};1;{math {call $fib;{math $arg-1 - 1}} + {call $fib;{math $arg-1 - 2}}}}}}{call $fib;$ALL};{embed Content must be a number}}
+```
