@@ -22,6 +22,7 @@ import { RunCustomCommand } from './lib/secret/run-custom';
 import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
 import { ExternalCommands } from './lib/external';
+import { ScreenshotCommand } from './lib/fun/screenshot';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -37,6 +38,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     ImposterCommand,
     ChooseCommand,
     ColorCommand,
+    ScreenshotCommand,
 
     ...ExternalCommands,
     ...PokengineCommands,
