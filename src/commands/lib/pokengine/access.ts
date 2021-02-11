@@ -1,6 +1,6 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { Environment } from '../../../data/environment';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { Role, TextChannel } from 'discord.js';
 
@@ -56,7 +56,7 @@ export class AccessCommand implements Command {
                 else {
                     const username = content;
                     const url = this.site + this.playerPath + username;
-                    let response;
+                    let response: AxiosResponse;
                     try {
                         response = await axios.request({
                             url: url,
