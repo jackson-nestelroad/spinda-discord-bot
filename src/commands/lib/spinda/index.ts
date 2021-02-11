@@ -1,11 +1,11 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
 import { Message, MessageAttachment } from 'discord.js';
 import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D } from 'canvas';
-import { resolve } from 'path';
 import { SpindaColors } from './spinda-colors';
 import { OutlineDrawer } from './outline';
 import { Color } from './color';
 import { Point } from './point';
+import { DiscordBot } from '../../../bot';
 
 interface SpindaConfig<T> {
     base?: T,
@@ -91,10 +91,9 @@ export class SpindaCommand implements Command {
         this.drawImage(this.tempCanvas, 0, 0, width, height, 0, 0, width * scale, height * scale);
     }
 
-    private async loadResources() {
-        const resourcePath = resolve(resolve(process.cwd(), 'resources'));
+    private async loadResources(bot: DiscordBot) {
         for (const key in this.resourcePaths) {
-            this.resources[key] = await loadImage(resolve(resourcePath, this.resourcePaths[key]));
+            this.resources[key] = await loadImage(bot.resourceService.resolve(this.resourcePaths[key]));
         }
     }
 
@@ -200,14 +199,14 @@ export class SpindaCommand implements Command {
         }
     }
 
-    public async run({ msg }: CommandParameters) {
-        await this.runForPid(msg, this.getRandomPID());
+    public async run({ bot, msg }: CommandParameters) {
+        await this.runForPid(bot, msg, this.getRandomPID());
     }
 
-    public async runForPid(msg: Message, pid: number) {
+    public async runForPid(bot: DiscordBot, msg: Message, pid: number) {
         // Need resources
         if (Object.getOwnPropertyNames(this.resources).length === 0) {
-            await this.loadResources();
+            await this.loadResources(bot);
         }
 
         // Reset canvas

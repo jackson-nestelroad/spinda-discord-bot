@@ -18,6 +18,7 @@ import { MessageUpdateEvent } from './events/message-update';
 import { MessageDeleteBulkEvent } from './events/message-delete-bulk';
 import { MemberListService } from './services/member-list';
 import { MediaWikiService } from './services/media-wiki';
+import { ResourceService } from './services/resources';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -35,6 +36,7 @@ export class DiscordBot {
     public readonly startedAt: Date;
     public readonly client: Client;
     public readonly dataService: DataService;
+    public readonly resourceService: ResourceService;
     public readonly memberListService: MemberListService;
     public readonly mediaWikiService: MediaWikiService;
 
@@ -49,6 +51,7 @@ export class DiscordBot {
         this.startedAt = new Date();
         this.client = new Client();
         this.dataService = new DataService();
+        this.resourceService = new ResourceService();
         this.memberListService = new MemberListService(this);
         this.mediaWikiService = new MediaWikiService(this);
 
