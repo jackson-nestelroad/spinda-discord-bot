@@ -29,3 +29,8 @@ Furthermore, custom commands allow parameters to be used alongside built-in func
 ```
 >set-command fib {if {regex /^\d+$/ $ALL};{$fib := {function {if {math $arg-1 < 2};1;{math {call $fib;{math $arg-1 - 1}} + {call $fib;{math $arg-1 - 2}}}}}}{call $fib;$ALL};{embed Content must be a number}}
 ```
+
+#### Chain Commands (`>chain >command1 args... >command2 args...`)
+```
+>set-command chain {$run-all-commands := {function {if {regex /{prefix}(\w+)(?: ((?:(?!{prefix}).)*))?/ $arg-1};{>{$match-group-1} $match-group-2}{call $run-all-commands;{substring $match-end $arg-1}}}}} {call $run-all-commands;$ALL}
+```
