@@ -44,7 +44,7 @@ export class CustomCommandEngine {
     };
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
-    private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: (.*))?$/;
+    private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
 
     constructor(private params: CommandParameters) { }
 
