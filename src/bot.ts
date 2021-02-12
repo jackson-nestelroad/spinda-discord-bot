@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User, Channel, Message } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, Message, GuildMember } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -106,6 +106,23 @@ export class DiscordBot {
         const embed = this.createEmbed({ footer: false, timestamp: false, error: true });
         embed.setDescription(error.message || error.toString());
         await msg.channel.send(embed);
+    }
+
+    public async getMemberFromString(str: string, guildId: string): Promise<GuildMember | null> {
+        // Try mention first
+        const guild = this.client.guilds.cache.get(guildId);
+        const match = DiscordUtil.userMentionRegex.exec(str);
+        if (match) {
+            const user = this.client.users.cache.get(match[1]);
+            return user ? guild.member(user) : null;
+        }
+
+        // Try user ID then username
+        const members = await this.memberListService.getMemberListForGuild(guildId);
+        if (members.has(str)) {
+            return members.get(str);
+        }
+        return members.find(member => str.localeCompare(member.user.username, undefined, { sensitivity: 'accent' }) === 0) || null;
     }
 
     public getUserFromMention(mention: string): User | null {

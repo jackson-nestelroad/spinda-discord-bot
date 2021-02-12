@@ -152,15 +152,7 @@ export class ScreenshotCommand implements Command {
 
         // Try to find guild member associated with the given username
         // Could have been a mention or just a name given
-        let member: GuildMember;
-        const mentionedUser = bot.getUserFromMention(givenUsername);
-        if (mentionedUser) {
-            member = msg.guild.member(mentionedUser);
-        }
-        else {
-            const members = await bot.memberListService.getMemberListForGuild(msg.guild.id);
-            member = members.find(member => givenUsername.localeCompare(member.user.username, undefined, { sensitivity: 'accent' }) === 0);
-        }
+        const member = await bot.getMemberFromString(givenUsername, msg.guild.id);
 
         let username: string;
         let usernameColor: string;
