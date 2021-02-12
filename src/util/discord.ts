@@ -2,7 +2,7 @@ import { User } from 'discord.js';
 import { DiscordBot } from '../bot';
 
 export namespace DiscordUtil {
-    export const codeBlockRegex = /```(?:[^\s]*\n)?((?:.|\n)*)\n?```/s;
+    export const codeBlockRegex = /```(?:[^\s]*\n)?((?:.|\n)+)\n?```/s;
     export const codeLineRegex = /^(`{1,2})([^`]*)\1$/;
     export const userMentionRegex = /^<@!?(\d+)>$/;
     export const channelMentionRegex = /^<#(\d+)>$/;
