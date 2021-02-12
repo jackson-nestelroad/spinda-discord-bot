@@ -43,6 +43,11 @@ export class MessageEvent extends BaseEvent<typeof event> {
         if (msg.author.bot || msg.guild === null) {
             return;
         }
+
+        const blacklist = await this.bot.dataService.getBlacklist(msg.guild.id);
+        if (blacklist.has(msg.author.id)) {
+            return;
+        }
     
         const guild = await this.bot.dataService.getGuild(msg.guild.id);
         const prefix = guild.prefix;

@@ -3,6 +3,7 @@ import { Sequelize } from 'sequelize';
 import { Environment } from './environment';
 import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
+import { BlacklistEntry } from './model/blacklist';
 
 export class DataService {
     public static readonly defaultPrefix: string = '>';
@@ -10,10 +11,12 @@ export class DataService {
     private sequelize: Sequelize;
     private guilds = Guild;
     private customCommands = CustomCommand;
+    private blacklist = BlacklistEntry;
 
     private cache = {
         guilds: new Map<string, GuildAttributes>(),
         customCommands: new Map<string, Dictionary<string>>(),
+        blacklist: new Map<string, Set<string>>(),
     } as const;
 
     constructor() {
@@ -32,6 +35,7 @@ export class DataService {
 
         this.guilds.initialize(this.sequelize);
         this.customCommands.initialize(this.sequelize);
+        this.blacklist.initialize(this.sequelize);
 
         // TODO: Set up migrations
         this.sequelize.sync({ alter: true });
@@ -102,6 +106,43 @@ export class DataService {
         await this.assureCustomCommandsCache(guildId);
         const removed = (await this.customCommands.destroy({ where: { guildId, name }})) !== 0;
         delete this.cache.customCommands.get(guildId)[name];
+        return removed;
+    }
+
+    private async getBlacklistModels(guildId: string): Promise<BlacklistEntry[]> {
+        let entries = await this.blacklist.findAll({ where: { guildId }});
+        return entries;
+    }
+
+    private async assureBlacklistCache(guildId: string) {
+        if (!this.cache.blacklist.has(guildId)) {
+            const models = await this.getBlacklistModels(guildId);
+            const set: Set<string> = new Set();
+            for (const model of models) {
+                set.add(model.userId);
+            }
+            this.cache.blacklist.set(guildId, set);
+        }
+    }
+
+    public async getBlacklist(guildId: string): Promise<ReadonlySet<string>> {
+        await this.assureBlacklistCache(guildId);
+        return this.cache.blacklist.get(guildId);
+    }
+
+    public async addToBlacklist(guildId: string, userId: string): Promise<void> {
+        await this.assureBlacklistCache(guildId);
+        const list = this.cache.blacklist.get(guildId);
+        if (!list.has(userId)) {
+            await this.blacklist.create({ guildId, userId });
+            list.add(userId);
+        }
+    }
+
+    public async removeFromBlacklist(guildId: string, userId: string): Promise<boolean> {
+        await this.assureBlacklistCache(guildId);
+        const removed = (await this.blacklist.destroy({ where: { guildId, userId }})) !== 0;
+        this.cache.blacklist.get(guildId).delete(userId);
         return removed;
     }
 }

@@ -23,6 +23,7 @@ import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
 import { ExternalCommands } from './lib/external';
 import { ScreenshotCommand } from './lib/fun/screenshot';
+import { BlacklistCommand } from './lib/config/blacklist';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -51,6 +52,7 @@ const CommandTypes: Array<{ new(): Command }> = [
 
     PrefixCommand,
     LogsCommand,
+    BlacklistCommand,
     SetCommandCommand,
     RemoveCommandCommand,
 ];
