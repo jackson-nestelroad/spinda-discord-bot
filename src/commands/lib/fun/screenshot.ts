@@ -188,7 +188,7 @@ export class ScreenshotCommand implements Command {
 
         // Create the timestamp string
         let timestamp: string;
-        if (!givenTimestamp || givenTimestamp.localeCompare('now', undefined, { sensitivity: 'accent' }) === 0) {
+        if (!givenTimestamp || givenTimestamp.localeCompare('today', undefined, { sensitivity: 'accent' }) === 0) {
             timestamp = 'Today at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute:'2-digit' });
         }
         else if (givenTimestamp.localeCompare('yesterday', undefined, { sensitivity: 'accent' }) === 0) {
