@@ -73,7 +73,7 @@ export class ScreenshotCommand implements Command {
     private splitLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
         const paragraphs = text.split('\n');
         if (paragraphs.length > 1) {
-            return paragraphs.map(para => this.splitLines(ctx, para, maxWidth)).flat();
+            return paragraphs.map(para => this.splitLines(ctx, para, maxWidth)).map(arr => arr.length === 0 ? [''] : arr).flat();
         }
         else {
             const lines: string[] = [];
