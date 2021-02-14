@@ -5,7 +5,7 @@ import { DiscordUtil } from '../../../util/discord';
 
 export class ScreenshotCommand implements Command {
     public name = 'screenshot';
-    public args = 'user [@ timestamp] \\```message\\```';
+    public args = 'user (@ timestamp) \\```message\\```';
     public description = 'Creates a fake Discord message screenshot.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
