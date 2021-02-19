@@ -24,6 +24,7 @@ import { ColorCommand } from './lib/fun/color';
 import { ExternalCommands } from './lib/external';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { BlacklistCommand } from './lib/config/blacklist';
+import { RollCommand } from './lib/fun/roll';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -35,6 +36,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,
+    RollCommand,
     RoutletteCommand,
     ImposterCommand,
     ChooseCommand,
