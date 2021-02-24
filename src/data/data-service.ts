@@ -43,6 +43,8 @@ export class DataService {
 
     public async clearCache() {
         this.cache.guilds.clear();
+        this.cache.customCommands.clear();
+        this.cache.blacklist.clear();
     }
 
     private async getGuildModel(id: string): Promise<Guild> {
