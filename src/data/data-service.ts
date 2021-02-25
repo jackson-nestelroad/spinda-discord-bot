@@ -21,7 +21,8 @@ export class DataService {
 
     constructor() {
         this.sequelize = new Sequelize(Environment.getDatabaseUrl(), { 
-            logging: false
+            logging: false,
+            ssl: true,
         });
     }
 
