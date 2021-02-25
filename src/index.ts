@@ -7,5 +7,11 @@ if (Environment.getEnvironment() !== 'production') {
     config();
 }
 
-const bot = new DiscordBot();
-bot.run();
+(async () => {
+    const bot = new DiscordBot();
+    await bot.initialize();
+    await bot.run();
+})().catch(error => {
+    console.error(error);
+    process.exit(1);
+});

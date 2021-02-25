@@ -54,21 +54,6 @@ export class DiscordBot {
         this.resourceService = new ResourceService();
         this.memberListService = new MemberListService(this);
         this.mediaWikiService = new MediaWikiService(this);
-
-        this.dataService.initialize().then(() => {
-            this.events.push(new ReadyEvent(this));
-            this.events.push(new MessageEvent(this));
-            this.events.push(new GuildMemberAddEvent(this));
-            this.events.push(new GuildMemberRemoveEvent(this));
-            this.events.push(new GuildMemberUpdateEvent(this));
-            this.events.push(new GuildBanAddEvent(this));
-            this.events.push(new GuildBanRemoveEvent(this));
-            this.events.push(new MessageDeleteEvent(this));
-            this.events.push(new MessageUpdateEvent(this));
-            this.events.push(new MessageDeleteBulkEvent(this));
-
-            this.refreshCommands();
-        });
     }
 
     public refreshCommands() {
@@ -141,10 +126,29 @@ export class DiscordBot {
         return null;
     }
 
-    public run() {
-        this.client.login(Environment.getDiscordToken()).catch(reason => {
-            console.error(reason);
+    public async initialize() {
+        await this.dataService.initialize();
+
+        this.events.push(new ReadyEvent(this));
+        this.events.push(new MessageEvent(this));
+        this.events.push(new GuildMemberAddEvent(this));
+        this.events.push(new GuildMemberRemoveEvent(this));
+        this.events.push(new GuildMemberUpdateEvent(this));
+        this.events.push(new GuildBanAddEvent(this));
+        this.events.push(new GuildBanRemoveEvent(this));
+        this.events.push(new MessageDeleteEvent(this));
+        this.events.push(new MessageUpdateEvent(this));
+        this.events.push(new MessageDeleteBulkEvent(this));
+
+        this.refreshCommands();
+    }
+
+    public async run() {
+        try {
+            await this.client.login(Environment.getDiscordToken());
+        } catch (error) {
+            console.error(error);
             process.exit(1);
-        });
+        }
     }
 }

@@ -1,5 +1,5 @@
 import { Guild, GuildAttributes } from './model/guild';
-import { Sequelize } from 'sequelize';
+import { Sequelize, Options } from 'sequelize';
 import { Environment } from './environment';
 import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
@@ -20,10 +20,19 @@ export class DataService {
     } as const;
 
     constructor() {
-        this.sequelize = new Sequelize(Environment.getDatabaseUrl(), { 
+        const options: Options = {
             logging: false,
-            ssl: true,
-        });
+        };
+
+        if (Environment.getEnvironment() === 'production') {
+            options.dialectOptions = {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false,
+                }
+            };
+        }
+        this.sequelize = new Sequelize(Environment.getDatabaseUrl(), options);
     }
 
     public async initialize() {
