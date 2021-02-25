@@ -38,7 +38,7 @@ export class DataService {
         this.blacklist.initialize(this.sequelize);
 
         // TODO: Set up migrations
-        this.sequelize.sync({ alter: true });
+        await this.sequelize.sync({ alter: true });
     }
 
     public async clearCache() {
