@@ -51,7 +51,7 @@ export class DataService {
         await this.sequelize.sync({ alter: true });
     }
 
-    public async clearCache() {
+    public clearCache() {
         this.cache.guilds.clear();
         this.cache.customCommands.clear();
         this.cache.blacklist.clear();

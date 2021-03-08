@@ -15,16 +15,16 @@ export class RoutletteCommand implements Command {
 
     public readonly dead: Map<string, Date> = new Map();
 
-    public readonly timeToRevive: number = 1;
+    public readonly timeToRevive: number = 1 * 60 * 1000;
 
     public async run({ msg, args }: CommandParameters) {
         if (this.dead.has(msg.author.id)) {
             const diedAt = this.dead.get(msg.author.id);
-            if ((new Date() as any) - (diedAt as any) > this.timeToRevive * 60 * 1000) {
+            if ((new Date() as any) - (diedAt as any) > this.timeToRevive) {
                 this.dead.delete(msg.author.id);
             }
             else {
-                msg.reply('You are already dead!');
+                await msg.reply('You are already dead!');
                 return;
             }
         }
