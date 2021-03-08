@@ -1,11 +1,11 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { inspect } from 'util';
 import { Environment } from '../../../data/environment';
 import { runInContext, createContext } from 'vm';
 import { DiscordUtil } from '../../../util/discord';
 
 // This command is heavily unsafe, use at your own risk
-export class EvalCommand implements Command {
+export class EvalCommand extends Command {
     public name = 'eval';
     public args = '(silent?) code';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
@@ -17,6 +17,7 @@ export class EvalCommand implements Command {
     public sensitivePattern: RegExp = null;
 
     constructor() {
+        super();
         this.createSensitivePattern();
     }
 

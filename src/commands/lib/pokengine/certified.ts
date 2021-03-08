@@ -1,14 +1,15 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';
 
-export class CertifiedCommand implements Command {
+export class CertifiedCommand extends Command {
     public name = 'certified';
     public args = '(pok\u00E9dex) (pok\u00E9mon | number)';
     public description = 'Returns a a link to a Pok\u00E9mon or Fak\u00E9mon from the certified Pok\u00E9dexes on the Pok\u00E9ngine website. If no Pok\u00E9dex is given, a random one will be selected. If no Pok\u00E9mon or Dex Number is given, a random one will be selected.';
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.medium;
 
     public readonly pokedexPath: string = '/pok\u00E9dex';
     public certifiedDexNames: WebScrapedPokedex[];

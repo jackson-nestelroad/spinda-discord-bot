@@ -1,7 +1,7 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { FunUtil } from './util';
 
-export class ConchCommand implements Command {
+export class ConchCommand extends Command {
     public readonly prefix = ':shell: - ';
     
     public name = 'conch';
@@ -9,6 +9,7 @@ export class ConchCommand implements Command {
     public description = this.prefix + 'Pulls the Magic Conch Shell\u2122\'s string for words of wisdom.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.high;
 
     public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
     public readonly header = `You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;

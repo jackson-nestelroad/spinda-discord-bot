@@ -1,12 +1,13 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 
-export class PrefixCommand implements Command {
+export class PrefixCommand extends Command {
     public name = 'prefix';
     public args = '(prefix)';
     public description = 'Sets the guild\'s prefix.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.medium;
 
     public async run({ bot, msg, content, guild }: CommandParameters) {
         const embed = bot.createEmbed({ footer: false, timestamp: false });

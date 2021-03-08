@@ -1,7 +1,8 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { FunUtil } from './util';
+import { TimedCacheSet } from '../../../util/timed-cache';
 
-export class RoutletteCommand implements Command {
+export class RoutletteCommand extends Command {
     public readonly prefix = ':gun: - ';
 
     public name = 'roulette';
@@ -9,24 +10,17 @@ export class RoutletteCommand implements Command {
     public description = this.prefix + 'Spins the chambers for a good ol\' fashioned game of Russian Roulette.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.high;
 
     public readonly defaultBullets = 1;
     public readonly defaultChambers = 6;
 
-    public readonly dead: Map<string, Date> = new Map();
-
-    public readonly timeToRevive: number = 1 * 60 * 1000;
+    public readonly dead: TimedCacheSet<string> = new TimedCacheSet({ minutes: 1 });
 
     public async run({ msg, args }: CommandParameters) {
         if (this.dead.has(msg.author.id)) {
-            const diedAt = this.dead.get(msg.author.id);
-            if ((new Date() as any) - (diedAt as any) > this.timeToRevive) {
-                this.dead.delete(msg.author.id);
-            }
-            else {
-                await msg.reply('You are already dead!');
-                return;
-            }
+            await msg.reply('you are already dead!');
+            return;
         }
 
         let bullets = parseInt(args[0]);
@@ -53,7 +47,7 @@ export class RoutletteCommand implements Command {
         let result: string;
         if (Math.random() < bullets / chambers) {
             result = ` :boom: ***BLAM!***  ${nickname} died. Luck was not on their side...`;
-            this.dead.set(msg.author.id, new Date());
+            this.dead.add(msg.author.id);
         }
         else {
             result = ` *click* ...  ${nickname} survived. They breathe a sigh of relief.`;

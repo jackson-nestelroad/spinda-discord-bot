@@ -1,6 +1,6 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
-export class EightBallCommand implements Command {
+export class EightBallCommand extends Command {
     public readonly prefix = ':8ball: - ';
 
     public name = '8ball';
@@ -8,6 +8,7 @@ export class EightBallCommand implements Command {
     public description = this.prefix + 'Shakes the Magic 8-ball for a glimpse into the future.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public readonly options = [
         'It is certain.',

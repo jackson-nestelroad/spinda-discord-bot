@@ -1,12 +1,14 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { DiscordUtil } from '../../../util/discord';
+import { ExpireAgeConversion } from '../../../util/timed-cache';
 
-export class HelpCommand implements Command {
+export class HelpCommand extends Command {
     public name = 'help';
     public args = '(command)';
     public description = 'Gives information on how to use the bot or a given command.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     // Cache for list of command names by category
     private commandListByCategory: Map<CommandCategory, string[]> = null;
@@ -48,6 +50,7 @@ export class HelpCommand implements Command {
                 embed.addField('Description', cmd.description);
                 embed.addField('Category', cmd.category, true);
                 embed.addField('Permission', CommandPermission[cmd.permission], true);
+                embed.addField('Cooldown', cmd.cooldown ? ExpireAgeConversion.toString(cmd.cooldown) : 'None', true);
                 if (cmd.addHelpFields) {
                     cmd.addHelpFields(embed);
                 }

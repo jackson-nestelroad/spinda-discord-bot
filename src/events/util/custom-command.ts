@@ -270,7 +270,7 @@ export class CustomCommandEngine {
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
                     }
-                    await command.run({
+                    await command.execute({
                         bot: this.params.bot,
                         msg: this.params.msg,
                         guild: this.params.guild,

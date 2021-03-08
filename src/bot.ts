@@ -19,6 +19,7 @@ import { MessageDeleteBulkEvent } from './events/message-delete-bulk';
 import { MemberListService } from './services/member-list';
 import { MediaWikiService } from './services/media-wiki';
 import { ResourceService } from './services/resources';
+import { TimeoutService } from './services/timeout';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -39,6 +40,7 @@ export class DiscordBot {
     public readonly resourceService: ResourceService;
     public readonly memberListService: MemberListService;
     public readonly mediaWikiService: MediaWikiService;
+    public readonly timeoutService: TimeoutService;
 
     private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
@@ -54,6 +56,7 @@ export class DiscordBot {
         this.resourceService = new ResourceService();
         this.memberListService = new MemberListService(this);
         this.mediaWikiService = new MediaWikiService(this);
+        this.timeoutService = new TimeoutService();
     }
 
     public refreshCommands() {

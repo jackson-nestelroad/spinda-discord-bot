@@ -1,13 +1,14 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 import { TextChannel } from 'discord.js';
 
-export class CleanCommand implements Command {
+export class CleanCommand extends Command {
     public name = 'clean';
     public args = '(number)';
     public description = 'Cleans up the bot responses for the current channel.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.low;
 
     public readonly defaultNumberToDelete: number = 100;
     public readonly ageLimit: number = 14 * 24 * 60 * 60 * 1000;

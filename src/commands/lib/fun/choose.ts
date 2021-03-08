@@ -1,7 +1,7 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { FunUtil } from './util';
 
-export class ChooseCommand implements Command {
+export class ChooseCommand extends Command {
     public readonly separator: string = ';';
 
     public name = 'choose';
@@ -9,6 +9,7 @@ export class ChooseCommand implements Command {
     public description = `Randomly selects one choice from a given list of options. Separate all choices using \`${this.separator}\`.`;
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public readonly header = 'I choose... ';
 

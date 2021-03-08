@@ -1,11 +1,12 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../../base';
 
-export class MediaWikiCommand implements Command {
+export class MediaWikiCommand extends Command {
     public name = 'media-wiki';
     public args = 'MediaWiki-URL query';
     public description = 'Searches a MediaWiki website for a page matching the given query.'
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
+    public cooldown = StandardCooldowns.medium;
 
     public async run({ bot, msg, args }: CommandParameters) {
         if (args.length < 2) {

@@ -1,4 +1,4 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { TextChannel } from 'discord.js';
 import { LogOptionBit } from '../../../data/model/guild';
 
@@ -30,7 +30,7 @@ const LogEvents: { [name: string]: LogOptionBit } = {
 type LogOptionMap = { [name: string]: LogOptionType[] };
 
 
-export class LogsCommand implements Command {
+export class LogsCommand extends Command {
     private readonly options: LogOptionMap = {
         [LogCommandOption.Channel]: [LogOptionType.Channel],
         [LogCommandOption.Enable]: [LogOptionType.None, LogOptionType.Events],
@@ -52,6 +52,7 @@ ${this.formatBitOptions()}
 
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.medium;
 
     private formatOptions(): string {
         return Object.entries(this.options)

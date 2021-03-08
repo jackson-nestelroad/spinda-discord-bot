@@ -1,14 +1,15 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { createCanvas, registerFont, loadImage, CanvasRenderingContext2D, Canvas } from 'canvas';
 import { GuildMember, MessageAttachment } from 'discord.js';
 import { DiscordUtil } from '../../../util/discord';
 
-export class ScreenshotCommand implements Command {
+export class ScreenshotCommand extends Command {
     public name = 'screenshot';
     public args = 'user (@ timestamp) \\```message\\```';
     public description = 'Creates a fake Discord message screenshot.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.high;
 
     private initialized = false;
     private canvas: Canvas = null;

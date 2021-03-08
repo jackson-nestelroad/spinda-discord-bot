@@ -1,7 +1,7 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 
-export class RunCustomCommand implements Command {
+export class RunCustomCommand extends Command {
     public name = 'run-custom';
     public args = 'message';
     public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';

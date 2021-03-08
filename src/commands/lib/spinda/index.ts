@@ -1,4 +1,4 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { Message, MessageAttachment } from 'discord.js';
 import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { SpindaColors } from './spinda-colors';
@@ -16,7 +16,7 @@ interface SpindaConfig<T> {
     3: T,
 }
 
-export class SpindaCommand implements Command {
+export class SpindaCommand extends Command {
     public name =  'spinda';
     public args =  '';
     public description = `Generates a random Spinda pattern from ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There is even a chance for shinies!`;

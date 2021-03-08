@@ -27,7 +27,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
             try {
                 const command = this.bot.commands.get(cmd)
                 if (Validation.validate(params, command, params.msg.member)) {
-                    await command.run(params);
+                    await command.execute(params);
                 }
             } catch (error) {
                 await params.bot.sendError(params.msg, error);
@@ -47,10 +47,17 @@ export class MessageEvent extends BaseEvent<typeof event> {
     }
     
     public async run(msg: Message) {
+        // User is a bot or in a direct message
         if (msg.author.bot || msg.guild === null) {
             return;
         }
 
+        // User is on timeout
+        if (this.bot.timeoutService.onTimeout(msg.author)) {
+            return;
+        }
+
+        // User is blacklisted in this guild
         const blacklist = await this.bot.dataService.getBlacklist(msg.guild.id);
         if (blacklist.has(msg.author.id)) {
             return;

@@ -1,11 +1,12 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
-export class PingCommand implements Command {
+export class PingCommand extends Command {
     public name = 'ping';
     public args = '';
     public description = 'Checks if the bot is still alive.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public async run({ msg }: CommandParameters) {
         const start = new Date();

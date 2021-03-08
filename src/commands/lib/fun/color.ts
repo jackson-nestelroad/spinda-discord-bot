@@ -1,14 +1,15 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { Color } from '../spinda/color';
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
 
-export class ColorCommand implements Command {
+export class ColorCommand extends Command {
     public name = 'color';
     public args = '(#hex | R,G,B)';
     public description = 'Displays the given color. If no color is given, a random one is generated.'
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.medium;
 
     private readonly errorMessage = 'Invalid color format';
 

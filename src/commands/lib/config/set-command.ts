@@ -1,8 +1,8 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { MessageEmbed } from 'discord.js';
 
-export class SetCommandCommand implements Command {
+export class SetCommandCommand extends Command {
     public name = 'set-command';
     public args = 'command message';
     public description = `
@@ -11,6 +11,7 @@ Sets a custom command for the guild that responds with the given message.
 You may use the following variables in the command message to customize your command's response.`;
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.high;
 
     public addHelpFields(embed: MessageEmbed) {
         Object.entries(CustomCommandEngine.AllOptions).map(([category, options]) => {

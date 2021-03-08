@@ -1,12 +1,13 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { Channel, TextChannel } from 'discord.js';
 
-export class SayCommand implements Command {
+export class SayCommand extends Command {
     public name = 'say';
     public args = '(channel) message';
     public description = 'Repeats your message.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.low;
 
     public async run({ msg, args, content }: CommandParameters) {
         let channel: Channel = msg.channel;

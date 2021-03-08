@@ -1,12 +1,13 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import * as moment from 'moment';
 
-export class UptimeCommand implements Command {
+export class UptimeCommand extends Command {
     public name = 'uptime';
     public args = '';
     public description = 'Gives how long the bot has been continually running.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public async run({ bot, msg }: CommandParameters) {
         const now = new Date();

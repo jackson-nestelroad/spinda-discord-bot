@@ -1,10 +1,10 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { Environment } from '../../../data/environment';
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { Role, TextChannel } from 'discord.js';
 
-export class AccessCommand implements Command {
+export class AccessCommand extends Command {
     private readonly serverName = 'Official Pok\u00E9ngine Discord Server';
     private readonly site = 'http://pokengine.org';
     private readonly playerPath = '/players/';
@@ -17,6 +17,7 @@ export class AccessCommand implements Command {
     public description = `Requests access to the ${this.serverName}.`
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public async run({ bot, msg, guild, content }: CommandParameters) {
         if (msg.guild.id !== Environment.Pokengine.getGuildId()) {

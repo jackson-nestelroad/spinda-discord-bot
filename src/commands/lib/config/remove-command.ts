@@ -1,11 +1,12 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
-export class RemoveCommandCommand implements Command {
+export class RemoveCommandCommand extends Command {
     public name = 'remove-command';
     public args = 'command';
     public description = 'Removes a custom command that was previously set for the guild.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.high;
 
     public async run({ bot, msg, args }: CommandParameters) {
         if (args.length === 0) {

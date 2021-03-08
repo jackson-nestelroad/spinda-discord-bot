@@ -1,6 +1,6 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
-export class RollCommand implements Command {
+export class RollCommand extends Command {
     public readonly prefix = ':game_die: - ';
 
     public name = 'roll';
@@ -8,6 +8,7 @@ export class RollCommand implements Command {
     public description = this.prefix + 'Rolls a die with a given number of sides, a given number of times, with the given mathematical operations. Mathematical operations can use the results of other dice rolls.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.medium;
 
     private readonly rollCountLimit = 256;
     private readonly arrow = '\u21d2';

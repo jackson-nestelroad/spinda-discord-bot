@@ -1,7 +1,7 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import axios from 'axios';
 
-export class JcoadCommand implements Command {
+export class JcoadCommand extends Command {
     public readonly docUrl: string = 'https://pokengine-jcoad.readthedocs.io';
 
     public name = 'jcoad';
@@ -9,6 +9,7 @@ export class JcoadCommand implements Command {
     public description = `Searches the jCoad documentation.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.medium;
 
     private readonly apiPath: string = '/_/api/v2/search/?format=json&project=pokengine-jcoad&version=latest&q=';
     private readonly accentRegex: RegExp = /([P|p]ok)e(mon|ngine)/g;

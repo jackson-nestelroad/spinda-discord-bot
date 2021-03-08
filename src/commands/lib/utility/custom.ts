@@ -1,11 +1,12 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
-export class CustomHelpCommand implements Command {
+export class CustomHelpCommand extends Command {
     public name = 'custom';
     public args = '(command)';
     public description = 'Gives a list of all custom commands registered in this guild.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.low;
 
     public async run({ bot, msg, args, guild }: CommandParameters) {
         const commands = await bot.dataService.getCustomCommands(msg.guild.id);

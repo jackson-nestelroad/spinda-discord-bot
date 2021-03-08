@@ -1,13 +1,14 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters } from '../base';
+import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
 type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
 
-export class ImposterCommand implements Command {
+export class ImposterCommand extends Command {
     public name = 'imposter';
     public args = '(user)';
     public description = 'Checks if a user is an imposter.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
+    public cooldown = StandardCooldowns.medium;
 
     private readonly imposter = '\u{D9E}';
     private readonly chanceForImposter = 0.1;
