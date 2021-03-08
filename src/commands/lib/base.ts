@@ -54,27 +54,9 @@ export abstract class Command {
     }
 
     public async execute(params: CommandParameters): Promise<void> {
-        if (this.cooldownSet) {
-            const offenses = this.cooldownSet.get(params.msg.author.id);
-            if (offenses === undefined) {
-                this.cooldownSet.set(params.msg.author.id, 0);
-            }
-            else {
-                if (offenses === 0) {
-                    this.cooldownSet.update(params.msg.author.id, 1);
-                    const reply = await params.msg.reply('slow down!');
-                    await reply.delete({ timeout: 10000 });
-                }
-                else if (offenses >= 5) {
-                    await params.bot.timeoutService.timeout(params.msg.author);
-                }
-                else {
-                    this.cooldownSet.update(params.msg.author.id, offenses + 1);
-                }
-                return;
-            }
+        if (await params.bot.handleCooldown(params.msg, this.cooldownSet)) {
+            return this.run(params);
         }
-        return this.run(params);
     }
 }
 

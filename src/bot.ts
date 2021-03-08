@@ -20,6 +20,7 @@ import { MemberListService } from './services/member-list';
 import { MediaWikiService } from './services/media-wiki';
 import { ResourceService } from './services/resources';
 import { TimeoutService } from './services/timeout';
+import { TimedCache } from './util/timed-cache';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -144,6 +145,31 @@ export class DiscordBot {
         this.events.push(new MessageDeleteBulkEvent(this));
 
         this.refreshCommands();
+    }
+
+    
+    public async handleCooldown(msg: Message, cooldownSet: TimedCache<string, number>): Promise<boolean> {
+        if (cooldownSet) {
+            const offenses = cooldownSet.get(msg.author.id);
+            if (offenses === undefined) {
+                cooldownSet.set(msg.author.id, 0);
+            }
+            else {
+                if (offenses === 0) {
+                    cooldownSet.update(msg.author.id, 1);
+                    const reply = await msg.reply('slow down!');
+                    await reply.delete({ timeout: 10000 });
+                }
+                else if (offenses >= 5) {
+                    await this.timeoutService.timeout(msg.author);
+                }
+                else {
+                    cooldownSet.update(msg.author.id, offenses + 1);
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     public async run() {

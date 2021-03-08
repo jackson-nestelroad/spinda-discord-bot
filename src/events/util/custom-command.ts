@@ -3,6 +3,7 @@ import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
+import { TimedCache } from '../../util/timed-cache';
 
 interface ResponseParseResult {
     response: string;
@@ -45,6 +46,8 @@ export class CustomCommandEngine {
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
+
+    private static readonly cooldownSet: TimedCache<string, number> = new TimedCache({ seconds: 3 });
 
     constructor(private params: CommandParameters) { }
 
@@ -898,10 +901,12 @@ export class CustomCommandEngine {
     }
 
     public async run(response: string) {
-        response = (await this.parse(response)).trim();
-        if (!this.silent && response.length !== 0) {
-            this.assertLimit('message', 1);
-            await this.params.msg.channel.send(response);
+        if (await this.params.bot.handleCooldown(this.params.msg, CustomCommandEngine.cooldownSet)) {
+            response = (await this.parse(response)).trim();
+            if (!this.silent && response.length !== 0) {
+                this.assertLimit('message', 1);
+                await this.params.msg.channel.send(response);
+            }
         }
     }
 }
