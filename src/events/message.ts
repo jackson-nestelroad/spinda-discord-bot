@@ -4,6 +4,7 @@ import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
 import { CommandParameters } from '../commands/lib/base';
 import { CustomCommandEngine } from './util/custom-command';
+import { GuildAttributes } from '../data/model/guild';
 
 const event = 'message';
 
@@ -14,7 +15,13 @@ export class MessageEvent extends BaseEvent<typeof event> {
         super(bot, event);
     }
 
-    private async runCommand(cmd: string, params: CommandParameters) {
+    private async runCommand(content: string, msg: Message, guild: GuildAttributes) {
+        const args = content.split(' ');
+        const cmd = args.shift();
+        content = content.substr(cmd.length).trim();
+        content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
+
+        const params: CommandParameters = { bot: this.bot, msg, args, content, guild };
         // Global command
         if (this.bot.commands.has(cmd)) {
             try {
@@ -59,23 +66,14 @@ export class MessageEvent extends BaseEvent<typeof event> {
                 const mentionIndex = msg.content.indexOf(this.bot.client.user.id);
                 if (mentionIndex === 2 || mentionIndex === 3) {
                     let content = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim();
-                    const args = content.split(' ');
-                    const cmd = args.shift();
-                    content = content.substr(cmd.length).trim();
-                    content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
-
-                    await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
+                    await this.runCommand(content, msg, guild);
                 }
             }
         }
         else {
             let content = msg.content.substr(prefix.length);
-            const args = content.split(' ');
-            const cmd = args.shift();
-            content = content.substr(cmd.length).trim();
-            content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
-            
-            await this.runCommand(cmd, { bot: this.bot, msg, args, content, guild });
+            await this.runCommand(content, msg, guild);
+
         }
     }
 }
