@@ -9,7 +9,7 @@ export class ConchCommand extends Command {
     public description = this.prefix + 'Pulls the Magic Conch Shell\u2122\'s string for words of wisdom.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.high;
+    public cooldown = StandardCooldowns.High;
 
     public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
     public readonly header = `You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;

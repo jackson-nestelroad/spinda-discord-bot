@@ -8,7 +8,7 @@ export class EightBallCommand extends Command {
     public description = this.prefix + 'Shakes the Magic 8-ball for a glimpse into the future.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public readonly options = [
         'It is certain.',

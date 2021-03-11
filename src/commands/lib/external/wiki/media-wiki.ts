@@ -6,7 +6,7 @@ export class MediaWikiCommand extends Command {
     public description = 'Searches a MediaWiki website for a page matching the given query.'
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     public async run({ bot, msg, args }: CommandParameters) {
         if (args.length < 2) {

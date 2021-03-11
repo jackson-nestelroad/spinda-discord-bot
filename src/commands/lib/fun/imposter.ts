@@ -8,7 +8,7 @@ export class ImposterCommand extends Command {
     public description = 'Checks if a user is an imposter.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private readonly imposter = '\u{D9E}';
     private readonly chanceForImposter = 0.1;

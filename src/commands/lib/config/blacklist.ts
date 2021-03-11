@@ -7,7 +7,7 @@ export class BlacklistCommand extends Command {
     public description = 'Adds or removes a member from the guild\'s blacklist. Blacklisted members will be unable to use bot commands in the guild. If no member is given, members on the blacklist will be given in pages of 10.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private readonly pageSize = 10;
 

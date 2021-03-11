@@ -9,7 +9,7 @@ export class JcoadCommand extends Command {
     public description = `Searches the jCoad documentation.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private readonly apiPath: string = '/_/api/v2/search/?format=json&project=pokengine-jcoad&version=latest&q=';
     private readonly accentRegex: RegExp = /([P|p]ok)e(mon|ngine)/g;

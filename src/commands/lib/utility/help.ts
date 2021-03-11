@@ -8,7 +8,7 @@ export class HelpCommand extends Command {
     public description = 'Gives information on how to use the bot or a given command.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     // Cache for list of command names by category
     private commandListByCategory: Map<CommandCategory, string[]> = null;

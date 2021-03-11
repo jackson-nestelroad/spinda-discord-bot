@@ -9,7 +9,7 @@ export class ColorCommand extends Command {
     public description = 'Displays the given color. If no color is given, a random one is generated.'
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private readonly errorMessage = 'Invalid color format';
 

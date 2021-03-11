@@ -6,7 +6,7 @@ export class FandomCommand extends Command {
     public description = 'Searches a Fandom wiki (**wiki-subdomain**.fandom.com) for a page matching the given query.'
     public category = CommandCategory.External;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     public async run({ bot, msg, args }: CommandParameters) {
         if (args.length < 1) {

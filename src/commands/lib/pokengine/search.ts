@@ -26,7 +26,7 @@ export class SearchCommand extends Command {
     public description = `Searches the Pok\u00E9ngine website with a given query and returns the *first* result only. If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor('help')}.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     public tabNamesToUpperCase: Map<SearchTab, string> = null;
 

@@ -7,7 +7,7 @@ export class UptimeCommand extends Command {
     public description = 'Gives how long the bot has been continually running.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public async run({ bot, msg }: CommandParameters) {
         const now = new Date();

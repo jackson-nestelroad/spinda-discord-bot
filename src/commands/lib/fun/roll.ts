@@ -8,7 +8,7 @@ export class RollCommand extends Command {
     public description = this.prefix + 'Rolls a die with a given number of sides, a given number of times, with the given mathematical operations. Mathematical operations can use the results of other dice rolls.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private readonly rollCountLimit = 256;
     private readonly arrow = '\u21d2';

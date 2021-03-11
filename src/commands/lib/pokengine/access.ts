@@ -17,7 +17,7 @@ export class AccessCommand extends Command {
     public description = `Requests access to the ${this.serverName}.`
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public async run({ bot, msg, guild, content }: CommandParameters) {
         if (msg.guild.id !== Environment.Pokengine.getGuildId()) {

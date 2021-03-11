@@ -52,7 +52,7 @@ ${this.formatBitOptions()}
 
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     private formatOptions(): string {
         return Object.entries(this.options)

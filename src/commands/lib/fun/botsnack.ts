@@ -6,7 +6,7 @@ export class BotsnackCommand extends Command {
     public description = 'Rewards the bot for good behavior.'
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public async run({ msg }: CommandParameters) {
         await msg.channel.send('botsnack, mmmmmm...');

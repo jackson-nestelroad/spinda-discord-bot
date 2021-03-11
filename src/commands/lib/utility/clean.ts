@@ -8,7 +8,7 @@ export class CleanCommand extends Command {
     public description = 'Cleans up the bot responses for the current channel.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public readonly defaultNumberToDelete: number = 100;
     public readonly ageLimit: number = 14 * 24 * 60 * 60 * 1000;

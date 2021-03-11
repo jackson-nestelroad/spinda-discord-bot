@@ -7,7 +7,7 @@ export class SayCommand extends Command {
     public description = 'Repeats your message.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public async run({ msg, args, content }: CommandParameters) {
         let channel: Channel = msg.channel;

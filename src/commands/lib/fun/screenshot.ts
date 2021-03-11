@@ -9,7 +9,7 @@ export class ScreenshotCommand extends Command {
     public description = 'Creates a fake Discord message screenshot.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.high;
+    public cooldown = StandardCooldowns.High;
 
     private initialized = false;
     private canvas: Canvas = null;

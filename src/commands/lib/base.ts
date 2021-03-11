@@ -27,11 +27,11 @@ export interface CommandParameters {
 }
 
 export const StandardCooldowns = {
-    low: { seconds: 3 },
-    medium: { seconds: 5 },
-    high: { seconds: 10 },
-    minute: { minutes: 1 },
-}
+    Low: { seconds: 3 },
+    Medium: { seconds: 5 },
+    High: { seconds: 10 },
+    Minute: { minutes: 1 },
+} as const;
 
 export abstract class Command {
     public abstract readonly name: string;

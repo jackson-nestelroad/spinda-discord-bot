@@ -6,7 +6,7 @@ export class CustomHelpCommand extends Command {
     public description = 'Gives a list of all custom commands registered in this guild.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public async run({ bot, msg, args, guild }: CommandParameters) {
         const commands = await bot.dataService.getCustomCommands(msg.guild.id);

@@ -11,7 +11,7 @@ Sets a custom command for the guild that responds with the given message.
 You may use the following variables in the command message to customize your command's response.`;
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.high;
+    public cooldown = StandardCooldowns.High;
 
     public addHelpFields(embed: MessageEmbed) {
         Object.entries(CustomCommandEngine.AllOptions).map(([category, options]) => {

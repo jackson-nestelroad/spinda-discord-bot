@@ -10,7 +10,7 @@ export class RoutletteCommand extends Command {
     public description = this.prefix + 'Spins the chambers for a good ol\' fashioned game of Russian Roulette.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.high;
+    public cooldown = StandardCooldowns.High;
 
     public readonly defaultBullets = 1;
     public readonly defaultChambers = 6;

@@ -9,7 +9,7 @@ export class ChooseCommand extends Command {
     public description = `Randomly selects one choice from a given list of options. Separate all choices using \`${this.separator}\`.`;
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.low;
+    public cooldown = StandardCooldowns.Low;
 
     public readonly header = 'I choose... ';
 

@@ -7,7 +7,7 @@ export class PrefixCommand extends Command {
     public description = 'Sets the guild\'s prefix.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     public async run({ bot, msg, content, guild }: CommandParameters) {
         const embed = bot.createEmbed({ footer: false, timestamp: false });

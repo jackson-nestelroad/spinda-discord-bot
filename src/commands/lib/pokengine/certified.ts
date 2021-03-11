@@ -9,7 +9,7 @@ export class CertifiedCommand extends Command {
     public description = 'Returns a a link to a Pok\u00E9mon or Fak\u00E9mon from the certified Pok\u00E9dexes on the Pok\u00E9ngine website. If no Pok\u00E9dex is given, a random one will be selected. If no Pok\u00E9mon or Dex Number is given, a random one will be selected.';
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
-    public cooldown = StandardCooldowns.medium;
+    public cooldown = StandardCooldowns.Medium;
 
     public readonly pokedexPath: string = '/pok\u00E9dex';
     public certifiedDexNames: WebScrapedPokedex[];
