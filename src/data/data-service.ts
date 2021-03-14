@@ -170,7 +170,7 @@ export class DataService {
     public async getCaughtSpinda(userId: string): Promise<CaughtSpindaAttributes | null> {
         if (!this.cache.caughtSpindas.has(userId)) {
             const model = await this.getCaughtSpindaModel(userId);
-            this.cache.caughtSpindas.set(userId, model.get());
+            this.cache.caughtSpindas.set(userId, model?.get() ?? null);
         }
         return this.cache.caughtSpindas.get(userId);
     }
