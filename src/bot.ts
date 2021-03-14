@@ -6,7 +6,7 @@ import { Command } from './commands/lib/base';
 import { Commands } from './commands';
 import { DataService } from './data/data-service';
 import { Environment } from './data/environment';
-import { SpindaColors } from './commands/lib/spinda/spinda-colors';
+import { SpindaColorPalettes } from './commands/lib/spinda/util/spinda-colors';
 import { MessageDeleteEvent } from './events/message-delete';
 import { DiscordUtil } from './util/discord';
 import { GuildMemberAddEvent } from './events/guild-member-add';
@@ -45,7 +45,7 @@ export class DiscordBot {
 
     private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
-        default: SpindaColors.spots.base.hexString(),
+        default: SpindaColorPalettes.normal.base.hexString(),
         error: '#F04947',
         success: '#43B581',
     } as const;

@@ -1,7 +1,7 @@
 import { Command } from './lib/base';
 import { PingCommand } from './lib/utility/ping';
 import { HelpCommand } from './lib/utility/help';
-import { SpindaCommand } from './lib/spinda';
+import { SpindaCommand } from './lib/spinda/spinda';
 import { ConchCommand } from './lib/fun/conch';
 import { BotsnackCommand } from './lib/fun/botsnack';
 import { EightBallCommand } from './lib/fun/8ball';
@@ -25,6 +25,8 @@ import { ExternalCommands } from './lib/external';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { BlacklistCommand } from './lib/config/blacklist';
 import { RollCommand } from './lib/fun/roll';
+import { CatchCommand } from './lib/spinda/catch';
+import { SpindaCommands } from './lib/spinda';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -32,7 +34,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     CleanCommand,
     UptimeCommand,
 
-    SpindaCommand,
+    ...SpindaCommands,
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,

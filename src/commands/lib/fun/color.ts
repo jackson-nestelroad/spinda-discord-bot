@@ -1,5 +1,5 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
-import { Color } from '../spinda/color';
+import { Color } from '../spinda/util/color';
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
 

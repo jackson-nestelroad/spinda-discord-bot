@@ -4,6 +4,7 @@ import { Environment } from './environment';
 import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
 import { BlacklistEntry } from './model/blacklist';
+import { CaughtSpinda, CaughtSpindaAttributes, GeneratedSpinda } from './model/caught-spinda';
 
 export class DataService {
     public static readonly defaultPrefix: string = '>';
@@ -12,11 +13,13 @@ export class DataService {
     private guilds = Guild;
     private customCommands = CustomCommand;
     private blacklist = BlacklistEntry;
+    private caughtSpindas = CaughtSpinda;
 
     private cache = {
         guilds: new Map<string, GuildAttributes>(),
         customCommands: new Map<string, Dictionary<string>>(),
         blacklist: new Map<string, Set<string>>(),
+        caughtSpindas: new Map<string, CaughtSpindaAttributes | null>(),
     } as const;
 
     constructor() {
@@ -46,6 +49,7 @@ export class DataService {
         this.guilds.initialize(this.sequelize);
         this.customCommands.initialize(this.sequelize);
         this.blacklist.initialize(this.sequelize);
+        this.caughtSpindas.initialize(this.sequelize);
 
         // TODO: Set up migrations
         await this.sequelize.sync({ alter: true });
@@ -55,6 +59,7 @@ export class DataService {
         this.cache.guilds.clear();
         this.cache.customCommands.clear();
         this.cache.blacklist.clear();
+        this.cache.caughtSpindas.clear();
     }
 
     private async getGuildModel(id: string): Promise<Guild> {
@@ -156,5 +161,22 @@ export class DataService {
         const removed = (await this.blacklist.destroy({ where: { guildId, userId }})) !== 0;
         this.cache.blacklist.get(guildId).delete(userId);
         return removed;
+    }
+
+    private async getCaughtSpindaModel(userId: string): Promise<CaughtSpinda | null> {
+        return await this.caughtSpindas.findOne({ where: { userId }});
+    }
+
+    public async getCaughtSpinda(userId: string): Promise<CaughtSpindaAttributes | null> {
+        if (!this.cache.caughtSpindas.has(userId)) {
+            const model = await this.getCaughtSpindaModel(userId);
+            this.cache.caughtSpindas.set(userId, model.get());
+        }
+        return this.cache.caughtSpindas.get(userId);
+    }
+
+    public async catchSpinda(userId: string, spinda: GeneratedSpinda): Promise<void> {
+        const updated = (await this.caughtSpindas.upsert({ userId, ...spinda, }))[0];
+        this.cache.caughtSpindas.set(updated.userId, updated.get());
     }
 }
