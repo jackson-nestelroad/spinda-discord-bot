@@ -40,6 +40,7 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
             userId: {
                 type: DataTypes.STRING,
                 allowNull: false,
+                unique: true,
             },
             generatedAt: {
                 type: DataTypes.DATE,
