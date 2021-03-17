@@ -5,8 +5,10 @@ import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
 import { BlacklistEntry } from './model/blacklist';
 import { CaughtSpinda, CaughtSpindaAttributes, GeneratedSpinda } from './model/caught-spinda';
+import { BaseService } from '../services/base';
+import { DiscordBot } from '../bot';
 
-export class DataService {
+export class DataService extends BaseService {
     public static readonly defaultPrefix: string = '>';
 
     private sequelize: Sequelize;
@@ -22,7 +24,9 @@ export class DataService {
         caughtSpindas: new Map<string, CaughtSpindaAttributes | null>(),
     } as const;
 
-    constructor() {
+    constructor(bot: DiscordBot) {
+        super(bot);
+        
         const options: Options = {
             logging: false,
         };

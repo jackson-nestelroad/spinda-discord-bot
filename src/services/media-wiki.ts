@@ -1,19 +1,17 @@
 import { Message } from 'discord.js';
 import axios from 'axios';
-import { DiscordBot } from '../bot';
+import { BaseService } from './base';
 
 interface ConfirmedSiteEntry {
     siteName: string;
     homePage: string;
 }
 
-export class MediaWikiService {
+export class MediaWikiService extends BaseService {
     private readonly confirmPath = '/api.php?action=query&meta=siteinfo&siprop=general&format=json';
 
     // Sites confirmed to be MediaWiki sites that are safe to query
     private readonly confirmedSites: Map<string, ConfirmedSiteEntry> = new Map();
-
-    public constructor(private bot: DiscordBot) { }
 
     private throwNotMediaWiki(site: string): never {
         throw new Error(`${site} does not appear to be a MediaWiki API endpoint.`);

@@ -1,5 +1,4 @@
 import { GuildMember } from 'discord.js';
-import { DiscordBot } from '../../bot';
 import { Command, CommandPermission, CommandParameters } from '../../commands/lib/base';
 import { Environment } from '../../data/environment';
 

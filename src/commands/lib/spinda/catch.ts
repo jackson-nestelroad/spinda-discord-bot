@@ -1,6 +1,5 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { SpindaCommandNames } from './command-names';
-import { SpindaCommand } from './spinda';
 
 export class CatchCommand extends Command {
     public name = SpindaCommandNames.Catch;
@@ -11,14 +10,13 @@ export class CatchCommand extends Command {
     public cooldown = StandardCooldowns.High;
 
     public async run({ bot, msg, guild }: CommandParameters) {
-        const generateCommand = bot.commands.get(SpindaCommandNames.Generate) as SpindaCommand;
-        const lastSpinda = generateCommand.getLastGeneratedForChannel(msg.channel.id);
+        const lastSpinda = bot.spindaGeneratorService.getLastGeneratedForChannel(msg.channel.id);
         if (!lastSpinda) {
             throw new Error(`No new Spinda found in this channel. Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`);
         }
 
         await bot.dataService.catchSpinda(msg.author.id, lastSpinda);
-        generateCommand.deleteLastGeneratedForChannel(msg.channel.id);
+        bot.spindaGeneratorService.deleteLastGeneratedForChannel(msg.channel.id);
         
         const embed = bot.createEmbed({ success: true });
         embed.setDescription(`Successfully caught! You can regenerate your Spinda at any time using \`${guild.prefix}${SpindaCommandNames.View}\`. Note that any future catches will overwrite this Spinda.`);

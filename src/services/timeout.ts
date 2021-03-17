@@ -1,7 +1,8 @@
 import { VariableTimedCacheSet } from '../util/timed-cache';
 import { User } from 'discord.js';
+import { BaseService } from './base';
 
-export class TimeoutService {
+export class TimeoutService extends BaseService {
     public readonly timeoutCount: Map<string, number> = new Map();
     public readonly timeoutUsers: VariableTimedCacheSet<string> = new VariableTimedCacheSet();
 

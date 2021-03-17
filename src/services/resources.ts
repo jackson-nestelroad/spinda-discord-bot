@@ -1,10 +1,9 @@
 import { resolve } from 'path';
+import { BaseService } from './base';
 
-export class ResourceService {
+export class ResourceService extends BaseService {
     private readonly root: string = resolve(resolve(process.cwd(), 'resources'));
     private readonly paths: Map<string, string> = new Map();
-    
-    public constructor() { }
 
     public resolve(path: string): string {
         if (!this.paths[path]) {

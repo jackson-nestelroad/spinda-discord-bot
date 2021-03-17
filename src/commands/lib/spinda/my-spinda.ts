@@ -1,7 +1,6 @@
 import { MessageAttachment } from 'discord.js';
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { SpindaCommandNames } from './command-names';
-import { SpindaCommand } from './spinda';
 
 export class MySpindaCommand extends Command {
     public name = SpindaCommandNames.View;
@@ -12,13 +11,12 @@ export class MySpindaCommand extends Command {
     public cooldown = StandardCooldowns.High;
 
     public async run({ bot, msg, guild }: CommandParameters) {
-        const generateCommand = bot.commands.get(SpindaCommandNames.Generate) as SpindaCommand;
         const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
         if (!caughtSpinda) {
             throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch}\` to catch the last generated Spinda in the channel.`);
         }
 
-        const result = await generateCommand.generate(bot, caughtSpinda);
+        const result = await bot.spindaGeneratorService.generate(caughtSpinda);
 
         const embed = bot.createEmbed();
         const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');

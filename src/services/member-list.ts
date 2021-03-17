@@ -1,11 +1,9 @@
 import { GuildMember, Collection } from 'discord.js';
-import { DiscordBot } from '../bot';
 import { TimedCache } from '../util/timed-cache';
+import { BaseService } from './base';
 
-export class MemberListService {
+export class MemberListService extends BaseService {
     private readonly cache: TimedCache<string, Collection<string, GuildMember>> = new TimedCache({ minutes: 30 });
-    
-    public constructor(private bot: DiscordBot) { }
 
     private async fetchMemberListForGuild(id: string): Promise<Collection<string, GuildMember>> {
         const guild = this.bot.client.guilds.cache.get(id);

@@ -3,6 +3,7 @@ import { inspect } from 'util';
 import { Environment } from '../../../data/environment';
 import { runInContext, createContext } from 'vm';
 import { DiscordUtil } from '../../../util/discord';
+import * as DiscordJS from 'discord.js'
 
 // This command is heavily unsafe, use at your own risk
 export class EvalCommand extends Command {
@@ -67,6 +68,7 @@ export class EvalCommand extends Command {
             params,
             bot,
             msg,
+            discord: DiscordJS,
             setTimeout,
             setInterval,
             clearInterval,

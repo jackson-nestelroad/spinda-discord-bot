@@ -21,6 +21,7 @@ import { MediaWikiService } from './services/media-wiki';
 import { ResourceService } from './services/resources';
 import { TimeoutService } from './services/timeout';
 import { TimedCache } from './util/timed-cache';
+import { SpindaGeneratorService } from './commands/lib/spinda/generator';
 
 interface EmbedOptions {
     footer?: boolean | string;
@@ -35,13 +36,14 @@ export class DiscordBot {
 
     public commands: Map<string, Command>;
 
-    public readonly startedAt: Date;
-    public readonly client: Client;
-    public readonly dataService: DataService;
-    public readonly resourceService: ResourceService;
-    public readonly memberListService: MemberListService;
-    public readonly mediaWikiService: MediaWikiService;
-    public readonly timeoutService: TimeoutService;
+    public readonly startedAt = new Date();
+    public readonly client = new Client();
+    public readonly dataService = new DataService(this);
+    public readonly resourceService = new ResourceService(this);
+    public readonly memberListService = new MemberListService(this);
+    public readonly mediaWikiService = new MediaWikiService(this);
+    public readonly timeoutService = new TimeoutService(this);
+    public readonly spindaGeneratorService = new SpindaGeneratorService(this);
 
     private events: Array<BaseEvent<any>> = [];
     private readonly colors = {
@@ -49,16 +51,6 @@ export class DiscordBot {
         error: '#F04947',
         success: '#43B581',
     } as const;
-
-    constructor() {
-        this.startedAt = new Date();
-        this.client = new Client();
-        this.dataService = new DataService();
-        this.resourceService = new ResourceService();
-        this.memberListService = new MemberListService(this);
-        this.mediaWikiService = new MediaWikiService(this);
-        this.timeoutService = new TimeoutService();
-    }
 
     public refreshCommands() {
         this.commands = Commands.buildCommandMap();
