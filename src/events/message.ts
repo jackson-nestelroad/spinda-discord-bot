@@ -71,8 +71,10 @@ export class MessageEvent extends BaseEvent<typeof event> {
             if (msg.mentions.users.has(this.bot.client.user.id)) {
                 // Bot mention is the message's prefix
                 const mentionIndex = msg.content.indexOf(this.bot.client.user.id);
-                if (mentionIndex === 2 || mentionIndex === 3) {
-                    let content = msg.content.substr(this.bot.client.user.toString().length + (mentionIndex - 2)).trim();
+                const endOfMentionString = mentionIndex + this.bot.client.user.id.length;
+                if ((mentionIndex === 2 || (mentionIndex === 3 && msg.content[2] === '!'))
+                    && msg.content[0] === '<' && msg.content[1] === '@' && msg.content[endOfMentionString] === '>') {
+                    let content = msg.content.substr(endOfMentionString + 1).trim();
                     await this.runCommand(content, msg, guild);
                 }
             }
