@@ -35,7 +35,6 @@ export class ImposterCommand extends Command {
             '\u{2737}',
         ] },
         { weight: 1, value: [
-            
             '\u{25D0}',
             '\u{25D1}',
         ] },

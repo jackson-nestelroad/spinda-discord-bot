@@ -82,7 +82,6 @@ export class MessageEvent extends BaseEvent<typeof event> {
         else {
             let content = msg.content.substr(prefix.length);
             await this.runCommand(content, msg, guild);
-
         }
     }
 }

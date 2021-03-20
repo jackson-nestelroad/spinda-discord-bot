@@ -10,7 +10,7 @@ export abstract class BaseEvent<K extends keyof ClientEvents> {
         this.bot.client.on(eventName, this.run.bind(this));
     }
 
-    public abstract async run(...args: ClientEvents[K]): Promise<void>;
+    public abstract run(...args: ClientEvents[K]): Promise<void>;
 }
 
 export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEvent<K> {
