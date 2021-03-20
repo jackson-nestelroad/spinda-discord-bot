@@ -36,7 +36,7 @@ export const StandardCooldowns = {
 export abstract class Command {
     public abstract readonly name: string;
     public abstract readonly args: string;
-    public abstract readonly description: string;
+    public abstract readonly description: string | string[];
     public abstract readonly category: CommandCategory;
     public abstract readonly permission: CommandPermission;
 
@@ -62,6 +62,7 @@ export abstract class Command {
 
 export interface Command {
     readonly cooldown?: ExpireAge;
+    readonly examples?: string[];
 
     addHelpFields?(embed: MessageEmbed): void;
 }

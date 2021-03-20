@@ -47,12 +47,15 @@ export class HelpCommand extends Command {
             if (bot.commands.has(needHelp)) {
                 const cmd = bot.commands.get(needHelp);
                 embed.setTitle(`${prefix}${needHelp} ${cmd.args}`);
-                embed.addField('Description', cmd.description);
+                embed.addField('Description', Array.isArray(cmd.description) ? cmd.description.join('\n\n') : cmd.description);
                 embed.addField('Category', cmd.category, true);
                 embed.addField('Permission', CommandPermission[cmd.permission], true);
                 embed.addField('Cooldown', cmd.cooldown ? ExpireAgeConversion.toString(cmd.cooldown) : 'None', true);
                 if (cmd.addHelpFields) {
                     cmd.addHelpFields(embed);
+                }
+                if (cmd.examples && cmd.examples.length > 0) {
+                    embed.addField('Examples', cmd.examples.map(example => `${prefix}${needHelp} ${example}`).join('\n'));
                 }
             }
             else if (category = Object.values(CommandCategory).find(val => DiscordUtil.baseStringEqual(needHelp, val))) {
