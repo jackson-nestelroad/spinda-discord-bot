@@ -14,7 +14,7 @@ export class SpindaCommand extends Command {
         const result = await bot.spindaGeneratorService.generate();
         
         // Save it as the last Spinda generated in the channel
-        bot.spindaGeneratorService.setLastGeneratedForChannel(msg.channel.id, result.info);
+        bot.spindaGeneratorService.pushToChannelHistory(msg.channel.id, result.info);
 
         // Send the image
         await msg.channel.send(new MessageAttachment(result.buffer));

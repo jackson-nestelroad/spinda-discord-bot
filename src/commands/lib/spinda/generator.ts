@@ -2,6 +2,7 @@ import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D } from
 import { Message, MessageAttachment } from 'discord.js';
 import { GeneratedSpinda, SpindaColorChange } from '../../../data/model/caught-spinda';
 import { BaseService } from '../../../services/base';
+import { CircularBuffer } from '../../../util/circular-buffer';
 import { Color } from './util/color';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
@@ -59,7 +60,8 @@ export class SpindaGeneratorService extends BaseService {
     private tempCanvas: Canvas = createCanvas(0, 0);
     private tempCtx: CanvasRenderingContext2D = this.tempCanvas.getContext('2d');
 
-    private readonly history: Map<string, GeneratedSpinda> = new Map();
+    public static readonly historySize: number = 3;
+    private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
 
     private clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -204,16 +206,28 @@ export class SpindaGeneratorService extends BaseService {
         }
     }
 
-    public setLastGeneratedForChannel(id: string, spinda: GeneratedSpinda) {
-        this.history.set(id, spinda);
+    private getChannelHistory(id: string): CircularBuffer<GeneratedSpinda> {
+        let buffer = this.history.get(id);
+        if (!buffer) {
+            buffer = new CircularBuffer(SpindaGeneratorService.historySize);
+            this.history.set(id, buffer);
+        }
+        return buffer;
     }
 
-    public getLastGeneratedForChannel(id: string): GeneratedSpinda | undefined {
-        return this.history.get(id);
+    public pushToChannelHistory(id: string, spinda: GeneratedSpinda) {
+        const buffer = this.getChannelHistory(id);
+        buffer.push(spinda);
     }
 
-    public deleteLastGeneratedForChannel(id: string) {
-        this.history.delete(id);
+    public getFromChannelHistory(id: string, offset: number = 0): GeneratedSpinda | undefined {
+        const buffer = this.getChannelHistory(id);
+        return buffer.get(offset);
+    }
+
+    public clearChannelHistory(id: string) {
+        const buffer = this.getChannelHistory(id);
+        buffer.clear();
     }
 
     public async generate(spinda: GeneratedSpinda = this.newSpinda()): Promise<SpindaGenerationResult> {
