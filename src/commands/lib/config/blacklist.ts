@@ -1,5 +1,6 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { MessageEmbed } from 'discord.js';
+import { EmbedTemplates } from '../../../util/embed';
 
 export class BlacklistCommand extends Command {
     public name = 'blacklist';
@@ -36,7 +37,7 @@ export class BlacklistCommand extends Command {
             }
 
             // Display blacklist
-            embed = bot.createEmbed({ footer: false, timestamp: false });
+            embed = bot.createEmbed(EmbedTemplates.Bare);
             embed.setTitle(`Blacklist for ${msg.guild.name}`);
             const blacklistArray = [...blacklist.values()];
             
@@ -61,7 +62,7 @@ export class BlacklistCommand extends Command {
         }
         // Add or remove member
         else {
-            embed = bot.createEmbed({ footer: false, timestamp: false, success: true });
+            embed = bot.createEmbed(EmbedTemplates.Success);
             if (blacklist.has(member.id)) {
                 await bot.dataService.removeFromBlacklist(guild.id, member.id);
                 embed.setDescription(`Removed ${member.user.username} from the blacklist`);

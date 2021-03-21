@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { TextChannel } from 'discord.js';
 import { LogOptionBit } from '../../../data/model/guild';
+import { EmbedTemplates } from '../../../util/embed';
 
 enum LogCommandOption {
     Channel = 'channel',
@@ -167,7 +168,7 @@ ${this.formatBitOptions()}
             }
 
             await bot.dataService.updateGuild(guild);
-            const embed = bot.createEmbed({ success: true });
+            const embed = bot.createEmbed(EmbedTemplates.Success);
             embed.setDescription('Successfully updated log configuration.');
             await msg.channel.send(embed);
         }

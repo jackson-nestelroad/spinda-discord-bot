@@ -1,3 +1,4 @@
+import { EmbedTemplates } from '../../../util/embed';
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
@@ -34,7 +35,7 @@ export class CatchCommand extends Command {
         await bot.dataService.catchSpinda(msg.author.id, lastSpinda);
         bot.spindaGeneratorService.clearChannelHistory(msg.channel.id);
         
-        const embed = bot.createEmbed({ success: true });
+        const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${guild.prefix}${SpindaCommandNames.View}\`. Note that any future catches will overwrite this Spinda.`);
         await msg.channel.send(embed);
     }

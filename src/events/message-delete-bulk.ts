@@ -2,6 +2,7 @@ import { Message, TextChannel, Channel, Collection, Snowflake, MessageAttachment
 import { BaseLogEvent } from './base';
 import { DiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
+import { EmbedTemplates } from '../util/embed';
 
 const event = 'messageDeleteBulk';
 
@@ -17,7 +18,7 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<typeof event> {
             const firstMessage = messages.first();
             const channel = await this.getDestination(firstMessage.guild?.id ?? null);
             if (channel) {
-                const embed = this.bot.createEmbed({ footer: true, timestamp: true });
+                const embed = this.bot.createEmbed(EmbedTemplates.Log);
                 
                 embed.setTitle('Bulk Message Deletion');
                 embed.setDescription(`${messages.size} message${messages.size === 1 ? '' : 's'} deleted in ${firstMessage.channel.toString()}`);

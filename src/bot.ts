@@ -6,7 +6,6 @@ import { Command } from './commands/lib/base';
 import { Commands } from './commands';
 import { DataService } from './data/data-service';
 import { Environment } from './data/environment';
-import { SpindaColorPalettes } from './commands/lib/spinda/util/spinda-colors';
 import { MessageDeleteEvent } from './events/message-delete';
 import { DiscordUtil } from './util/discord';
 import { GuildMemberAddEvent } from './events/guild-member-add';
@@ -22,13 +21,7 @@ import { ResourceService } from './services/resources';
 import { TimeoutService } from './services/timeout';
 import { TimedCache } from './util/timed-cache';
 import { SpindaGeneratorService } from './commands/lib/spinda/generator';
-
-interface EmbedOptions {
-    footer?: boolean | string;
-    timestamp?: boolean;
-    error?: boolean;
-    success?: boolean;
-}
+import { EmbedOptions, EmbedProps, EmbedTemplates, EmbedType } from './util/embed';
 
 export class DiscordBot {
     public readonly name = 'Spinda';
@@ -46,45 +39,20 @@ export class DiscordBot {
     public readonly spindaGeneratorService = new SpindaGeneratorService(this);
 
     private events: Array<BaseEvent<any>> = [];
-    private readonly colors = {
-        default: SpindaColorPalettes.normal.base.hexString(),
-        error: '#F04947',
-        success: '#43B581',
-    } as const;
 
     public refreshCommands() {
         this.commands = Commands.buildCommandMap();
     }
 
-    public createEmbed(options: EmbedOptions = { 
-        footer: true,
-        timestamp: false,
-    }): MessageEmbed {
-        const embed = new MessageEmbed();
-        
-        if (options.error) {
-            embed.setColor(this.colors.error);
+    public createEmbed(options: EmbedProps | EmbedOptions = new EmbedOptions()): MessageEmbed {
+        if (!(options instanceof EmbedOptions)) {
+            options = new EmbedOptions(options);
         }
-        else if (options.success) {
-            embed.setColor(this.colors.success);
-        }
-        else {
-            embed.setColor(this.colors.default);
-        }
-        
-        if (options.timestamp) {
-            embed.setTimestamp();
-        }
-
-        if (options.footer) {
-            embed.setFooter(typeof options.footer === 'string' ? options.footer : this.name, this.iconUrl);
-        }
-
-        return embed;
+        return (options as EmbedOptions).create(this);
     }
 
     public async sendError(msg: Message, error: any) {
-        const embed = this.createEmbed({ footer: false, timestamp: false, error: true });
+        const embed = this.createEmbed(EmbedTemplates.Error);
         embed.setDescription(error.message || error.toString());
         await msg.channel.send(embed);
     }

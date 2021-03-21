@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { MessageEmbed } from 'discord.js';
+import { EmbedTemplates } from '../../../util/embed';
 
 export class SetCommandCommand extends Command {
     public name = 'set-command';
@@ -35,7 +36,7 @@ You may use the following variables in the command message to customize your com
 
         await bot.dataService.setCustomCommand(msg.guild.id, command, content);
         
-        const embed = bot.createEmbed({ footer: false, timestamp: false, success: true });
+        const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully set command \`${command}\`.`);
         await msg.channel.send(embed);
     }

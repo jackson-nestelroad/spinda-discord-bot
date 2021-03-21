@@ -1,5 +1,6 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { DiscordUtil } from '../../../util/discord';
+import { EmbedTemplates } from '../../../util/embed';
 
 export class PrefixCommand extends Command {
     public name = 'prefix';
@@ -10,7 +11,7 @@ export class PrefixCommand extends Command {
     public cooldown = StandardCooldowns.Medium;
 
     public async run({ bot, msg, content, guild }: CommandParameters) {
-        const embed = bot.createEmbed({ footer: false, timestamp: false });
+        const embed = bot.createEmbed(EmbedTemplates.Bare);
         
         let newPrefix = content;
         

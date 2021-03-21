@@ -1,3 +1,4 @@
+import { EmbedTemplates } from '../../../util/embed';
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 
 export class RemoveCommandCommand extends Command {
@@ -19,7 +20,7 @@ export class RemoveCommandCommand extends Command {
             throw new Error(`Command \`${command}\` does not exist.`);
         }
         
-        const embed = bot.createEmbed({ footer: false, timestamp: false, success: true });
+        const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully removed command \`${command}\`.`);
         await msg.channel.send(embed);
     }
