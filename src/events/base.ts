@@ -5,9 +5,15 @@ import { LogOptionBit } from '../data/model/guild';
 export abstract class BaseEvent<K extends keyof ClientEvents> {
     constructor(
         protected bot: DiscordBot,
-        eventName: K,
+        private name: K,
     ) {
-        this.bot.client.on(eventName, this.run.bind(this));
+        this.bot.client.on(name, this.execute.bind(this));
+    }
+
+    private execute(...args: ClientEvents[K]) {
+        this.run(...args).catch(error => {
+            console.error(`Uncaught exception in ${this.name} event handler: ${error}`);
+        });
     }
 
     public abstract run(...args: ClientEvents[K]): Promise<void>;
