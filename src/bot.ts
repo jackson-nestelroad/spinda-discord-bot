@@ -21,7 +21,7 @@ import { ResourceService } from './services/resources';
 import { TimeoutService } from './services/timeout';
 import { TimedCache } from './util/timed-cache';
 import { SpindaGeneratorService } from './commands/lib/spinda/generator';
-import { EmbedOptions, EmbedProps, EmbedTemplates, EmbedType } from './util/embed';
+import { EmbedOptions, EmbedProps, EmbedTemplates } from './util/embed';
 
 export class DiscordBot {
     public readonly name = 'Spinda';
