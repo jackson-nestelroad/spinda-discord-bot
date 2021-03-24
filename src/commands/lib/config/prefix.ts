@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 import { EmbedTemplates } from '../../../util/embed';
+import { MessageEmbed } from 'discord.js';
 
 export class PrefixCommand extends Command {
     public name = 'prefix';
@@ -10,9 +11,7 @@ export class PrefixCommand extends Command {
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
 
-    public async run({ bot, msg, content, guild }: CommandParameters) {
-        const embed = bot.createEmbed(EmbedTemplates.Bare);
-        
+    public async run({ bot, msg, content, guild }: CommandParameters) {        
         let newPrefix = content;
         
         const codeLine = DiscordUtil.getCodeLine(newPrefix);
@@ -20,10 +19,13 @@ export class PrefixCommand extends Command {
             newPrefix = codeLine.content;
         }
 
+        let embed: MessageEmbed;
         if (!newPrefix) {
+            embed = bot.createEmbed(EmbedTemplates.Bare);
             embed.setDescription(`The prefix for this guild is \`${guild.prefix}\``);
         }
         else {
+            embed = bot.createEmbed(EmbedTemplates.Success);
             guild.prefix = newPrefix;
             await bot.dataService.updateGuild(guild);
             embed.setDescription(`Changed guild prefix to \`${guild.prefix}\``);
