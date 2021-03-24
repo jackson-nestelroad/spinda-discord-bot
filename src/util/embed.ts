@@ -11,7 +11,7 @@ export enum EmbedType {
 
 export type EmbedProps = PartialProps<EmbedOptions>;
 
-export class EmbedOptions extends PartialConstructible<EmbedOptions> {
+export class EmbedOptions {
     public footer: boolean | string = true;
     public timestamp: boolean = false;
     public type: EmbedType = EmbedType.Normal;
@@ -23,9 +23,15 @@ export class EmbedOptions extends PartialConstructible<EmbedOptions> {
         blank: '#2F3136',
     } as const;
 
+    public constructor(props?: PartialProps<EmbedProps>) {
+        if (props) {
+            Object.assign(this, props);
+        }
+    }
+
     public create(bot: DiscordBot): MessageEmbed {
         const embed = new MessageEmbed();
-
+        
         switch (this.type) {
             case EmbedType.Error: embed.setColor(this.colors.error); break;
             case EmbedType.Success: embed.setColor(this.colors.success); break;
