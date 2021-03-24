@@ -1,7 +1,7 @@
 import { Message, MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
-import { ExpireAge, TimedCache } from '../../util/timed-cache';
+import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 
 export enum CommandCategory {
     Config = 'Config',
@@ -26,12 +26,14 @@ export interface CommandParameters {
     guild: GuildAttributes,
 }
 
-export const StandardCooldowns = {
+const StandardCooldownObject = {
     Low: { seconds: 3 },
     Medium: { seconds: 5 },
     High: { seconds: 10 },
     Minute: { minutes: 1 },
 } as const;
+
+export const StandardCooldowns: Readonly<Record<keyof typeof StandardCooldownObject, Readonly<ExpireAgeFormat>>> = StandardCooldownObject;
 
 export abstract class Command {
     public abstract readonly name: string;
