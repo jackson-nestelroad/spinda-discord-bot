@@ -193,7 +193,7 @@ export class ScreenshotCommand extends Command {
         }
         else {
             const date = new Date(givenTimestamp);
-            if (isNaN(date as any)) {
+            if (isNaN(date.valueOf())) {
                 throw new Error(`Invalid timestamp.`);
             }
             timestamp = date.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: 'numeric' })

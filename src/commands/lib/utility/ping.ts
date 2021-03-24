@@ -12,6 +12,6 @@ export class PingCommand extends Command {
         const start = new Date();
         const newMsg = await msg.channel.send('Pong!');
         const end = new Date();
-        await newMsg.edit(`Pong! (${((end as any) - (start as any))} ms)`);
+        await newMsg.edit(`Pong! (${end.valueOf() - start.valueOf()} ms)`);
     }
 }

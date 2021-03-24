@@ -22,7 +22,7 @@ export class CleanCommand extends Command {
         const channelHistory = await msg.channel.messages.fetch({ limit: 100 });
         const now = new Date();
         const toDelete = channelHistory
-            .filter(msg => msg.author.id === bot.client.user.id && (now as any) - (msg.createdAt as any) < this.ageLimit)
+            .filter(msg => msg.author.id === bot.client.user.id && now.valueOf() - msg.createdAt.valueOf() < this.ageLimit)
             .array().slice(0, numberToDelete);
         
 

@@ -11,7 +11,7 @@ export class UptimeCommand extends Command {
 
     public async run({ bot, msg }: CommandParameters) {
         const now = new Date();
-        const diff = (now as any) - (bot.startedAt as any);
+        const diff = now.valueOf() - bot.startedAt.valueOf();
         const duration = moment.duration(diff);
 
         let reply: string[] = [];
