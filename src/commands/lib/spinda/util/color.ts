@@ -28,12 +28,7 @@ export class Color {
     }
 
     public hexString(): string {
-        let r = this.red.toString(16);
-        let g = this.green.toString(16);
-        let b = this.blue.toString(16);
-        if (this.red < 0x10) r = '0' + r;
-        if (this.green < 0x10) g = '0' + g;
-        if (this.blue < 0x10) b ='0' + b;
-        return `#${r}${g}${b}`;
+        const str = this.hex.toString(16).toUpperCase();
+        return str.length < 6 ? '0'.repeat(6 - str.length) + str : str;
     }
 }
