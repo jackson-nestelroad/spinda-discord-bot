@@ -1,6 +1,7 @@
 import { MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../bot';
 import { SpindaColorPalettes } from '../commands/lib/spinda/util/spinda-colors';
+import { PartialConstructible, PartialProps } from './partial-constructible';
 
 export enum EmbedType {
     Normal,
@@ -8,11 +9,9 @@ export enum EmbedType {
     Success,
 }
 
-type ExcludeFunctionProps<T> = Omit<T, { [K in keyof T]-?: T[K] extends Function ? K : never }[keyof T]>;
-type PartialProps<T> = ExcludeFunctionProps<T> | Partial<T>;
 export type EmbedProps = PartialProps<EmbedOptions>;
 
-export class EmbedOptions {
+export class EmbedOptions extends PartialConstructible<EmbedOptions> {
     public footer: boolean | string = true;
     public timestamp: boolean = false;
     public type: EmbedType = EmbedType.Normal;
@@ -21,13 +20,8 @@ export class EmbedOptions {
         default: SpindaColorPalettes.normal.base.hexString(),
         error: '#F04947',
         success: '#43B581',
+        blank: '#2F3136',
     } as const;
-
-    constructor(options?: EmbedProps) {
-        if (options) {
-            Object.assign(this, options);
-        }
-    }
 
     public create(bot: DiscordBot): MessageEmbed {
         const embed = new MessageEmbed();
