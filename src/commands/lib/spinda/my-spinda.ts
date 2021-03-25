@@ -13,7 +13,7 @@ export class MySpindaCommand extends Command {
     public async run({ bot, msg, guild }: CommandParameters) {
         const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
         if (!caughtSpinda) {
-            throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch}\` to catch the last generated Spinda in the channel.`);
+            throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch} N\` to catch the one of the last generated Spinda in the channel.`);
         }
 
         const result = await bot.spindaGeneratorService.generate(caughtSpinda);
