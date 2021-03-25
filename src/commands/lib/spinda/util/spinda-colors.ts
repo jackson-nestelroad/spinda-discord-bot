@@ -1,32 +1,67 @@
+import { SpindaColorChange } from '../../../../data/model/caught-spinda';
 import { Color } from './color';
 
 export interface SpindaColorPalette {
     readonly base: Color;
     readonly shadow: Color;
     readonly outline: Color;
-    readonly highlight: Color;
 }
 
 export const SpindaColorPalettes = {
     base: {
-        base: new Color(255, 219,170),
-        shadow: new Color(188, 161, 147),
-        outline: new Color(107, 92, 101),
-        highlight: new Color(255, 247, 221),
+        base: Color.Hex(0xFFDBAA),
+        shadow: Color.Hex(0xBCA193),
+        outline: Color.Hex(0x6B5C65),
     },
     normal: {
-        base: new Color(247, 93, 93),
-        shadow: new Color(181, 68, 89),
-        outline: new Color(104, 39, 66),
-        highlight: new Color(255, 167, 142),
+        base: Color.Hex(0xF75D5D),
+        shadow: Color.Hex(0xB54459),
+        outline: Color.Hex(0x682742),
     },
-    shiny: {
-        base: new Color(172, 196, 78),
-        shadow: new Color(121, 137, 85),
-        outline: new Color(69, 78, 79),
-        highlight: new Color(217, 219, 87),
+    black: Color.Hex(0x000000),
+    white: Color.Hex(0xFFFFFF),
+    transparent: Color.HexAlpha(0x00000000),
+} as const;
+
+export const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaColorPalette } = {
+    [SpindaColorChange.Shiny]: {
+        base: Color.Hex(0xACC44E),
+        shadow: Color.Hex(0x798955),
+        outline: Color.Hex(0x454E4F),
     },
-    black: new Color(0, 0, 0),
-    white: new Color(255, 255, 255),
-    transparent: new Color(0, 0, 0, 0),
+    [SpindaColorChange.Retro]: {
+        base: Color.Hex(0xEA8356),
+        shadow: Color.Hex(0xA55C5C),
+        outline: Color.Hex(0x5B334F),
+    },
+    [SpindaColorChange.Gold]: {
+        base: Color.Hex(0xF7BD1D),
+        shadow: Color.Hex(0xB58A36),
+        outline: Color.Hex(0x725742),
+    },
+    [SpindaColorChange.Green]: {
+        base: Color.Hex(0x52A55B),
+        shadow: Color.Hex(0x366D58),
+        outline: Color.Hex(0x1C3852),
+    },
+    [SpindaColorChange.Blue]: {
+        base: Color.Hex(0x40B7F7),
+        shadow: Color.Hex(0x2E82D1),
+        outline: Color.Hex(0x1B4FA3),
+    },
+    [SpindaColorChange.Purple]: {
+        base: Color.Hex(0xC467EF),
+        shadow: Color.Hex(0x8446BA),
+        outline: Color.Hex(0x45268E),
+    },
+    [SpindaColorChange.Pink]: {
+        base: Color.Hex(0xFF84EE),
+        shadow: Color.Hex(0xAD5AC2),
+        outline: Color.Hex(0x663693),
+    },
+    [SpindaColorChange.Gray]: {
+        base: Color.Hex(0x717187),
+        shadow: Color.Hex(0x46466D),
+        outline: Color.Hex(0x29295E),
+    },
 } as const;

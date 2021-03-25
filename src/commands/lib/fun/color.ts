@@ -23,7 +23,7 @@ export class ColorCommand extends Command {
 
         // Random color
         if (!content) {
-            color = new Color(Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256));
+            color = Color.Hex(Math.random() * 0x1000000);
         }
         else {
             const rgb = content.split(',');
@@ -35,7 +35,7 @@ export class ColorCommand extends Command {
                 if (isNaN(r) || isNaN(g) || isNaN(b)) {
                     throw new Error(this.errorMessage);
                 }
-                color = new Color(r, g, b);
+                color = Color.RGB(r, g, b);
             }
             // Hexadecimal format, or nothing
             else {
@@ -49,7 +49,7 @@ export class ColorCommand extends Command {
                 if (isNaN(r) || isNaN(g) || isNaN(b)) {
                     throw new Error(this.errorMessage);
                 }
-                color = new Color(r, g, b);
+                color = Color.RGB(r, g, b);
             }
         }
 
