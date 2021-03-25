@@ -169,7 +169,7 @@ export class SpindaGeneratorService extends BaseService {
     }
 
     private getRandomPID(): number {
-        return Math.floor(Math.random() * 0xFFFFFFFF);
+        return Math.floor(Math.random() * 0x100000000);
     }
 
     private drawOutline() {
