@@ -1,7 +1,7 @@
 import { MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../bot';
 import { SpindaColorPalettes } from '../commands/lib/spinda/util/spinda-colors';
-import { PartialConstructible, PartialProps } from './partial-constructible';
+import { PartialProps } from './partial-constructible';
 
 export enum EmbedType {
     Normal,

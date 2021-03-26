@@ -1,5 +1,5 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
-import { Color } from '../spinda/util/color';
+import { Color, RGBColor } from '../../../util/color';
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
 
@@ -19,7 +19,7 @@ export class ColorCommand extends Command {
     private readonly ctx: CanvasRenderingContext2D = this.canvas.getContext('2d');
 
     public async run({ bot, msg, content }: CommandParameters) {
-        let color: Color = null;
+        let color: RGBColor = null;
 
         // Random color
         if (!content) {

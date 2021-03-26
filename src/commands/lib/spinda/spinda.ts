@@ -1,6 +1,7 @@
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { MessageAttachment } from 'discord.js';
 import { SpindaCommandNames } from './command-names';
+import { SpindaColorChange } from '../../../data/model/caught-spinda';
 
 export class SpindaCommand extends Command {
     public name = SpindaCommandNames.Generate;
@@ -17,6 +18,10 @@ export class SpindaCommand extends Command {
         bot.spindaGeneratorService.pushToChannelHistory(msg.channel.id, result.info);
 
         // Send the image
-        await msg.channel.send(new MessageAttachment(result.buffer));
+        const sent = await msg.channel.send(new MessageAttachment(result.buffer));
+
+        if (result.info.colorChange === SpindaColorChange.Shiny) {
+            await sent.react('\u{2728}');
+        }
     }
 }

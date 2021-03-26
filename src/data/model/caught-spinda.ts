@@ -1,8 +1,8 @@
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export enum SpindaColorChange {
+    Random = -1,
     None,
-    Random,
     Shiny,
     Retro,
     Gold,
@@ -11,6 +11,7 @@ export enum SpindaColorChange {
     Purple,
     Pink,
     Gray,
+    Custom,
 }
 
 export enum SpindaFeatures {
@@ -26,6 +27,7 @@ export interface GeneratedSpinda {
     generatedAt: Date;
     colorChange: SpindaColorChange;
     features: number;
+    customColor: number;
 }
 
 export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
@@ -33,7 +35,7 @@ export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
     readonly userId: string;
 }
 
-interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features'> { };
+interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> { };
 
 export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
     implements CaughtSpindaAttributes {
@@ -43,6 +45,7 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
     public readonly pid: number;
     public readonly colorChange: SpindaColorChange;
     public readonly features: number;
+    public readonly customColor: number;
     
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -76,7 +79,12 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
                 type: DataTypes.INTEGER,
                 allowNull: false,
                 defaultValue: SpindaFeatures.None,
-            }
+            },
+            customColor: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                defaultValue: null,
+            },
         }, {
             sequelize,
             tableName: 'caughtspindas',

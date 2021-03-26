@@ -1,10 +1,10 @@
 import { SpindaColorChange } from '../../../../data/model/caught-spinda';
-import { Color } from './color';
+import { Color, RGBColor } from '../../../../util/color';
 
 export interface SpindaColorPalette {
-    readonly base: Color;
-    readonly shadow: Color;
-    readonly outline: Color;
+    readonly base: RGBColor;
+    readonly shadow: RGBColor;
+    readonly outline: RGBColor;
 }
 
 export const SpindaColorPalettes = {

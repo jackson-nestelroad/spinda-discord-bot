@@ -5,10 +5,10 @@ import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../dat
 import { BaseService } from '../../../services/base';
 import { CircularBuffer } from '../../../util/circular-buffer';
 import { NumberUtil } from '../../../util/number';
-import { Color } from './util/color';
+import { Color, RGBColor } from '../../../util/color';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
-import { SpindaColorChangePalettes, SpindaColorPalettes } from './util/spinda-colors';
+import { SpindaColorChangePalettes, SpindaColorPalette, SpindaColorPalettes } from './util/spinda-colors';
 
 enum SpotLocation {
     Start = 0,
@@ -93,6 +93,7 @@ export class SpindaGeneratorService extends BaseService {
             [SpindaColorChange.Purple]: 400,
             [SpindaColorChange.Pink]: 500,
             [SpindaColorChange.Gray]: 600,
+            [SpindaColorChange.Custom]: 250,
         },
         features: {
             [SpindaFeatures.SmallSpots]: 25,
@@ -162,7 +163,7 @@ export class SpindaGeneratorService extends BaseService {
         }
     }
 
-    private getPixel(data: Uint8ClampedArray, x: number, y: number, width: number): Color {
+    private getPixel(data: Uint8ClampedArray, x: number, y: number, width: number): RGBColor {
         const i = (y * width + x) * 4;
         const [r, g, b, a]: number[] = data.slice(i, i + 4) as any;
         return Color.RGBA(r, g, b, a);
@@ -243,7 +244,7 @@ export class SpindaGeneratorService extends BaseService {
                     // Opaque pixel
                     if (spotPixel.alpha !== 0) {
                         const basePixel = this.getPixel(baseData, newPos.x, newPos.y, baseWidth);
-                        let newPixel: Color;
+                        let newPixel: RGBColor;
                         switch (basePixel.hex) {
                             case SpindaColorPalettes.base.base.hex: newPixel = SpindaColorPalettes.normal.base; break;
                             case SpindaColorPalettes.base.shadow.hex: newPixel = SpindaColorPalettes.normal.shadow; break;
@@ -287,10 +288,40 @@ export class SpindaGeneratorService extends BaseService {
             }
         }
     }
+
+    private rollCustomColor(spinda: GeneratedSpinda) {
+        if (spinda.colorChange === SpindaColorChange.Custom && spinda.customColor === null) {
+            spinda.customColor = Color.HSV(
+                Math.random(),
+                Math.random(),
+                (Math.random() * 0.34) + 0.66,
+            ).toRGB().hex;
+        }
+    }
+
+    private makePalette(spinda: GeneratedSpinda): SpindaColorPalette {
+        const palette: Partial<Writeable<SpindaColorPalette>> = { base: Color.Hex(spinda.customColor) };
+
+        const hsv = palette.base.toHSV();
+        hsv.value *= 0.7083;
+        const shadow = hsv.toRGB();
+        shadow.blue += 20 * (hsv.value < 0.33 ? 1 - hsv.value : 1);
+        palette.shadow = shadow;
+
+        hsv.value *= 0.5;
+        const outline = hsv.toRGB();
+        outline.blue += 20 * (hsv.value < 0.33 ? 1 - hsv.value : 1);
+        palette.outline = outline;
+
+        return palette as SpindaColorPalette;
+    }
     
-    private recolor(colorChange: SpindaColorChange) {
-        if (colorChange !== SpindaColorChange.None) {
-            const palette = SpindaColorChangePalettes[colorChange];
+    private recolor(spinda: GeneratedSpinda) {
+        if (spinda.colorChange !== SpindaColorChange.None) {
+            const palette = spinda.colorChange === SpindaColorChange.Custom 
+                ? this.makePalette(spinda)
+                : SpindaColorChangePalettes[spinda.colorChange];
+
             const width = this.canvas.width;
             const height = this.canvas.height;
             const imageData = this.ctx.getImageData(0, 0, width, height).data;
@@ -364,7 +395,8 @@ export class SpindaGeneratorService extends BaseService {
         this.drawSpots(spinda);
 
         this.rollColorChange(spinda);
-        this.recolor(spinda.colorChange);
+        this.rollCustomColor(spinda);
+        this.recolor(spinda);
 
         this.scaleCanvas(this.scale);
 
@@ -385,6 +417,7 @@ export class SpindaGeneratorService extends BaseService {
             generatedAt: new Date(),
             colorChange: SpindaColorChange.Random,
             features: SpindaFeatures.Random,
+            customColor: null,
         };
     }
 }
