@@ -20,6 +20,7 @@ export enum SpindaFeatures {
     SmallSpots = 1 << 0,
     Heart = 1 << 1,
     Star = 1 << 2,
+    Inverted = 1 << 3,
 }
 
 export interface GeneratedSpinda {

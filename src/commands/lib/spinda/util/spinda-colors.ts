@@ -24,6 +24,7 @@ export const SpindaColorPalettes = {
 } as const;
 
 export const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaColorPalette } = {
+    [SpindaColorChange.None]: SpindaColorPalettes.normal,
     [SpindaColorChange.Shiny]: {
         base: Color.Hex(0xACC44E),
         shadow: Color.Hex(0x798955),

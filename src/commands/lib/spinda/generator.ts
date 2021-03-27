@@ -99,6 +99,7 @@ export class SpindaGeneratorService extends BaseService {
             [SpindaFeatures.SmallSpots]: 25,
             [SpindaFeatures.Heart]: 50,
             [SpindaFeatures.Star]: 50,
+            [SpindaFeatures.Inverted]: 50,
         },
     } as const;
 
@@ -317,7 +318,8 @@ export class SpindaGeneratorService extends BaseService {
     }
     
     private recolor(spinda: GeneratedSpinda) {
-        if (spinda.colorChange !== SpindaColorChange.None) {
+        const inverted = spinda.features & SpindaFeatures.Inverted;
+        if (spinda.colorChange !== SpindaColorChange.None || inverted) {
             const palette = spinda.colorChange === SpindaColorChange.Custom 
                 ? this.makePalette(spinda)
                 : SpindaColorChangePalettes[spinda.colorChange];
@@ -325,15 +327,41 @@ export class SpindaGeneratorService extends BaseService {
             const width = this.canvas.width;
             const height = this.canvas.height;
             const imageData = this.ctx.getImageData(0, 0, width, height).data;
+
             // Iterate over every pixel, change the spot colors
-            for (let x = 0; x < width; ++x) {
-                for (let y = 0; y < height; ++y) {
-                    const pixel = this.getPixel(imageData, x, y, width);
-                    for (const key in SpindaColorPalettes.normal) {
-                        if (pixel.hex === SpindaColorPalettes.normal[key].hex) {
-                            this.ctx.fillStyle = palette[key].rgba();
-                            this.ctx.fillRect(x, y, 1, 1);
-                            break;
+
+            if (spinda.features & SpindaFeatures.Inverted) {
+                for (let x = 0; x < width; ++x) {
+                    pixelLoop:
+                    for (let y = 0; y < height; ++y) {
+                        const pixel = this.getPixel(imageData, x, y, width);
+                        for (const key in SpindaColorPalettes.normal) {
+                            if (pixel.hex === SpindaColorPalettes.normal[key].hex) {
+                                this.ctx.fillStyle = SpindaColorPalettes.base[key].rgba();
+                                this.ctx.fillRect(x, y, 1, 1);
+                                continue pixelLoop;
+                            }
+                        }
+                        for (const key in SpindaColorPalettes.base) {
+                            if (pixel.hex === SpindaColorPalettes.base[key].hex) {
+                                this.ctx.fillStyle = palette[key].rgba();
+                                this.ctx.fillRect(x, y, 1, 1);
+                                continue pixelLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                for (let x = 0; x < width; ++x) {
+                    for (let y = 0; y < height; ++y) {
+                        const pixel = this.getPixel(imageData, x, y, width);
+                        for (const key in SpindaColorPalettes.normal) {
+                            if (pixel.hex === SpindaColorPalettes.normal[key].hex) {
+                                this.ctx.fillStyle = palette[key].rgba();
+                                this.ctx.fillRect(x, y, 1, 1);
+                                break;
+                            }
                         }
                     }
                 }
