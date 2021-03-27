@@ -87,19 +87,19 @@ export class SpindaGeneratorService extends BaseService {
         colors: {
             [SpindaColorChange.Shiny]: 8192,
             [SpindaColorChange.Retro]: 15,
-            [SpindaColorChange.Gold]: 100,
-            [SpindaColorChange.Green]: 200,
-            [SpindaColorChange.Blue]: 300,
-            [SpindaColorChange.Purple]: 400,
-            [SpindaColorChange.Pink]: 500,
-            [SpindaColorChange.Gray]: 600,
-            [SpindaColorChange.Custom]: 250,
+            [SpindaColorChange.Gold]: 50,
+            [SpindaColorChange.Green]: 75,
+            [SpindaColorChange.Blue]: 100,
+            [SpindaColorChange.Purple]: 125,
+            [SpindaColorChange.Pink]: 150,
+            [SpindaColorChange.Gray]: 175,
+            [SpindaColorChange.Custom]: 200,
         },
         features: {
             [SpindaFeatures.SmallSpots]: 25,
             [SpindaFeatures.Heart]: 50,
             [SpindaFeatures.Star]: 50,
-            [SpindaFeatures.Inverted]: 50,
+            [SpindaFeatures.Inverted]: 30,
         },
     } as const;
 
