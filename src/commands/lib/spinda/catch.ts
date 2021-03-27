@@ -9,9 +9,9 @@ export class CatchCommand extends Command {
     public description = [
         `Catches one of the last ${SpindaGeneratorService.historySize} Spinda generated in the channel. Once one Spinda is caught, the others run away.`,
         `Caught Spinda can be regenerated at any time using the \`${SpindaCommandNames.View}\` command. You may only have one Spinda saved at any given time.`,
-        `The position specifies the Spinda to catch, with 1 being the top-most (oldest) and ${SpindaGeneratorService.historySize} being the bottom-most (newest). Give no index to catch the newest Spinda.`
+        `The position specifies the Spinda to catch, with 1 being the top-most (left-most in a horde) and ${SpindaGeneratorService.historySize} being the bottom-most (right-most in a horde). Give no index to catch the newest Spinda.`
     ];
-    public category = CommandCategory.Fun;
+    public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
 

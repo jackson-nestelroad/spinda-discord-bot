@@ -1,4 +1,4 @@
-import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D } from 'canvas';
+import { createCanvas, loadImage, Image, ImageData, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
 import { DiscordBot } from '../../../bot';
 import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
@@ -53,6 +53,11 @@ class Spot extends Resource {
 interface SpindaGenerationResult {
     readonly buffer: Buffer;
     readonly info: GeneratedSpinda;
+}
+
+interface HordeGenerationResult {
+    readonly buffer: Buffer;
+    readonly info: Array<GeneratedSpinda>;
 }
 
 type Resources = Resource | ResourceMap;
@@ -114,27 +119,27 @@ export class SpindaGeneratorService extends BaseService {
     private tempCanvas: Canvas = createCanvas(0, 0);
     private tempCtx: CanvasRenderingContext2D = this.tempCanvas.getContext('2d');
 
-    public static readonly historySize: number = 3;
+    // Canvas for putting a horde together
+    private hordeCanvas: Canvas = createCanvas(0, 0);
+    private hordeCtx: CanvasRenderingContext2D = this.hordeCanvas.getContext('2d');
+
+    public static readonly historySize: number = 5;
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
 
-    private clear() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    private clear(ctx: CanvasRenderingContext2D) {
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    private clearTemp() {
-        this.tempCtx.clearRect(0, 0, this.tempCanvas.width, this.tempCanvas.height);
-    }
-
-    private drawImage(...args: any[]) {
-        this.ctx.imageSmoothingEnabled = false;
-        this.ctx.drawImage(...args);
+    private drawImage(ctx: CanvasRenderingContext2D, ...args: any[]) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(...args);
     }
 
     private scaleCanvas(scale: number) {
         const width = this.canvas.width;
         const height = this.canvas.height;
 
-        this.clearTemp();
+        this.clear(this.tempCtx);
 
         // Move over to temporary canvas
         this.tempCanvas.width = width;
@@ -144,8 +149,8 @@ export class SpindaGeneratorService extends BaseService {
         // Scale main canvas
         this.canvas.width *= scale;
         this.canvas.height *= scale;
-        this.clear();
-        this.drawImage(this.tempCanvas, 0, 0, width, height, 0, 0, width * scale, height * scale);
+        this.clear(this.ctx);
+        this.drawImage(this.ctx, this.tempCanvas, 0, 0, width, height, 0, 0, width * scale, height * scale);
     }
 
     private resourcesLoaded(): boolean {
@@ -190,6 +195,7 @@ export class SpindaGeneratorService extends BaseService {
     }
 
     private getSpots(features: SpindaFeatures): SpotData<Spot> {
+        // Use normal or small spots
         let baseSpots: SpotData<Spot>;
         if (features & SpindaFeatures.SmallSpots) {
             baseSpots = this.resources.smallSpots;
@@ -198,19 +204,23 @@ export class SpindaGeneratorService extends BaseService {
             baseSpots = this.resources.spots;
         }
 
-        const spots: SpotData<Spot> = { } as any;
+        // Copy spots over
+        const spots: Partial<SpotData<Spot>> = { };
         for (let i = SpotLocation.Start; i < SpotLocation.Count; ++i) {
             spots[i] = baseSpots[i];
         }
 
+        // Use heart in bottom left
         if (features & SpindaFeatures.Heart) {
             spots[SpotLocation.BottomLeft] = this.resources.specialSpots.heart;
         }
+
+        // Use star in bottom right
         if (features & SpindaFeatures.Star) {
             spots[SpotLocation.BottomRight] = this.resources.specialSpots.star;
         }
 
-        return spots;
+        return spots as SpotData<Spot>;
     }
 
     private drawSpots(spinda: GeneratedSpinda) {
@@ -227,7 +237,7 @@ export class SpindaGeneratorService extends BaseService {
             );
 
             // Put spot in temporary canvas
-            this.clearTemp();
+            this.clear(this.tempCtx);
             this.tempCanvas.width = spot.image.width;
             this.tempCanvas.height = spot.image.height;
             this.tempCtx.drawImage(spot.image, 0, 0);
@@ -267,6 +277,7 @@ export class SpindaGeneratorService extends BaseService {
         if (spinda.features === SpindaFeatures.Random) {
             spinda.features = SpindaFeatures.None;
 
+            // Merge all features together as a bit string
             for (const key in this.odds.features) {
                 if (Math.floor(Math.random() * this.odds.features[key]) === 0) {
                     spinda.features |= +key;
@@ -277,15 +288,14 @@ export class SpindaGeneratorService extends BaseService {
 
     private rollColorChange(spinda: GeneratedSpinda) {
         if (spinda.colorChange === SpindaColorChange.Random) {
+            spinda.colorChange = SpindaColorChange.None;
+
+            // Select first color that meets the odds
             for (const key in this.odds.colors) {
                 if (Math.floor(Math.random() * this.odds.colors[key]) === 0) {
                     spinda.colorChange = +key;
                     break;
                 }
-            }
-            // No change
-            if (spinda.colorChange === SpindaColorChange.Random) {
-                spinda.colorChange = SpindaColorChange.None;
             }
         }
     }
@@ -295,6 +305,7 @@ export class SpindaGeneratorService extends BaseService {
             spinda.customColor = Color.HSV(
                 Math.random(),
                 Math.random(),
+                // Limited value range, so the spots aren't too dark
                 (Math.random() * 0.34) + 0.66,
             ).toRGB().hex;
         }
@@ -303,12 +314,14 @@ export class SpindaGeneratorService extends BaseService {
     private makePalette(spinda: GeneratedSpinda): SpindaColorPalette {
         const palette: Partial<Writeable<SpindaColorPalette>> = { base: Color.Hex(spinda.customColor) };
 
+        // Create shadow color
         const hsv = palette.base.toHSV();
         hsv.value *= 0.7083;
         const shadow = hsv.toRGB();
         shadow.blue += 20 * (hsv.value < 0.33 ? 1 - hsv.value : 1);
         palette.shadow = shadow;
 
+        // Create outline color
         hsv.value *= 0.5;
         const outline = hsv.toRGB();
         outline.blue += 20 * (hsv.value < 0.33 ? 1 - hsv.value : 1);
@@ -388,12 +401,17 @@ export class SpindaGeneratorService extends BaseService {
         return buffer.get(offset);
     }
 
+    public setChannelHistory(id: string, spinda: Array<GeneratedSpinda>) {
+        const buffer = this.getChannelHistory(id);
+        buffer.set(spinda);
+    }
+
     public clearChannelHistory(id: string) {
         const buffer = this.getChannelHistory(id);
         buffer.clear();
     }
 
-    public async generate(spinda: GeneratedSpinda = this.newSpinda()): Promise<SpindaGenerationResult> {
+    public async generate(spinda: GeneratedSpinda = this.newSpinda(), scale: boolean = true): Promise<SpindaGenerationResult> {
         if (!this.resourcesLoaded()) {
             await this.loadResources(this.resources);
         }
@@ -401,37 +419,71 @@ export class SpindaGeneratorService extends BaseService {
         // Reset canvas
         this.canvas.width = this.resources.base.image.width + this.outlineThickness * 2;
         this.canvas.height = this.resources.base.image.height + this.outlineThickness * 2;
-        this.clear();
+        this.clear(this.ctx);
 
         // Create outline polygon
         if (!this.outlinePolygon) {
             // Draw initial image for generating outline
-            this.drawImage(this.resources.base.image, this.outlineThickness, this.outlineThickness);
+            this.drawImage(this.ctx, this.resources.base.image, this.outlineThickness, this.outlineThickness);
             const drawer = new OutlineDrawer(this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height));
             this.outlinePolygon = drawer.getPolygon();
-            this.clear();
+            this.clear(this.ctx);
         }
 
         // Draw outline
         this.drawOutline();
 
         // Draw the base
-        this.drawImage(this.resources.base.image, this.outlineThickness, this.outlineThickness);
+        this.drawImage(this.ctx, this.resources.base.image, this.outlineThickness, this.outlineThickness);
 
         // Draw the random spots
         this.rollFeatures(spinda);
         this.drawSpots(spinda);
 
+        // Recolor the sprite if necessary
         this.rollColorChange(spinda);
         this.rollCustomColor(spinda);
         this.recolor(spinda);
 
-        this.scaleCanvas(this.scale);
+        if (scale) {
+            this.scaleCanvas(this.scale);
+        }
 
         // Send image to Discord
         return {
             buffer: this.canvas.toBuffer(),
             info: spinda,
+        };
+    }
+
+    public async horde(): Promise<HordeGenerationResult> {
+        const generated = await Promise.all(
+            [...new Array(SpindaGeneratorService.historySize)]
+                .map(async () => await this.generate(this.newSpinda(), false))
+        );
+
+        const width = this.resources.base.image.width + this.outlineThickness * 2;
+        const height = this.resources.base.image.height + this.outlineThickness * 2;
+
+        // Reset canvas
+        this.hordeCanvas.width = width * SpindaGeneratorService.historySize * this.scale;
+        this.hordeCanvas.height = height * this.scale;
+        this.clear(this.hordeCtx);
+
+        const scaledWidth = width * this.scale;
+        const scaledHeight = height * this.scale;
+        for (let i = 0; i < generated.length; ++i) {
+            const spinda = generated[i];
+
+            const image = new Image();
+            image.src = spinda.buffer;
+
+            this.drawImage(this.hordeCtx, image, 0, 0, width, height, scaledWidth * i, 0, scaledWidth, scaledHeight);
+        }
+
+        return {
+            buffer: this.hordeCanvas.toBuffer(),
+            info: generated.map(res => res.info),
         };
     }
 

@@ -35,6 +35,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     MemoryCommand,
 
     ...SpindaCommands,
+    
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,

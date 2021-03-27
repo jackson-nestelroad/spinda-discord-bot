@@ -29,6 +29,19 @@ export class CircularBuffer<T> {
         this.data[NumberUtil.mod(this.incrementHead(), this.size)] = value;
     }
 
+    public set(newData: T[]) {
+        if (newData.length > this.size) {
+            this.data = newData.slice(0, this.size);
+        }
+        else {
+            if (newData.length < this.size) {
+                newData.length = this.size;
+            }
+            this.data = newData;
+        }
+        this.head = this.size - 1;
+    }
+
     public clear() {
         this.data = new Array(this.size);
         this.head = 0;

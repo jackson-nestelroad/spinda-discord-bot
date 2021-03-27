@@ -6,8 +6,11 @@ import { SpindaColorChange } from '../../../data/model/caught-spinda';
 export class SpindaCommand extends Command {
     public name = SpindaCommandNames.Generate;
     public args = '';
-    public description = `Generates a random Spinda pattern from ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There are even random chances for Spinda with special features and colorings. The rarest Spinda is a shiny Spinda! Use the \`${SpindaCommandNames.Catch}\` command to catch a Spinda you like!`;
-    public category = CommandCategory.Fun;
+    public description = [
+        `Generates a random Spinda pattern from ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There are even random chances for Spinda with special features and colorings. The rarest Spinda is a shiny Spinda!`,
+        `Use the \`${SpindaCommandNames.Catch}\` command to catch a Spinda you like!`
+    ];
+    public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
 
     public async run({ bot, msg }: CommandParameters) {

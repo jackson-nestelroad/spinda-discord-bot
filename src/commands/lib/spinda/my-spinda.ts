@@ -7,7 +7,7 @@ export class MySpindaCommand extends Command {
     public name = SpindaCommandNames.View;
     public args = '';
     public description = `Regenerates the Spinda you have previously caught.`;
-    public category = CommandCategory.Fun;
+    public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
 
