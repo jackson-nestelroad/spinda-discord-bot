@@ -124,6 +124,8 @@ export class SpindaGeneratorService extends BaseService {
     private hordeCtx: CanvasRenderingContext2D = this.hordeCanvas.getContext('2d');
 
     public static readonly historySize: number = 5;
+    public static readonly partySize: number = 5;
+
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
 
     private clear(ctx: CanvasRenderingContext2D) {
@@ -456,17 +458,20 @@ export class SpindaGeneratorService extends BaseService {
         };
     }
 
-    public async horde(): Promise<HordeGenerationResult> {
+    public async horde(spindaCollection?: Readonly<Array<GeneratedSpinda>>): Promise<HordeGenerationResult> {
         const generated = await Promise.all(
-            [...new Array(SpindaGeneratorService.historySize)]
+            spindaCollection === undefined || spindaCollection.length === 0
+            ? [...new Array(SpindaGeneratorService.historySize)]
                 .map(async () => await this.generate(this.newSpinda(), false))
+            : spindaCollection
+                .map(async (spinda) => await this.generate(spinda, false))
         );
 
         const width = this.resources.base.image.width + this.outlineThickness * 2;
         const height = this.resources.base.image.height + this.outlineThickness * 2;
 
         // Reset canvas
-        this.hordeCanvas.width = width * SpindaGeneratorService.historySize * this.scale;
+        this.hordeCanvas.width = width * generated.length * this.scale;
         this.hordeCanvas.height = height * this.scale;
         this.clear(this.hordeCtx);
 

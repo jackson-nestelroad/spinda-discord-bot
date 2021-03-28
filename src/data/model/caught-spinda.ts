@@ -34,6 +34,7 @@ export interface GeneratedSpinda {
 export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
     readonly id: number;
     readonly userId: string;
+    readonly position: number;
 }
 
 interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> { };
@@ -42,6 +43,7 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
     implements CaughtSpindaAttributes {
     public readonly id: number;
     public readonly userId: string;
+    public readonly position: number;
     public readonly generatedAt: Date;
     public readonly pid: number;
     public readonly colorChange: SpindaColorChange;
@@ -61,7 +63,13 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
             userId: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                unique: true,
+                unique: false,
+            },
+            position: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                unique: false,
+                defaultValue: 0,
             },
             generatedAt: {
                 type: DataTypes.DATE,

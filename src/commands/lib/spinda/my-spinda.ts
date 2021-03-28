@@ -2,11 +2,12 @@ import { MessageAttachment } from 'discord.js';
 import { SpindaColorChange } from '../../../data/model/caught-spinda';
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { SpindaCommandNames } from './command-names';
+import { SpindaGeneratorService } from './generator';
 
 export class MySpindaCommand extends Command {
     public name = SpindaCommandNames.View;
-    public args = '';
-    public description = `Regenerates the Spinda you have previously caught.`;
+    public args = '(position)';
+    public description = `Regenerates one, or all, of the Spinda you have previously caught.`;
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
@@ -23,27 +24,44 @@ export class MySpindaCommand extends Command {
         [SpindaColorChange.Custom]: 'Random \u{1F3B2}'
     };
 
-    public async run({ bot, msg, guild }: CommandParameters) {
+    public async run({ bot, msg, guild, content }: CommandParameters) {
         const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
-        if (!caughtSpinda) {
-            throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch} N\` to catch the one of the last generated Spinda in the channel.`);
+        if (caughtSpinda.length === 0) {
+            throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch}\` to catch one of the last generated Spinda in the channel.`);
         }
 
-        const result = await bot.spindaGeneratorService.generate(caughtSpinda);
-
-        const embed = bot.createEmbed();
-        const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
-        embed.attachFiles(attachment as any).setThumbnail('attachment://thumbnail.png');
-
-        embed.setTitle(`${msg.author.username}'s Spinda`);
-        embed.addField('PID', result.info.pid, true);
-
-        if (result.info.colorChange !== SpindaColorChange.None) {
-            embed.addField('Classification', this.classifications[result.info.colorChange], true);
+        if (!content) {
+            const result = await bot.spindaGeneratorService.horde(caughtSpinda);
+            await msg.channel.send(new MessageAttachment(result.buffer));
         }
-          
-        embed.addField('Generated At', result.info.generatedAt.toLocaleString(), true);
+        else {
+            const pos = parseInt(content);
+            if (isNaN(pos) || pos <= 0) {
+                throw new Error(`Position must be a positive integer.`);
+            }
+            else if (pos > SpindaGeneratorService.partySize) {
+                throw new Error(`Position too large.`);
+            }
+            else if (pos > caughtSpinda.length) {
+                throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
+            }
 
-        await msg.channel.send(embed);
+            const result = await bot.spindaGeneratorService.generate(caughtSpinda[pos - 1]);
+
+            const embed = bot.createEmbed();
+            const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
+            embed.attachFiles(attachment as any).setThumbnail('attachment://thumbnail.png');
+    
+            embed.setTitle(`${msg.author.username}'s Spinda`);
+            embed.addField('PID', result.info.pid, true);
+    
+            if (result.info.colorChange !== SpindaColorChange.None) {
+                embed.addField('Classification', this.classifications[result.info.colorChange], true);
+            }
+              
+            embed.addField('Generated At', result.info.generatedAt.toLocaleString(), true);
+    
+            await msg.channel.send(embed);
+        }
     }
 }

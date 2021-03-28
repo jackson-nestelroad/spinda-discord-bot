@@ -3,4 +3,6 @@ export enum SpindaCommandNames {
     Horde = 'horde',
     Catch = 'catch',
     View = 'my-spinda',
+    Swap = 'swap',
+    Release = 'release',
 }

@@ -1,5 +1,5 @@
 import { Guild, GuildAttributes } from './model/guild';
-import { Sequelize, Options } from 'sequelize';
+import { Sequelize, Options, Model } from 'sequelize';
 import { Environment } from './environment';
 import { exit } from 'process';
 import { CustomCommand } from './model/custom-command';
@@ -21,7 +21,7 @@ export class DataService extends BaseService {
         guilds: new Map<string, GuildAttributes>(),
         customCommands: new Map<string, Dictionary<string>>(),
         blacklist: new Map<string, Set<string>>(),
-        caughtSpindas: new Map<string, CaughtSpindaAttributes | null>(),
+        caughtSpindas: new Map<string, Array<CaughtSpindaAttributes>>(),
     } as const;
 
     constructor(bot: DiscordBot) {
@@ -167,20 +167,159 @@ export class DataService extends BaseService {
         return removed;
     }
 
-    private async getCaughtSpindaModel(userId: string): Promise<CaughtSpinda | null> {
-        return await this.caughtSpindas.findOne({ where: { userId }});
+    private async getCaughtSpindaModels(userId: string): Promise<Array<CaughtSpinda>> {
+        return await this.caughtSpindas.findAll({ where: { userId }, order: [['position', 'ASC']] });
     }
 
-    public async getCaughtSpinda(userId: string): Promise<CaughtSpindaAttributes | null> {
-        if (!this.cache.caughtSpindas.has(userId)) {
-            const model = await this.getCaughtSpindaModel(userId);
-            this.cache.caughtSpindas.set(userId, model?.get() ?? null);
+    private async assureCaughtSpindaCache(userId: string): Promise<Array<CaughtSpindaAttributes>> {
+        let cached = this.cache.caughtSpindas.get(userId);
+        if (cached === undefined) {
+            const found = await this.getCaughtSpindaModels(userId);
+            cached = found.map(model => model.get());
+            this.cache.caughtSpindas.set(userId, cached);
+            return cached;
         }
-        return this.cache.caughtSpindas.get(userId);
+        return cached;
     }
 
-    public async catchSpinda(userId: string, spinda: GeneratedSpinda): Promise<void> {
-        const updated = (await this.caughtSpindas.upsert({ userId, ...spinda, }))[0];
-        this.cache.caughtSpindas.set(updated.userId, updated.get());
+    private async correctCaughtSpindaModels(userId: string) {
+        this.cache.caughtSpindas.delete(userId);
+
+        // Get all models for this user
+        const allSavedModels = await this.getCaughtSpindaModels(userId);
+
+        // Find models with repeated positions
+        const seenPositions: Set<number> = new Set();
+        let maxPositionSeen: number = 0;
+        const goodModels: Array<CaughtSpinda> = [];
+        const badModels: Array<CaughtSpinda> = [];
+
+        for (const model of allSavedModels) {
+            if (seenPositions.has(model.position)) {
+                badModels.push(model);
+            }
+            else {
+                if (model.position > maxPositionSeen) {
+                    maxPositionSeen = model.position;
+                }
+                seenPositions.add(model.position);
+                goodModels.push(model);
+            }
+        }
+
+        // Some number(s) between 0 and the maximum position is missing
+        // No need to delete models, just correct the numbering!
+        if (allSavedModels.length <= maxPositionSeen + 1) {
+            let i = 0;
+            for (const model of badModels) {
+                for (; i <= maxPositionSeen; ++i) {
+                    // Have not seen this number before
+                    if (!seenPositions.has(i)) {
+                        await model.update({ position: i });
+                        ++i;
+                        break;
+                    }
+                }
+            }
+
+            // Correct cache
+            const cached = allSavedModels.map(model => model.get()).sort((a, b) => a.position - b.position);
+            this.cache.caughtSpindas.set(userId, cached);
+        }
+        else {
+            // Destroy all bad models
+            for (const model of badModels) {
+                await model.destroy();
+            }
+
+            const cached: Array<CaughtSpindaAttributes> = [];
+            // Correct all good models
+            for (let i = 0; i < goodModels.length; ++i) {
+                const model = goodModels[i];
+                const [num, updated] = await this.caughtSpindas.update({ position: i }, { where: { id: model.id }});
+                // num is surely 0 or 1, because id is a primary key
+                cached.push(num === 0 ? model.get() : updated[0].get());
+            }
+
+            // Cache for this user should be corrected
+            this.cache.caughtSpindas.set(userId, cached);
+        }
+    }
+
+    public async getCaughtSpinda(userId: string): Promise<Readonly<Array<CaughtSpindaAttributes>>> {
+        return this.assureCaughtSpindaCache(userId);
+    }
+
+    public async swapCaughtSpindaPositions(userId: string, first: number, second: number) {
+        const firstModels = await this.caughtSpindas.findAll({ where: { userId, position: first }});
+        if (firstModels.length !== 1) {
+            await this.correctCaughtSpindaModels(userId);
+            return this.swapCaughtSpindaPositions(userId, first, second);
+        }
+
+        const secondModels = await this.caughtSpindas.findAll({ where: { userId, position: second }});
+        if (secondModels.length !== 1) {
+            await this.correctCaughtSpindaModels(userId);
+            return this.swapCaughtSpindaPositions(userId, first, second);
+        }
+
+
+        const newSecond = await firstModels[0][first].update({ position: second });
+        const newFirst = await secondModels[0][second].update({ position: first });
+
+        const collection = await this.assureCaughtSpindaCache(userId);
+        collection[first] = newFirst.get();
+        collection[second] = newSecond.get();
+    }
+
+    public async releaseCaughtSpinda(userId: string, pos: number) {
+        await this.caughtSpindas.destroy({ where: { userId, position: pos }});
+        await this.correctCaughtSpindaModels(userId);
+    }
+
+    public async catchSpinda(userId: string, spinda: GeneratedSpinda, pos: number, allowCorrection: boolean = true): Promise<void> {
+        const collection = await this.assureCaughtSpindaCache(userId);
+        
+        let model: CaughtSpinda;
+
+        // Position exceeds current array
+        // Add to end of array, and add new entry
+        if (pos >= collection.length) {
+            pos = collection.length;
+            ++collection.length;
+
+            model = await this.caughtSpindas.create({ userId, position: pos, ...spinda });
+        }
+        else {
+            const [numUpdated, updated] = await this.caughtSpindas.update(spinda, { where: { userId, position: pos }, returning: true });
+            
+            // numUpdated should be 1
+            // If it isn't, something bad happened
+            // The cache may have been corrupted, so we fix the cache and database, then try again
+
+            if (numUpdated !== 1) {
+                if (!allowCorrection) {
+                    throw new Error(`Could not correct caught Spinda collection for user ID ${userId}. Database correction required.`);
+                }
+
+                await this.correctCaughtSpindaModels(userId);
+
+                // Try to catch this Spinda again, this time not allowing correction
+                if (numUpdated === 0) {
+                    return this.catchSpinda(userId, spinda, pos, false);
+                }
+                // Not much we can do if multiple Spinda got overwritten
+                else {
+                    await Promise.all(updated.slice(1).map(async (model) => await model.destroy()));
+                    model = updated[0];
+                }
+            }
+            else {
+                model = updated[0];
+            }
+        }
+
+        // Update cache at the given position
+        collection[pos] = model.get();
     }
 }
