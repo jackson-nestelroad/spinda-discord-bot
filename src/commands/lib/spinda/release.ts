@@ -16,9 +16,6 @@ export class ReleaseCommand extends Command {
         if (isNaN(pos) || pos <= 0) {
             throw new Error(`Position must be a positive integer.`);
         }
-        else if (pos > SpindaGeneratorService.partySize) {
-            throw new Error(`Position too large.`);
-        }
 
         const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
 
