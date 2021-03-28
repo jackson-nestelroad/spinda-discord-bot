@@ -16,32 +16,23 @@ export class CatchCommand extends Command {
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
-
-    private async getSpinda({ bot, msg, guild }: CommandParameters, position: number): Promise<GeneratedSpinda> {
-        const lastSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, position);
-
-        if (!lastSpinda) {
-            const generateMessage = `Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
-            if (position === 0) {
-                throw new Error('No new Spinda found in this channel. ' + generateMessage);
-            }
-            else {
-                throw new Error(`Spinda at position ${position} could not be found. ` + generateMessage);
-            }
-        }
-
-        return lastSpinda;
-    }
-
-    public async run(params: CommandParameters) {
-        const { bot, msg, guild, content } = params;
-
+    public async run({ bot, msg, guild, content }: CommandParameters) {
         const wantedPosition = content ? parseInt(content) : 0;
         if (isNaN(wantedPosition) || wantedPosition < 0) {
             throw new Error('Position must be a positive integer.');
         }
 
-        let wantedSpinda = await this.getSpinda(params, wantedPosition);
+        let wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, wantedPosition);
+
+        if (!wantedSpinda) {
+            const generateMessage = `Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
+            if (wantedPosition === 0) {
+                throw new Error('No new Spinda found in this channel. ' + generateMessage);
+            }
+            else {
+                throw new Error(`Spinda at position ${wantedPosition} could not be found. ` + generateMessage);
+            }
+        }
 
         const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
 
@@ -68,7 +59,11 @@ export class CatchCommand extends Command {
                 pos = num - 1;
 
                 // Fetch Spinda again, to make sure it wasn't caught before responding
-                wantedSpinda = await this.getSpinda(params, wantedPosition)
+                wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, wantedPosition);
+
+                if (!wantedSpinda) {
+                    throw new Error(`It got away...`);
+                }
 
             } catch (error) {
                 const embed = bot.createEmbed(EmbedTemplates.Error);
