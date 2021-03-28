@@ -191,9 +191,10 @@ export class DataService extends BaseService {
         // Find models with repeated positions
         const seenPositions: Set<number> = new Set();
         let maxPositionSeen: number = 0;
-        const goodModels: Array<CaughtSpinda> = [];
-        const badModels: Array<CaughtSpinda> = [];
+        let goodModels: Array<CaughtSpinda> = [];
+        let badModels: Array<CaughtSpinda> = [];
 
+        // Find bad models, or models that duplicate a position
         for (const model of allSavedModels) {
             if (seenPositions.has(model.position)) {
                 badModels.push(model);
@@ -206,44 +207,38 @@ export class DataService extends BaseService {
                 goodModels.push(model);
             }
         }
-
-        // Some number(s) between 0 and the maximum position is missing
-        // No need to delete models, just correct the numbering!
-        if (allSavedModels.length <= maxPositionSeen + 1) {
-            let i = 0;
-            for (const model of badModels) {
-                for (; i <= maxPositionSeen; ++i) {
-                    // Have not seen this number before
-                    if (!seenPositions.has(i)) {
-                        await model.update({ position: i });
-                        ++i;
-                        break;
-                    }
+        
+        // Max position is too large, redefine good and bad models based on position number
+        if (maxPositionSeen + 1 > allSavedModels.length) { 
+            maxPositionSeen -= maxPositionSeen + 1 - allSavedModels.length;
+            goodModels = [];
+            badModels = [];
+            for (const model of allSavedModels) {
+                if (model.position <= maxPositionSeen) {
+                    goodModels.push(model);
+                }
+                else {
+                    badModels.push(model);
                 }
             }
-
-            // Correct cache
-            const cached = allSavedModels.map(model => model.get()).sort((a, b) => a.position - b.position);
-            this.cache.caughtSpindas.set(userId, cached);
         }
-        else {
-            // Destroy all bad models
-            for (const model of badModels) {
-                await model.destroy();
-            }
 
-            const cached: Array<CaughtSpindaAttributes> = [];
-            // Correct all good models
-            for (let i = 0; i < goodModels.length; ++i) {
-                const model = goodModels[i];
-                const [num, updated] = await this.caughtSpindas.update({ position: i }, { where: { id: model.id }});
-                // num is surely 0 or 1, because id is a primary key
-                cached.push(num === 0 ? model.get() : updated[0].get());
+        // Correct all bad models by using numbers we haven't seen before
+        let i = 0;
+        for (const model of badModels) {
+            for (; i < allSavedModels.length; ++i) {
+                // Have not seen this number before
+                if (!seenPositions.has(i)) {
+                    const updated = await model.update({ position: i });
+                    goodModels.push(updated);
+                    ++i;
+                    break;
+                }
             }
-
-            // Cache for this user should be corrected
-            this.cache.caughtSpindas.set(userId, cached);
         }
+
+        const cached = goodModels.map(model => model.get()).sort((a, b) => a.position - b.position);
+        this.cache.caughtSpindas.set(userId, cached);
     }
 
     public async getCaughtSpinda(userId: string): Promise<Readonly<Array<CaughtSpindaAttributes>>> {
@@ -263,9 +258,8 @@ export class DataService extends BaseService {
             return this.swapCaughtSpindaPositions(userId, first, second);
         }
 
-
-        const newSecond = await firstModels[0][first].update({ position: second });
-        const newFirst = await secondModels[0][second].update({ position: first });
+        const newSecond = await firstModels[0].update({ position: second });
+        const newFirst = await secondModels[0].update({ position: first });
 
         const collection = await this.assureCaughtSpindaCache(userId);
         collection[first] = newFirst.get();
