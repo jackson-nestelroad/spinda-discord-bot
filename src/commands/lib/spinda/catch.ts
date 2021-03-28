@@ -62,6 +62,7 @@ export class CatchCommand extends Command {
                 embed.setDescription('You did not respond in time.');
                 const reply = await msg.reply(embed);
                 await reply.delete({ timeout: 10000 });
+                return;
             }
         }
 
