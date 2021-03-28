@@ -51,7 +51,7 @@ export class CatchCommand extends Command {
                 });
                 const response = messages.first();
                 const num = parseInt(response.content);
-                if (isNaN(num) || num < 1 && num < SpindaGeneratorService.partySize) {
+                if (isNaN(num) || num < 1 || num > SpindaGeneratorService.partySize) {
                     return;
                 }
                 
