@@ -1,9 +1,10 @@
 import { Message } from 'discord.js';
-import { GeneratedSpinda } from '../../../data/model/caught-spinda';
 import { EmbedTemplates } from '../../../util/embed';
 import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+
+export class GotAwayError extends Error { };
 
 export class CatchCommand extends Command {
     public name = SpindaCommandNames.Catch;
@@ -62,10 +63,13 @@ export class CatchCommand extends Command {
                 wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, wantedPosition);
 
                 if (!wantedSpinda) {
-                    throw new Error(`It got away...`);
+                    throw new GotAwayError(`It got away...`);
                 }
 
             } catch (error) {
+                if (error instanceof GotAwayError) {
+                    throw error;
+                }
                 const embed = bot.createEmbed(EmbedTemplates.Error);
                 embed.setDescription('You did not respond in time.');
                 const reply = await msg.reply(embed);
