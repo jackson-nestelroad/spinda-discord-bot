@@ -105,14 +105,14 @@ export class AccessCommand extends Command {
                     embed.setDescription(`You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`);
                     
                     // Try to send a DM
-                    // If it fails, just reply in the channel
+                    // If it fails, add a reaction to signal the failure
                     try {
                         await msg.author.send(embed);
                     } catch (error) {
-                        await msg.reply(embed);
+                        await msg.react('\u{1F614}');
                     }
 
-                    await msg.react('\u2705');
+                    await msg.react('\u{2705}');
                 }
             }
         }
