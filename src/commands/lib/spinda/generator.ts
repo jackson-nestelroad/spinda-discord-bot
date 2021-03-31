@@ -308,7 +308,7 @@ export class SpindaGeneratorService extends BaseService {
                 Math.random(),
                 Math.random(),
                 // Limited value range, so the spots aren't too dark
-                (Math.random() * 0.34) + 0.66,
+                (Math.random() * 0.40) + 0.60,
             ).toRGB().hex;
         }
     }
