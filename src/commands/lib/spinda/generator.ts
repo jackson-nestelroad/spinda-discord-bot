@@ -334,12 +334,11 @@ export class SpindaGeneratorService extends BaseService {
     
     private recolor(spinda: GeneratedSpinda) {
         const inverted = spinda.features & SpindaFeatures.Inverted;
-        if (spinda.colorChange !== SpindaColorChange.Shiny || inverted) {
-            const palette = spinda.colorChange === SpindaColorChange.Custom 
-                ? this.makePalette(spinda)
-                : spinda.colorChange === SpindaColorChange.None
-                    ? SpindaColorChangePalettes[SpindaColorChange.Shiny]
-                    : SpindaColorChangePalettes[spinda.colorChange];
+        if (spinda.colorChange !== SpindaColorChange.None || inverted) {
+            const palette = SpindaColorChangePalettes[SpindaColorChange.Shiny];
+            // const palette = spinda.colorChange === SpindaColorChange.Custom 
+            //     ? this.makePalette(spinda)
+            //     : SpindaColorChangePalettes[SpindaColorChange.Shiny];
 
             const width = this.canvas.width;
             const height = this.canvas.height;
