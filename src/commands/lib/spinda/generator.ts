@@ -123,7 +123,7 @@ export class SpindaGeneratorService extends BaseService {
     private hordeCanvas: Canvas = createCanvas(0, 0);
     private hordeCtx: CanvasRenderingContext2D = this.hordeCanvas.getContext('2d');
 
-    public static readonly historySize: number = 25;
+    public static readonly historySize: number = 5;
     public static readonly partySize: number = 5;
 
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
@@ -335,10 +335,9 @@ export class SpindaGeneratorService extends BaseService {
     private recolor(spinda: GeneratedSpinda) {
         const inverted = spinda.features & SpindaFeatures.Inverted;
         if (spinda.colorChange !== SpindaColorChange.None || inverted) {
-            const palette = SpindaColorChangePalettes[SpindaColorChange.Shiny];
-            // const palette = spinda.colorChange === SpindaColorChange.Custom 
-            //     ? this.makePalette(spinda)
-            //     : SpindaColorChangePalettes[SpindaColorChange.Shiny];
+            const palette = spinda.colorChange === SpindaColorChange.Custom 
+                ? this.makePalette(spinda)
+                : SpindaColorChangePalettes[spinda.colorChange];
 
             const width = this.canvas.width;
             const height = this.canvas.height;
