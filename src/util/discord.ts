@@ -39,6 +39,20 @@ export namespace DiscordUtil {
         return result;
     }
 
+    export function getCodeBlockOrLine(content: string): string | null {
+        const codeBlock = DiscordUtil.getCodeBlock(content);
+        if (codeBlock.match) {
+            return codeBlock.content;
+        }
+        else {
+            const codeLine = DiscordUtil.getCodeLine(content);
+            if (codeLine.match) {
+                return codeLine.content;
+            }
+        }
+        return null;
+    }
+
     export function baseStringEqual(a: string, b: string): boolean {
         return a.localeCompare(b, undefined, { sensitivity: 'base' }) === 0;
     }

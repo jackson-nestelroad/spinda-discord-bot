@@ -26,6 +26,7 @@ import { BlacklistCommand } from './lib/config/blacklist';
 import { RollCommand } from './lib/fun/roll';
 import { SpindaCommands } from './lib/spinda';
 import { MemoryCommand } from './lib/utility/memory';
+import { MessageListenerCommand } from './lib/secret/message-listener';
 
 const CommandTypes: Array<{ new(): Command }> = [
     PingCommand,
@@ -54,6 +55,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     SayCommand,
     CustomHelpCommand,
     RunCustomCommand,
+    MessageListenerCommand,
 
     PrefixCommand,
     LogsCommand,

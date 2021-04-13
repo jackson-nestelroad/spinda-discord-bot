@@ -4,6 +4,7 @@ import { Environment } from '../../../data/environment';
 import { runInContext, createContext } from 'vm';
 import { DiscordUtil } from '../../../util/discord';
 import * as DiscordJS from 'discord.js'
+import { EvalUtil } from '../../../util/eval';
 
 // This command is heavily unsafe, use at your own risk
 export class EvalCommand extends Command {
@@ -26,45 +27,19 @@ export class EvalCommand extends Command {
         this.sensitivePattern = new RegExp(`${Environment.getDiscordToken()}`, 'g');
     }
 
-    private async runCode(code: string, context: any): Promise<string> {
-        let res: any;
-        try {
-            res = await runInContext(code, createContext(context, { codeGeneration: { strings: false, wasm: false }}));
-        } catch (error) {
-            res = `Error: ${error ? error.message || error : error}`;
-        }
-        if (typeof res !== 'string') {
-            res = inspect(res, { depth: 0 });
-        }
-        return res;
-    }
-
     public async run(params: CommandParameters) {
-        let { bot, msg, content } = params;
+        let { bot, msg, content, args } = params;
         let silent = false;
 
-        // Code block may be on a different line, so allow parameters to be split by any whitespace
-        const args = content.split(/\s+/);
-        
         if (args[0] === this.silentArg) {
             silent = true;
             content = content.substr(this.silentArg.length).trimLeft();
         }
 
         // Parse code from code blocks/lines
-        let code = content;
-        const codeBlock = DiscordUtil.getCodeBlock(code);
-        if (codeBlock.match) {
-            code = codeBlock.content;
-        }
-        else {
-            const codeLine = DiscordUtil.getCodeLine(code);
-            if (codeLine.match) {
-                code = codeLine.content;
-            }
-        }
+        const code = DiscordUtil.getCodeBlockOrLine(content) ?? content;
 
-        let res = await this.runCode(code, {
+        let res = await EvalUtil.runCodeToString(code, {
             params,
             bot,
             msg,
