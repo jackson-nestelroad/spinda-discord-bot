@@ -11,8 +11,10 @@ export abstract class ParameterCommand extends Command {
             throw new Error(`Invalid command: \`${command}\``);
         }
 
-        params.content = params.content.substr(command ? command.length : 0).trimLeft();
-        params.args.shift();
+        if (command) {
+            params.content = params.content.substr(command.length).trimLeft();
+            params.args.shift();
+        }
         await this.commands[command](params);
     }
 }
