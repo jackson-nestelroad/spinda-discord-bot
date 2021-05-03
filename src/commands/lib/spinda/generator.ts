@@ -124,7 +124,7 @@ export class SpindaGeneratorService extends BaseService {
     private hordeCtx: CanvasRenderingContext2D = this.hordeCanvas.getContext('2d');
 
     public static readonly historySize: number = 5;
-    public static readonly partySize: number = 6;
+    public static readonly partySize: number = 8;
 
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
 
