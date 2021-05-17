@@ -122,7 +122,7 @@ export class DiscordBot {
             else {
                 if (offenses === 0) {
                     cooldownSet.update(msg.author.id, 1);
-                    const reply = await msg.reply('slow down!');
+                    const reply = await msg.reply('Slow down!');
                     await this.wait(10000);
                     await reply.delete();
                 }

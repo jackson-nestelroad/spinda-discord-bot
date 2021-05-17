@@ -19,7 +19,7 @@ export class RoutletteCommand extends Command {
 
     public async run({ bot, msg, args }: CommandParameters) {
         if (this.dead.has(msg.author.id)) {
-            await msg.reply('you are already dead!');
+            await msg.reply('You are already dead!');
             return;
         }
 

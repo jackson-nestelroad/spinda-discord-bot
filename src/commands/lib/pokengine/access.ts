@@ -49,10 +49,10 @@ export class AccessCommand extends Command {
             // Ignore members that already have access
             if (!msg.member.roles.cache.has(this.accessRole.id)) {
                 if (msg.channel.id !== this.accessChannel.id) {
-                    await msg.reply(`please go to ${this.accessChannel.toString()}.`);
+                    await msg.reply(`Please go to ${this.accessChannel.toString()}.`);
                 }
                 else if (!content) {
-                    await msg.reply('please provide your Pok\u00E9ngine username.');
+                    await msg.reply('Please provide your Pok\u00E9ngine username.');
                 }
                 else {
                     const username = content;
@@ -84,7 +84,7 @@ export class AccessCommand extends Command {
                     try {
                         newMember = await newMember.setNickname(siteName);
                     } catch (error) {
-                        await msg.reply('your nickname could not be updated. Please contact a staff member.');
+                        await msg.reply('Your nickname could not be updated. Please contact a staff member.');
                     }
 
                     // Submit update to site
