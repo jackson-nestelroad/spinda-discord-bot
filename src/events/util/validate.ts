@@ -19,6 +19,6 @@ export namespace Validation {
     }
 
     export function isAdministrator(member: GuildMember): boolean {
-        return member.hasPermission("ADMINISTRATOR");
+        return member.permissions.has("ADMINISTRATOR");
     }
 }

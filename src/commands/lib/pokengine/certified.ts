@@ -20,12 +20,13 @@ export class CertifiedCommand extends Command {
         if (!this.certifiedDexNames) {
             const dexesResponse = await axios.get(PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.pokedexPath), { responseEncoding: 'binary' } as any);
             this.certifiedDexNames = [];
-            cheerio(dexesResponse.data).find('.dexes').first().find('a.button').each((i, button) => {
-                const ctx = cheerio(button);
+            
+            cheerio.load(dexesResponse.data)('.dexes').first().find('a.button').each((i, button) => {
+                const ctx = cheerio.load(button);
                 this.certifiedDexNames.push({
-                    name: ctx.text(),
-                    dexPath: ctx.attr('href'),
-                    iconPath: '/' + ctx.find('img').attr('src'),
+                    name: ctx.root().text(),
+                    dexPath: button.attribs['href'],
+                    iconPath: '/' + ctx('img').attr('src'),
                 })
             });
         }
@@ -48,14 +49,14 @@ export class CertifiedCommand extends Command {
         // Gather data
         // TODO: Think about caching this data
         let mons: WebScrapedDexBlock[] = [];
-        cheerio(dexResponse.data).find('.dex-block').each((i, block) => {
-            const ctx = cheerio(block);
+        cheerio.load(dexResponse.data)('.dex-block').each((i, block) => {
+            const ctx = cheerio.load(block).root();
             const split = ctx.text().split(' ');
             if (split.length > 1) {
                 mons.push({ 
                     num: parseInt(split[0]),
                     name: split.slice(1).join(' '),
-                    pagePath: ctx.attr('href'),
+                    pagePath: block.attribs['href'],
                     imagePath: ctx.find('img').attr('data-src')
                 });
             }

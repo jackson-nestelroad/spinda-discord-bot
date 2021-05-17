@@ -16,11 +16,11 @@ export class ConchCommand extends Command {
     public readonly secondLine = `\n${this.prefix}`;
     public readonly editedHeader = this.header + this.secondLine;
 
-    public async run({ msg, content }: CommandParameters) {
+    public async run({ bot, msg, content }: CommandParameters) {
         const question = content.toLowerCase().trim();
         let response = await msg.channel.send(this.header);
 
-        response = await FunUtil.addSuspense(response, this.editedHeader, 2);
+        response = await FunUtil.addSuspense(bot, response, this.editedHeader, 2);
 
         let res: string;
         if (question.startsWith('which')) {

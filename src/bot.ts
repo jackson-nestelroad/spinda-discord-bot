@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User, Channel, Message, GuildMember } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -30,7 +30,8 @@ export class DiscordBot {
     public commands: Map<string, Command>;
 
     public readonly startedAt = new Date();
-    public readonly client = new Client();
+    // TODO: Remove unneeded intents
+    public readonly client = new Client({ intents: Intents.ALL & ~Intents.FLAGS.GUILD_PRESENCES });
     public readonly dataService = new DataService(this);
     public readonly resourceService = new ResourceService(this);
     public readonly memberListService = new MemberListService(this);
@@ -63,7 +64,8 @@ export class DiscordBot {
         const match = DiscordUtil.userMentionRegex.exec(str);
         if (match) {
             const user = this.client.users.cache.get(match[1]);
-            return user ? guild.member(user) : null;
+            ;
+            return user ? guild.members.cache.get(user.id) : null;
         }
 
         // Try user ID then username
@@ -107,6 +109,9 @@ export class DiscordBot {
         this.refreshCommands();
     }
 
+    public async wait(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
     
     public async handleCooldown(msg: Message, cooldownSet: TimedCache<string, number>): Promise<boolean> {
         if (cooldownSet) {
@@ -118,7 +123,8 @@ export class DiscordBot {
                 if (offenses === 0) {
                     cooldownSet.update(msg.author.id, 1);
                     const reply = await msg.reply('slow down!');
-                    await reply.delete({ timeout: 10000 });
+                    await this.wait(10000);
+                    await reply.delete();
                 }
                 else if (offenses >= 5) {
                     await this.timeoutService.timeout(msg.author);

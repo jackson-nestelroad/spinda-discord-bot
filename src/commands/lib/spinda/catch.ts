@@ -73,7 +73,8 @@ export class CatchCommand extends Command {
                 const embed = bot.createEmbed(EmbedTemplates.Error);
                 embed.setDescription('You did not respond in time.');
                 const reply = await msg.reply(embed);
-                await reply.delete({ timeout: 10000 });
+                await bot.wait(10000);
+                await reply.delete();
                 return;
             }
         }

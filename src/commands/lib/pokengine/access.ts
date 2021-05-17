@@ -70,7 +70,7 @@ export class AccessCommand extends Command {
                         throw new Error(`Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`);
                     }
 
-                    const profile = cheerio(response.data).find('.content-inner.profile');
+                    const profile = cheerio.load(response.data)('.content-inner.profile');
                     const siteName = profile.find('.scroll').eq(0).find('b').text();
                     const betaNode = profile.find('.flavor.other').eq(1).find('a').eq(0);
                     if (betaNode.text() === 'take it') {

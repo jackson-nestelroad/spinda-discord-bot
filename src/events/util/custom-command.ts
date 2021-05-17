@@ -331,7 +331,7 @@ export class CustomCommandEngine {
                         throw new Error('Invalid value for wait');
                     }
                     this.assertLimit(name, ms);
-                    await new Promise(resolve => setTimeout(() => resolve(), ms));
+                    await this.params.bot.wait(ms);
                     return '';
                 } break;
                 case 'message': {

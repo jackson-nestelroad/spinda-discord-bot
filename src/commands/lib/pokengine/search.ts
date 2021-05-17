@@ -44,8 +44,8 @@ export class SearchCommand extends Command {
         const query = content;
         const searchUrl = this.searchFor(query);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
-        const searchResults = cheerio(searchResponse.data);
-        const title = searchResults.find('#content .content.above').last();
+        const searchResults = cheerio.load(searchResponse.data);
+        const title = searchResults('#content .content.above').last();
 
         const embed: MessageEmbed = bot.createEmbed();
         
@@ -81,7 +81,7 @@ export class SearchCommand extends Command {
 
         embed.setAuthor(`First result for "${titleText}"`);
 
-        const firstDexBlock = searchResults.find('.dex-block').first();
+        const firstDexBlock = searchResults('.dex-block').first();
         // Results are Pokemon or Trainers
         if (firstDexBlock.length > 0) {
             // Result is private
@@ -89,7 +89,7 @@ export class SearchCommand extends Command {
                 PokengineUtil.embedPrivate(embed);
             }
             // Results are Pokemon
-            else if (searchResults.find('#monsters').length > 0) {
+            else if (searchResults('#monsters').length > 0) {
                 PokengineUtil.embedDexBlock(embed, { 
                     num: parseInt(firstDexBlock.attr('data-id')),
                     name: firstDexBlock.attr('title'),
@@ -110,7 +110,7 @@ export class SearchCommand extends Command {
         }
 
         // Check for search table
-        const firstTableRow = searchResults.find('.search-table tr').first();
+        const firstTableRow = searchResults('.search-table tr').first();
         if (firstTableRow.length > 0) {
             const cols = firstTableRow.children();
             
@@ -179,7 +179,7 @@ export class SearchCommand extends Command {
         }
 
         // The only other option is Forums/Posts
-        const firstForumPost = searchResults.find('.content.below .content-inner.forum').first();
+        const firstForumPost = searchResults('.content.below .content-inner.forum').first();
         if (firstForumPost.length > 0) {
             const origin = firstForumPost.find('.time').find('a');
             PokengineUtil.embedPost(embed, {
