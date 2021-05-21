@@ -1,15 +1,15 @@
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
-export interface BlacklistEntryAttributes {
+export interface BlocklistEntryAttributes {
     readonly id: number;
     readonly guildId: string;
     readonly userId: string;
 }
 
-interface BlacklistEntryCreationAttributes extends Optional<BlacklistEntryAttributes, 'id'> { };
+interface BlocklistEntryCreationAttributes extends Optional<BlocklistEntryAttributes, 'id'> { };
 
-export class BlacklistEntry extends Model<BlacklistEntryAttributes, BlacklistEntryCreationAttributes>
-    implements BlacklistEntryAttributes {
+export class BlocklistEntry extends Model<BlocklistEntryAttributes, BlocklistEntryCreationAttributes>
+    implements BlocklistEntryAttributes {
     public readonly id: number;
     public readonly guildId: string;
     public readonly userId: string;
@@ -18,7 +18,7 @@ export class BlacklistEntry extends Model<BlacklistEntryAttributes, BlacklistEnt
     public readonly updatedAt!: Date;
 
     static initialize(sequelize: Sequelize) {
-        BlacklistEntry.init({
+        BlocklistEntry.init({
             id: {
                 type: DataTypes.INTEGER,
                 primaryKey: true,
@@ -34,7 +34,7 @@ export class BlacklistEntry extends Model<BlacklistEntryAttributes, BlacklistEnt
             }
         }, {
             sequelize,
-            tableName: 'blacklist',
+            tableName: 'blocklist',
         });
     }
 }

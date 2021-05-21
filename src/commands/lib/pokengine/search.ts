@@ -1,11 +1,12 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
-import { Message, MessageEmbed } from 'discord.js';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import { MessageEmbed } from 'discord.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { PokengineUtil } from './util';
+import { CommandSource } from '../../../util/command-source';
 
 enum SearchTabs {
-    'Pok\u00E9mon',
+    'Pok\u{00E9}mon',
     'Moves',
     'Items',
     'Abilities',
@@ -18,15 +19,27 @@ enum SearchTabs {
 
 type SearchTab = keyof typeof SearchTabs;
 
-export class SearchCommand extends Command {
+interface SearchArgs {
+    query: string;
+}
+
+export class SearchCommand extends ComplexCommand<SearchArgs> {
     public readonly searchPath: string = '/search';
 
     public name = 'search';
-    public args = 'query';
-    public description = `Searches the Pok\u00E9ngine website with a given query and returns the *first* result only. If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor('help')}.`;
+    public description = `Searches the Pok\u{00E9}ngine website with a given query and returns the first result only.`;
+    public moreDescription = `If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor('help')}.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public args: ArgumentsConfig<SearchArgs> = {
+        query: {
+            description: 'Search query, including any filters.',
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
 
     public tabNamesToUpperCase: Map<SearchTab, string> = null;
 
@@ -35,14 +48,15 @@ export class SearchCommand extends Command {
         return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(/#/g, '%23');
     }
 
-    private async sendEmbed(msg: Message, embed: MessageEmbed, searchUrl: string) {
+    private async sendEmbed(src: CommandSource, embed: MessageEmbed, searchUrl: string) {
         embed.setDescription(`[See more results](${searchUrl})`);
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        const query = content;
-        const searchUrl = this.searchFor(query);
+    public async run({ bot, src }: CommandParameters, args: SearchArgs) {
+        await src.defer();
+
+        const searchUrl = this.searchFor(args.query);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
         const searchResults = cheerio.load(searchResponse.data);
         const title = searchResults('#content .content.above').last();
@@ -52,7 +66,7 @@ export class SearchCommand extends Command {
         // No results
         if (title.length === 0) {
             embed.setTitle('No results found!');
-            return this.sendEmbed(msg, embed, searchUrl);
+            return this.sendEmbed(src, embed, searchUrl);
         }
 
         // Cached map names to upper case string
@@ -106,7 +120,7 @@ export class SearchCommand extends Command {
                 });
             }
             
-            return this.sendEmbed(msg, embed, searchUrl);
+            return this.sendEmbed(src, embed, searchUrl);
         }
 
         // Check for search table
@@ -123,7 +137,7 @@ export class SearchCommand extends Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    return this.sendEmbed(msg, embed, searchUrl);
+                    return this.sendEmbed(src, embed, searchUrl);
                 }
 
                 case 'Items': {
@@ -135,7 +149,7 @@ export class SearchCommand extends Command {
                         imagePath: cols.eq(1).find('img').attr('data-src'),
                     });
                     
-                    return this.sendEmbed(msg, embed, searchUrl);
+                    return this.sendEmbed(src, embed, searchUrl);
                 }
 
                 case 'Maps': {
@@ -147,7 +161,7 @@ export class SearchCommand extends Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    return this.sendEmbed(msg, embed, searchUrl);
+                    return this.sendEmbed(src, embed, searchUrl);
                 }
 
                 case 'Moves': {
@@ -160,7 +174,7 @@ export class SearchCommand extends Command {
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
                     
-                    return this.sendEmbed(msg, embed, searchUrl);
+                    return this.sendEmbed(src, embed, searchUrl);
                 }
 
                 case 'Players': {
@@ -173,7 +187,7 @@ export class SearchCommand extends Command {
                         imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
                     });
                     
-                    return this.sendEmbed(msg, embed, searchUrl);
+                    return this.sendEmbed(src, embed, searchUrl);
                 }
             }
         }
@@ -189,10 +203,10 @@ export class SearchCommand extends Command {
                 pagePath: origin.eq(1).attr('href'),
             });
 
-            return await this.sendEmbed(msg, embed, searchUrl);
+            return await this.sendEmbed(src, embed, searchUrl);
         }
 
         embed.setTitle('Could not parse results.');
-        return await this.sendEmbed(msg, embed, searchUrl);
+        return await this.sendEmbed(src, embed, searchUrl);
     }
 }

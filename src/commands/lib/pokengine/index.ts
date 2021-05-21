@@ -1,10 +1,10 @@
-import { Command } from '../base';
-import { CertifiedCommand } from './certified';
-import { SearchCommand } from './search';
+import { CommandTypeArray } from '../base';
 import { AccessCommand } from './access';
+import { CertifiedCommand } from './certified';
 import { JcoadCommand } from './jcoad';
+import { SearchCommand } from './search';
 
-export const PokengineCommands: Array<{ new(): Command }> = [
+export const PokengineCommands: CommandTypeArray = [
     CertifiedCommand,
     SearchCommand,
     JcoadCommand,

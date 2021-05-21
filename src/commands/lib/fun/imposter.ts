@@ -1,14 +1,26 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { GuildMember } from 'discord.js';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
 type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
 
-export class ImposterCommand extends Command {
+interface ImposterArgs {
+    user: GuildMember;
+}
+
+export class ImposterCommand extends ComplexCommand<ImposterArgs> {
     public name = 'imposter';
-    public args = '(user)';
     public description = 'Checks if a user is an imposter.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public args: ArgumentsConfig<ImposterArgs> = {
+        user: {
+            description: 'Member to check. If none is given, a random guild member is selected.',
+            type: ArgumentType.User,
+            required: false,
+        },
+    };
 
     private readonly imposter = '\u{D9E}';
     private readonly chanceForImposter = 0.1;
@@ -81,20 +93,9 @@ export class ImposterCommand extends Command {
         return `\`\`\`${message.join('\n')}\`\`\``;
     }
 
-    public async run({ bot, msg, args, content }: CommandParameters) {
-        let name: string;
-        if (args.length > 0) {
-            if (msg.mentions.users.size > 0) {
-                name = msg.mentions.users.first().username;
-            }
-            else {
-                name = content;
-            }
-        }
-        else {
-            name = (await bot.memberListService.getMemberListForGuild(msg.guild.id)).random().user.username;
-        }
+    public async run({ bot, src }: CommandParameters, args: ImposterArgs) {
+        const name = args.user?.user.username ?? (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
 
-        await msg.channel.send(this.generateText(name, this.identity));
+        await src.send(this.generateText(name, this.identity));
     }
 }

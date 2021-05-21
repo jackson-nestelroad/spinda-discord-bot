@@ -1,31 +1,42 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../../base';
 
-export class FandomCommand extends Command {
+interface FandomArgs {
+    subdomain: string;
+    query?: string;
+}
+
+export class FandomCommand extends ComplexCommand<FandomArgs> {
     public name = 'fandom';
-    public args = 'wiki-subdomain query';
-    public description = 'Searches a Fandom wiki (**wiki-subdomain**.fandom.com) for a page matching the given query.'
+    public description = 'Searches a Fandom wiki for a page matching the given query.'
     public category = CommandCategory.External;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public async run({ bot, msg, args }: CommandParameters) {
-        if (args.length < 1) {
-            throw new Error(`Fandom wiki subdomain is required.`);
-        }
+    public args: ArgumentsConfig<FandomArgs> = {
+        subdomain: {
+            description: 'Wiki subdomain, which precedes the Fandom link ([subdomain].fandom.com).',
+            type: ArgumentType.String,
+            required: true,
+        },
+        query: {
+            description: 'Search query.',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        },
+    };
 
-        const site = args.shift();
-        const search = args.join(' ');
-        const fandomURL = `https://${site}.fandom.com`;
+    public async run({ bot, src }: CommandParameters, args: FandomArgs) {
+        const fandomURL = `https://${args.subdomain}.fandom.com`;
 
-        if (args.length === 0) {
-            await msg.channel.send(fandomURL);
+        if (!args.query) {
+            await src.send(fandomURL);
         }
         else {
-            if (/^https?:\/\//.test(site)) {
+            if (/^https?:\/\//.test(args.subdomain)) {
                 throw new Error(`Only the Fandom wiki's subdomain (**example**.fandom.com) is required.`)
             }
             
-            await bot.mediaWikiService.searchSite(msg, fandomURL, search);
+            await bot.mediaWikiService.searchSite(src, fandomURL, args.query);
         }
     }
 }

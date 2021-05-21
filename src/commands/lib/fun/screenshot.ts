@@ -1,15 +1,42 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, StandardCooldowns, LegacyCommand, ArgumentsConfig, ArgumentType, CommandParameters, ChatCommandParameters } from '../base';
 import { createCanvas, registerFont, loadImage, CanvasRenderingContext2D, Canvas } from 'canvas';
-import { GuildMember, MessageAttachment } from 'discord.js';
+import { MessageAttachment } from 'discord.js';
 import { DiscordUtil } from '../../../util/discord';
 
-export class ScreenshotCommand extends Command {
+interface ScreenshotArgs {
+    user: string;
+    timestamp?: string;
+    message: string;
+}
+
+export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
     public name = 'screenshot';
-    public args = 'user (@ timestamp) \\```message\\```';
     public description = 'Creates a fake Discord message screenshot.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
+
+    public args: ArgumentsConfig<ScreenshotArgs> = {
+        user: {
+            description: 'Username. Give a Discord username or mention to use a guild member.',
+            type: ArgumentType.String,
+            required: true,
+        },
+        message: {
+            description: 'Message content.',
+            type: ArgumentType.String,
+            required: true,
+        },
+        timestamp: {
+            description: 'Timestamp. Give date format, "today", or "yesterday".',
+            type: ArgumentType.String,
+            required: false,
+        },
+    };
+
+    public argsString(): string {
+        return 'user (@ timestamp) \\```message\\```';
+    }
 
     private initialized = false;
     private canvas: Canvas = null;
@@ -128,7 +155,30 @@ export class ScreenshotCommand extends Command {
         }
     }
 
-    public async run({ bot, msg, content }: CommandParameters) {
+    protected parseChatArgs({ content }: ChatCommandParameters): ScreenshotArgs {
+        const args: Partial<ScreenshotArgs> = { };
+
+        // Message content is given in a code block at the end of the message
+        const codeBlockMatch = DiscordUtil.getCodeBlock(content);
+        if (!codeBlockMatch.match) {
+            throw new Error(`No code block found with message content.`);
+        }
+        args.message = codeBlockMatch.content;
+
+        const split = content.substring(0, codeBlockMatch.index).split(/(?<!<)@/g).map(str => str.trim());
+        if (split.length === 0 || split.length > 2) {
+            throw new Error(`Incorrect number of arguments before code block.`);
+        }
+
+        args.user = split[0];
+        args.timestamp = split[1];
+
+        return args as ScreenshotArgs;
+    } 
+
+    public async run({ bot, src }: CommandParameters, args: ScreenshotArgs) {
+        await src.defer();
+
         if (!this.initialized) {
             [300, 400, 500, 600, 700].forEach(weight => {
                 registerFont(bot.resourceService.resolve(`discord/fonts/whitney_${weight}.ttf`), { family: `Whitney` });
@@ -142,22 +192,9 @@ export class ScreenshotCommand extends Command {
             this.initialized = true;
         }
 
-        // Message content is given in a code block at the end of the message
-        const codeBlockMatch = DiscordUtil.getCodeBlock(content);
-        if (!codeBlockMatch.match) {
-            throw new Error(`No code block found with message content.`);
-        }
-        const messageContent = codeBlockMatch.content;
-        const args = content.substring(0, codeBlockMatch.index).split(/(?<!<)@/g).map(str => str.trim());
-        if (args.length === 0 || args.length > 2) {
-            throw new Error(`Incorrect number of arguments before code block.`);
-        }
-
-        const [givenUsername, givenTimestamp] = args;
-
         // Try to find guild member associated with the given username
         // Could have been a mention or just a name given
-        const member = await bot.getMemberFromString(givenUsername, msg.guild.id);
+        const member = await bot.getMemberFromString(args.user, src.guild.id);
 
         let username: string;
         let usernameColor: string;
@@ -165,7 +202,7 @@ export class ScreenshotCommand extends Command {
 
         // Create a fake user
         if (!member) {
-            username = givenUsername;
+            username = args.user;
             if (username.length < 2 || username.length > 32) {
                 throw new Error(`Username must be between 2 and 32 characters.`);
             }
@@ -185,14 +222,14 @@ export class ScreenshotCommand extends Command {
 
         // Create the timestamp string
         let timestamp: string;
-        if (!givenTimestamp || givenTimestamp.localeCompare('today', undefined, { sensitivity: 'accent' }) === 0) {
+        if (!args.timestamp || DiscordUtil.accentStringEqual('today', args.timestamp)) {
             timestamp = 'Today at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute:'2-digit' });
         }
-        else if (givenTimestamp.localeCompare('yesterday', undefined, { sensitivity: 'accent' }) === 0) {
+        else if (DiscordUtil.accentStringEqual('yesterday', args.timestamp)) {
             timestamp = 'Yesterday at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute:'2-digit' });
         }
         else {
-            const date = new Date(givenTimestamp);
+            const date = new Date(args.timestamp);
             if (isNaN(date.valueOf())) {
                 throw new Error(`Invalid timestamp.`);
             }
@@ -253,7 +290,7 @@ export class ScreenshotCommand extends Command {
         const contentTop = this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.height - this.contentProperties.size / 2;
         const maxLineWidthPixels = this.canvas.width - contentLeft - this.textAreaProperties.padding.right;
 
-        const lines = this.splitLines(this.ctx, messageContent, maxLineWidthPixels);
+        const lines = this.splitLines(this.ctx, args.message, maxLineWidthPixels);
         let currentLineTop = contentTop;
         for (const line of lines) {
             currentLineTop += this.contentProperties.height;
@@ -268,6 +305,6 @@ export class ScreenshotCommand extends Command {
         this.croppedCanvas.height = currentLineTop + this.contentProperties.size / 2;
         this.croppedCtx.drawImage(this.canvas, 0, 0);
 
-        await msg.channel.send(new MessageAttachment(this.croppedCanvas.toBuffer()));
+        await src.send(new MessageAttachment(this.croppedCanvas.toBuffer()));
     }
 }

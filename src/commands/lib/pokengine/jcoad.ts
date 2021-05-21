@@ -1,15 +1,26 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import axios from 'axios';
 
-export class JcoadCommand extends Command {
+interface JcoadArgs {
+    query?: string;
+}
+
+export class JcoadCommand extends ComplexCommand<JcoadArgs> {
     public readonly docUrl: string = 'https://pokengine-jcoad.readthedocs.io';
 
     public name = 'jcoad';
-    public args = '(query)';
     public description = `Searches the jCoad documentation.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public args: ArgumentsConfig<JcoadArgs> = {
+        query: {
+            description: 'Search query. Can be a function, property, trigger, condition, type, or option.',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        },
+    };
 
     private readonly apiPath: string = '/_/api/v2/search/?format=json&project=pokengine-jcoad&version=latest&q=';
     private readonly accentRegex: RegExp = /([P|p]ok)e(mon|ngine)/g;
@@ -24,12 +35,14 @@ export class JcoadCommand extends Command {
         'jcoad:pokeoption': ':regional_indicator_o: ',
     } as const;
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        if (!content) {
-            await msg.channel.send(this.docUrl);
+    public async run({ bot, src }: CommandParameters, args: JcoadArgs) {
+        if (!args.query) {
+            await src.send(this.docUrl);
         }
         else {
-            const query = content.replace(this.accentRegex, '$1\u00E9$2')
+            await src.defer();
+
+            const query = args.query.replace(this.accentRegex, '$1\u00E9$2')
             const url = this.docUrl + this.apiPath + encodeURIComponent(query);
             const response = await axios.get(url, { responseType: 'json' });
             if (response.status !== 200) {
@@ -44,7 +57,7 @@ export class JcoadCommand extends Command {
             const embed = bot.createEmbed();
             embed.setTitle('Pok\u00E9ngine jCoad Documentation');
             embed.setURL(this.docUrl);
-            embed.setAuthor(`Top results for "${content}"`);
+            embed.setAuthor(`Top results for "${args.query}"`);
 
             if (results.length === 0) {
                 embed.setDescription('No results found!');
@@ -88,7 +101,7 @@ export class JcoadCommand extends Command {
                 }
             }
 
-            await msg.channel.send(embed);
+            await src.send(embed);
         }
     }
 }

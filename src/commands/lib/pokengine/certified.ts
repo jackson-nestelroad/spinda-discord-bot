@@ -1,20 +1,41 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';
+import { DiscordUtil } from '../../../util/discord';
 
-export class CertifiedCommand extends Command {
+interface CertifiedArgs {
+    dex?: string;
+    mon?: string;
+}
+
+export class CertifiedCommand extends ComplexCommand<CertifiedArgs> {
     public name = 'certified';
-    public args = '(pok\u00E9dex) (pok\u00E9mon | number)';
-    public description = 'Returns a a link to a Pok\u00E9mon or Fak\u00E9mon from the certified Pok\u00E9dexes on the Pok\u00E9ngine website. If no Pok\u00E9dex is given, a random one will be selected. If no Pok\u00E9mon or Dex Number is given, a random one will be selected.';
+    public description = 'Returns a link to a Pok\u{00E9}mon or Fak\u{00E9}mon from the certified Pok\u{00E9}dexes on the Pok\u{00E9}ngine website.'
+    public moreDescription = 'If no Pok\u{00E9}dex is given, a random one will be selected. If no Pok\u{00E9}mon or Dex Number is given, a random one will be selected.';
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public readonly pokedexPath: string = '/pok\u00E9dex';
+    public args: ArgumentsConfig<CertifiedArgs> = {
+        dex: {
+            description: 'Pok\u{00E9}ex name.',
+            type: ArgumentType.String,
+            required: false,
+        },
+        mon: {
+            description: 'Pok\u{00E9}mon name or Pok\u{00E9}dex number',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        }
+    };
+
+    public readonly pokedexPath: string = '/pok\u{00E9}dex';
     public certifiedDexNames: WebScrapedPokedex[];
 
-    public async run({ bot, msg, args }: CommandParameters) {
+    public async run({ bot, src }: CommandParameters, args: CertifiedArgs) {
+        await src.defer();
+
         // Retrieve certified dex information
         // We cache this data since it is very unlikely to change
         if (!this.certifiedDexNames) {
@@ -33,14 +54,14 @@ export class CertifiedCommand extends Command {
 
         // Get dex from first argument, or choose a random one
         let dex: WebScrapedPokedex = null;
-        if (args.length > 0) {
-            dex = this.certifiedDexNames.find(dex => dex.name.localeCompare(args[0], undefined, { sensitivity: 'base' }) === 0);
-            if (!dex) {
-                throw new Error(`Pok\u00E9dex "${args[0]}" does not exist or is not certified.`);
-            }
+        if (args.dex === undefined) {
+            dex = this.certifiedDexNames[Math.floor(Math.random() * this.certifiedDexNames.length)];
         }
         else {
-            dex = this.certifiedDexNames[Math.floor(Math.random() * this.certifiedDexNames.length)];
+            dex = this.certifiedDexNames.find(dex => DiscordUtil.baseStringEqual(dex.name, args.dex));
+            if (!dex) {
+                throw new Error(`Pok\u00E9dex "${args.dex}" does not exist or is not certified.`);
+            }
         }
 
         // Get dex page, this is somewhat of a slow operation
@@ -63,25 +84,24 @@ export class CertifiedCommand extends Command {
         });
 
         if (mons.length === 0) {
-            throw new Error(`Pok\u00E9dex "${dex.name}" is empty.`);
+            throw new Error(`Pok\u{00E9}dex "${dex.name}" is empty.`);
         }
 
         let chosenMon: WebScrapedDexBlock = null;
-        if (args.length > 1) {
+        if (args.mon !== undefined) {
             // User gave a dex number
             let dexNum = parseInt(args[1]);
             if (!isNaN(dexNum)) {
                 chosenMon = mons.find(mon => mon.num === dexNum);
                 if (!chosenMon) {
-                    throw new Error(`#${dexNum} is out of range or private for Pok\u00E9dex ${dex.name}.`);
+                    throw new Error(`#${dexNum} is out of range or private for Pok\u{00E9}dex ${dex.name}.`);
                 }
             }
             // User gave a Fakemon name
             else {
-                const givenName = args.slice(1).join(' ');
-                chosenMon = mons.find(mon => mon.name.localeCompare(givenName, undefined, { sensitivity: 'base' }) === 0);
+                chosenMon = mons.find(mon => DiscordUtil.baseStringEqual(mon.name, args.mon));
                 if (!chosenMon) {
-                    throw new Error(`Pok\u00E9mon "${args[1]}" does not exist in Pok\u00E9dex ${dex.name}.`);
+                    throw new Error(`Pok\u{00E9}mon "${args.mon}" does not exist in Pok\u{00E9}dex ${dex.name}.`);
                 }
             }
         }
@@ -97,6 +117,6 @@ export class CertifiedCommand extends Command {
         PokengineUtil.embedDexBlock(embed, chosenMon);
         embed.setAuthor(dex.name, dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined);
 
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

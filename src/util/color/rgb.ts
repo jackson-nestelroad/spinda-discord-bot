@@ -133,7 +133,7 @@ export class RGBColor implements RGBInterface {
 
     public hexString(): string {
         const str = this.hex.toString(16).toUpperCase();
-        return str.length < 6 ? '0'.repeat(6 - str.length) + str : str;
+        return '#' + (str.length < 6 ? '0'.repeat(6 - str.length) + str : str);
     }
 
     public toHSV(): HSVColor {

@@ -1,14 +1,25 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../../base';
 
-export class BulbapediaCommand extends Command {
+interface BulbapediaArgs {
+    query: string;
+}
+
+export class BulbapediaCommand extends ComplexCommand<BulbapediaArgs> {
     public name = 'bulba';
-    public args = 'query';
     public description = 'Searches Bulbapedia for a page matching the given query.'
     public category = CommandCategory.External;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        await bot.mediaWikiService.searchSite(msg, 'https://bulbapedia.bulbagarden.net/w', content);
+    public args: ArgumentsConfig<BulbapediaArgs> = {
+        query: {
+            description: 'Search query.',
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src }: CommandParameters, args: BulbapediaArgs) {
+        await bot.mediaWikiService.searchSite(src, 'https://bulbapedia.bulbagarden.net/w', args.query);
     }
 }

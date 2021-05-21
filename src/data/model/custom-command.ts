@@ -1,10 +1,17 @@
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
-export interface CustomCommandAttributes {
-    readonly id: number;
-    readonly guildId: string;
+export interface CustomCommandData {
     name: string;
     message: string;
+    description: string;
+    contentName: string;
+    contentDescription: string;
+    noContent: boolean;
+}
+
+export interface CustomCommandAttributes extends CustomCommandData {
+    readonly id: number;
+    readonly guildId: string;
 }
 
 interface CustomCommandCreationAttributes extends Optional<CustomCommandAttributes, 'id'> { };
@@ -15,7 +22,11 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
     public readonly guildId: string;
     public name: string;
     public message: string;
-    
+    public description: string;
+    public contentName: string;
+    public contentDescription: string;
+    public noContent: boolean;
+
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
@@ -37,6 +48,22 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
             message: {
                 type: DataTypes.TEXT,
                 allowNull: false,
+            },
+            description: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
+            contentName: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
+            contentDescription: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            },
+            noContent: {
+                type: DataTypes.BOOLEAN,
+                allowNull: true,
             },
         }, {
             sequelize,

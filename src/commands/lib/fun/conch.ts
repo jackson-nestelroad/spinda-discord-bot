@@ -1,24 +1,34 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { FunUtil } from './util';
 
-export class ConchCommand extends Command {
-    public readonly prefix = ':shell: - ';
-    
+interface ConchArgs {
+    question?: string;
+}
+
+export class ConchCommand extends ComplexCommand<ConchArgs> {
+    public prefix = ':shell: - ';
     public name = 'conch';
-    public args = '(question)';
-    public description = this.prefix + 'Pulls the Magic Conch Shell\u2122\'s string for words of wisdom.';
+    public description = 'Pulls the Magic Conch Shell\u{2122}\'s string for words of wisdom.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
 
+    public args: ArgumentsConfig<ConchArgs> = {
+        question: {
+            description: 'Question to ask.',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        },
+    };
+
     public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
-    public readonly header = `You rapidly pulled the Magic Conch Shell\u2122\'s string. It slowly slithers back towards the shell.`;
+    public readonly header = `You rapidly pulled the Magic Conch Shell\u{2122}\'s string. It slowly slithers back towards the shell.`;
     public readonly secondLine = `\n${this.prefix}`;
     public readonly editedHeader = this.header + this.secondLine;
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        const question = content.toLowerCase().trim();
-        let response = await msg.channel.send(this.header);
+    public async run({ bot, src }: CommandParameters, args: ConchArgs) {
+        const question = args.question.toLowerCase().trim();
+        let response = await src.send(this.header);
 
         response = await FunUtil.addSuspense(bot, response, this.editedHeader, 2);
 

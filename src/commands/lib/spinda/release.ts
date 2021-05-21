@@ -1,32 +1,42 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { SpindaCommandNames } from './command-names';
-import { SpindaGeneratorService } from './generator';
 import { EmbedTemplates } from '../../../util/embed';
+import { SpindaGeneratorService } from './generator';
 
-export class ReleaseCommand extends Command {
+interface ReleaseArgs {
+    position: number;
+}
+
+export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
     public name = SpindaCommandNames.Release;
-    public args = 'position';
     public description = 'Releases a single Spinda from your party.';
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        const pos = parseInt(content);
-        if (isNaN(pos) || pos <= 0) {
+    public args: ArgumentsConfig<ReleaseArgs> = {
+        position: {
+            description: `Position to release, with 1 being the left-most and ${SpindaGeneratorService.partySize} being the right-most.`,
+            type: ArgumentType.Integer,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src }: CommandParameters, args: ReleaseArgs) {
+        if (args.position <= 0) {
             throw new Error(`Position must be a positive integer.`);
         }
 
-        const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
+        const caughtSpinda = await bot.dataService.getCaughtSpinda(src.author.id);
 
-        if (pos > caughtSpinda.length) {
+        if (args.position > caughtSpinda.length) {
             throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
         }
         
-        await bot.dataService.releaseCaughtSpinda(msg.author.id, pos - 1);
+        await bot.dataService.releaseCaughtSpinda(src.author.id, args.position - 1);
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
-        embed.setDescription(`Goodbye, Spinda! Successfully released position ${pos}.`);
-        await msg.channel.send(embed);
+        embed.setDescription(`Goodbye, Spinda! Successfully released position ${args.position}.`);
+        await src.send(embed);
     }
 }

@@ -1,29 +1,44 @@
 import { Message } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
 export class GotAwayError extends Error { };
 
-export class CatchCommand extends Command {
+interface CatchArgs {
+    position?: number;
+}
+
+export class CatchCommand extends ComplexCommand<CatchArgs> {
     public name = SpindaCommandNames.Catch;
-    public args = '(position)';
-    public description = [
-        `Catches one of the last ${SpindaGeneratorService.historySize} Spinda generated in the channel. Once one Spinda is caught, the others run away.`,
+    public description = `Catches one of the last ${SpindaGeneratorService.historySize} Spinda generated in the channel.`;
+    public moreDescription = [
+        `Once one Spinda is caught, the others run away.`,
         `Caught Spinda can be regenerated at any time using the \`${SpindaCommandNames.View}\` command. You may have up to ${SpindaGeneratorService.partySize} Spinda in your party at given time.`,
-        `The position specifies the Spinda to catch, with 1 being the top-most (left-most in a horde) and ${SpindaGeneratorService.historySize} being the bottom-most (right-most in a horde). Give no index to catch the newest Spinda.`
     ];
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
-    public async run({ bot, msg, guild, content }: CommandParameters) {
-        const wantedPosition = content ? parseInt(content) : 0;
-        if (isNaN(wantedPosition) || wantedPosition < 0) {
+
+    public args: ArgumentsConfig<CatchArgs> = {
+        position: {
+            description: `The Spinda to catch. Ranges top-to-bottom, left-to-right from 1 to ${SpindaGeneratorService.partySize}, or none for the most recent.`,
+            type: ArgumentType.Integer,
+            required: false,
+        },
+    };
+
+    public async run({ bot, src, guild }: CommandParameters, args: CatchArgs) {
+        const wantedPosition = args.position ?? 0;
+        if (wantedPosition < 0) {
             throw new Error('Position must be a positive integer.');
         }
+        if (wantedPosition > SpindaGeneratorService.historySize) {
+            throw new Error('Position is out of range.');
+        }
 
-        let wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, wantedPosition);
+        let wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(src.channel.id, wantedPosition);
 
         if (!wantedSpinda) {
             const generateMessage = `Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
@@ -35,18 +50,22 @@ export class CatchCommand extends Command {
             }
         }
 
-        const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
+        const caughtSpinda = await bot.dataService.getCaughtSpinda(src.author.id);
 
         let pos: number = caughtSpinda.length;
 
         // User must replace an existing Spinda
         if (caughtSpinda.length >= SpindaGeneratorService.partySize) {
+            // Save the numeric timestamp of the targeted Spinda
+            // Checked after the replacement segment to make sure a newer Spinda has not taken this spot
+            const generatedAt = wantedSpinda.generatedAt.valueOf();
+
             const embed = bot.createEmbed(EmbedTemplates.Error);
             embed.setDescription(`You have too many Spinda in your party. Respond with a number 1 through ${SpindaGeneratorService.partySize} to replace one of your party slots with this new Spinda. Send anything else to cancel.`);
-            await msg.reply(embed);
+            await src.reply(embed);
 
             try {
-                const messages = await msg.channel.awaitMessages((newMsg: Message) => newMsg.author.id === msg.author.id, {
+                const messages = await src.channel.awaitMessages((newMsg: Message) => newMsg.author.id === src.author.id, {
                     max: 1,
                     time: 10000,
                     errors: ['time'],
@@ -60,9 +79,9 @@ export class CatchCommand extends Command {
                 pos = num - 1;
 
                 // Fetch Spinda again, to make sure it wasn't caught before responding
-                wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(msg.channel.id, wantedPosition);
+                wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(src.channel.id, wantedPosition);
 
-                if (!wantedSpinda) {
+                if (!wantedSpinda || wantedSpinda.generatedAt.valueOf() !== generatedAt) {
                     throw new GotAwayError(`It got away...`);
                 }
 
@@ -72,20 +91,20 @@ export class CatchCommand extends Command {
                 }
                 const embed = bot.createEmbed(EmbedTemplates.Error);
                 embed.setDescription('You did not respond in time.');
-                const reply = await msg.reply(embed);
+                const reply = await src.reply(embed);
                 await bot.wait(10000);
                 await reply.delete();
                 return;
             }
         }
 
-        await bot.dataService.catchSpinda(msg.author.id, wantedSpinda, pos);
-        bot.spindaGeneratorService.clearChannelHistory(msg.channel.id);
+        await bot.dataService.catchSpinda(src.author.id, wantedSpinda, pos);
+        bot.spindaGeneratorService.clearChannelHistory(src.channel.id);
         
         const remaining = SpindaGeneratorService.partySize - caughtSpinda.length;
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${guild.prefix}${SpindaCommandNames.View} ${pos + 1}\`. You have ${remaining} party slot${remaining === 1 ? '' : 's'} remaining.`);
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

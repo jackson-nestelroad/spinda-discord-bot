@@ -1,15 +1,14 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
 import * as moment from 'moment';
 
-export class UptimeCommand extends Command {
+export class UptimeCommand extends SimpleCommand {
     public name = 'uptime';
-    public args = '';
     public description = 'Gives how long the bot has been continually running.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
-    public async run({ bot, msg }: CommandParameters) {
+    public async run({ bot, src }: CommandParameters) {
         const now = new Date();
         const diff = now.valueOf() - bot.startedAt.valueOf();
         const duration = moment.duration(diff);
@@ -41,6 +40,6 @@ export class UptimeCommand extends Command {
             reply.push(`${secs} second${secs === 1 ? '' : 's'}`);
         }
 
-        await msg.channel.send(reply.join(', '));
+        await src.send(reply.join(', '));
     }
 }

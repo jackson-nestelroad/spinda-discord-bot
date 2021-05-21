@@ -3,17 +3,30 @@ import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
-import { TimedCache } from '../../util/timed-cache';
+import { ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 
 interface ResponseParseResult {
     response: string;
     index: number;
 }
 
+export enum CustomCommandMetadata {
+    Description = 'description',
+    ContentName = 'content-name',
+    ContentDescription = 'content-description',
+    NoContent = 'no-content',
+}
+
+interface ParseMetadataResult {
+    code: string;
+    values: Map<CustomCommandMetadata, string | boolean>;
+}
+
 enum SpecialChars {
     FunctionBegin = '{',
     FunctionEnd = '}',
     VarBegin = '$',
+    MetadataBegin = '%',
     VarAssign = '=',
     FunctionAssign = ':=',
     AttributeSeparator = '.',
@@ -24,7 +37,7 @@ export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
     private static readonly falseVar = 'false';
-    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$>\+-]/;
+    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$%>\+-]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly maxParseDepth = 32;
 
@@ -47,9 +60,30 @@ export class CustomCommandEngine {
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
 
-    private static readonly cooldownSet: TimedCache<string, number> = new TimedCache({ seconds: 3 });
+    public static readonly cooldownTime: ExpireAgeFormat = { seconds: 3 };
+    private static readonly cooldownSet: TimedCache<string, number> = new TimedCache(CustomCommandEngine.cooldownTime);
 
-    constructor(private params: CommandParameters) { }
+    private content: string;
+    private args: string[];
+
+    constructor(private params: CommandParameters) {
+        if (params.src.isMessage) {
+            const msg = params.src.message;
+            this.content = msg.content;
+        }
+        else {
+            // Custom interactions have only a single parameter for all message content
+            const interaction = params.src.interaction;
+            if (interaction.options[0]) {
+                this.content = interaction.options[0].value.toString();
+                this.args = this.content.split(' ');
+            }
+            else {
+                this.content = '';
+                this.args = [];
+            }
+        }
+    }
 
     private static readonly userParams: ReadonlyDictionary<(user: User) => string> = {
         name: user => user.username,
@@ -97,7 +131,6 @@ export class CustomCommandEngine {
         'call',
     ]);
 
-
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
         'Arguments': [
             '$N',
@@ -107,6 +140,9 @@ export class CustomCommandEngine {
             `\$${CustomCommandEngine.specialVars.regexMatchEnd} (after regex)`,
             `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
             `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
+        ],
+        'Metadata': [
+            ...Object.entries(CustomCommandMetadata).map(([name, hasValue]) => `{%${CustomCommandMetadata[name]}${hasValue ? ' value' : ''}}`),
         ],
         'User Variables': [
             '{user}',
@@ -176,6 +212,41 @@ export class CustomCommandEngine {
     private depth: number = 0;
     private updatedMember: GuildMember = null;
     private limitProgress: Dictionary<number> = { };
+    
+    // Parses all metadata out of the custom command code
+    public static parseMetadata(code: string): ParseMetadataResult {
+        const result: Partial<ParseMetadataResult> = { values: new Map() };
+        let i = 0;
+        while ((i = code.indexOf(SpecialChars.MetadataBegin, i)) !== -1) {
+            if (code.charAt(i - 1) === SpecialChars.FunctionBegin) {
+                // Metadata starts at index (i - 1)
+                // We need to find where it ends
+                const nameStart = i + 1;
+                const nameEnd = nameStart + code.substring(nameStart).search(CustomCommandEngine.nonVarChar);
+
+                let value: string | boolean;
+                let metadataEnd: number;
+                // No value at all, no parsing required
+                if (code.charAt(nameEnd) === SpecialChars.FunctionEnd) {
+                    value = true;
+                    metadataEnd = nameEnd + 1;
+                }
+                // There is some value data after the metadata tag, parse it
+                else {
+                    const response = CustomCommandEngine.parseLazyEvalCode(code, nameEnd);
+                    value = response.response.trim();
+                    metadataEnd = response.index;
+                }
+
+                result.values.set(code.substring(nameStart, nameEnd) as CustomCommandMetadata, value);
+                code = code.substring(0, i - 1) + code.substring(metadataEnd);
+                // Do not update i, because the whole metadata portion was removed
+                // We begin searching for the next metadata at the same index!
+            }
+        }
+        result.code = code.trim();
+        return result as ParseMetadataResult;
+    }
 
     private assertLimit(name: string, increase: number) {
         if (!this.limitProgress[name]) {
@@ -188,16 +259,16 @@ export class CustomCommandEngine {
     }
 
     private getMember(): GuildMember {
-        return this.updatedMember ?? this.params.msg.member;
+        return this.updatedMember ?? this.params.src.member;
     }
 
     private handleVariableNative(name: string): string | undefined {
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
-            return !isNaN(argIndex) ? this.params.args[argIndex - 1] : undefined;
+            return !isNaN(argIndex) ? this.args[argIndex - 1] : undefined;
         }
         else if (name === CustomCommandEngine.specialVars.allArguments) {
-            return this.params.content;
+            return this.content;
         }
         else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
             const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
@@ -211,16 +282,6 @@ export class CustomCommandEngine {
 
     private handleVariable(name: string): string {
         return this.handleVariableNative(name) ?? CustomCommandEngine.undefinedVar;
-    }
-
-    private getRole(search: string): Role {
-        // Find role by ID
-        let role = this.params.msg.guild.roles.cache.get(search);
-        // Find role by name instead
-        if (!role) {
-            role = this.params.msg.guild.roles.cache.find(role => search.localeCompare(role.name, undefined, { sensitivity: 'accent'}) === 0);
-        }
-        return role;
     }
 
     private async handleFunction(name: string, args: string): Promise<string | null> {
@@ -262,6 +323,10 @@ export class CustomCommandEngine {
                 return null;
             }
         }
+        // Ignore metadata
+        else if (name.startsWith(SpecialChars.MetadataBegin)) {
+            return '';
+        }
         // Nested command call
         else if (name.startsWith(DataService.defaultPrefix)) {
             this.assertLimit('command', 1);
@@ -273,9 +338,9 @@ export class CustomCommandEngine {
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
                     }
-                    await command.execute({
+                    await command.executeChat({
                         bot: this.params.bot,
-                        msg: this.params.msg,
+                        src: this.params.src,
                         guild: this.params.guild,
                         content: args,
                         args: args ? args.split(' ') : [],
@@ -301,8 +366,8 @@ export class CustomCommandEngine {
                     return '';
                 } break;
                 case 'delete': {
-                    if (this.params.msg.deletable) {
-                        await this.params.msg.delete();
+                    if (this.params.src.deletable) {
+                        await this.params.src.delete();
                     }
                     return '';
                 } break;
@@ -336,14 +401,14 @@ export class CustomCommandEngine {
                 } break;
                 case 'message': {
                     this.assertLimit(name, 1);
-                    await this.params.msg.channel.send(args);
+                    await this.params.src.send(args);
                     return '';
                 } break;
                 case 'embed': {
                     this.assertLimit('message', 1);
                     const embed = this.params.bot.createEmbed();
                     embed.setDescription(args);
-                    await this.params.msg.channel.send(embed);
+                    await this.params.src.send(embed);
                     return '';
                 } break;
                 case 'random':
@@ -424,7 +489,7 @@ export class CustomCommandEngine {
                     return null;
                 } break;
                 case 'role': {
-                    const role = this.getRole(args);
+                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found`);
                     }
@@ -439,7 +504,7 @@ export class CustomCommandEngine {
                     return '';
                 } break;
                 case 'role?': {
-                    const role = this.getRole(args);
+                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found`);
                     }
@@ -447,7 +512,7 @@ export class CustomCommandEngine {
                     return this.getMember().roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
                 } break;
                 case '+role': {
-                    const role = this.getRole(args);
+                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found`);
                     }
@@ -456,7 +521,7 @@ export class CustomCommandEngine {
                     return '';
                 } break;
                 case '-role': {
-                    const role = this.getRole(args);
+                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found`);
                     }
@@ -468,7 +533,7 @@ export class CustomCommandEngine {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.userParams[attr]) {
-                            return CustomCommandEngine.userParams[attr](this.params.msg.author);
+                            return CustomCommandEngine.userParams[attr](this.params.src.author);
                         }
                         else if (CustomCommandEngine.memberParams[attr]) {
                             return CustomCommandEngine.memberParams[attr](this.getMember());
@@ -476,7 +541,7 @@ export class CustomCommandEngine {
                         return null;
                     }
                     else {
-                        return this.params.msg.author.toString();
+                        return this.params.src.author.toString();
                     }
                 } break;
                 case 'guild':
@@ -484,24 +549,24 @@ export class CustomCommandEngine {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.guildParams[attr]) {
-                            return CustomCommandEngine.guildParams[attr](this.params.msg.guild);
+                            return CustomCommandEngine.guildParams[attr](this.params.src.guild);
                         }
                         return null;
                     }
                     else {
-                        return this.params.msg.guild.toString();
+                        return this.params.src.guild.toString();
                     }
                 } break;
                 case 'channel': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.channelParams[attr]) {
-                            return CustomCommandEngine.channelParams[attr](this.params.msg.channel);
+                            return CustomCommandEngine.channelParams[attr](this.params.src.channel);
                         }
                         return null;
                     }
                     else {
-                        return this.params.msg.channel.toString();
+                        return this.params.src.channel.toString();
                     }
                 } break;
                 // This is not a function
@@ -727,7 +792,8 @@ export class CustomCommandEngine {
         return { response, index };
     }
 
-    private async parseLazyEvalCode(code: string, index: number): Promise<ResponseParseResult | null> {
+    // This method is static so that it can be used for metadata parsing as well
+    private static parseLazyEvalCode(code: string, index: number): ResponseParseResult | null {
         let response = '';
         let nestedDepth = 0;
         let paired = false;
@@ -814,7 +880,7 @@ export class CustomCommandEngine {
                         return this.parseSelectorFunction(code, index, functionName);
                     }
                     else if (CustomCommandEngine.lazyEvalFunctions.has(functionName)) {
-                        const lazyEval = await this.parseLazyEvalCode(code, index);
+                        const lazyEval = CustomCommandEngine.parseLazyEvalCode(code, index);
 
                         // null means the parse was unsuccessful
                         if (lazyEval !== null) {
@@ -901,11 +967,11 @@ export class CustomCommandEngine {
     }
 
     public async run(response: string) {
-        if (await this.params.bot.handleCooldown(this.params.msg, CustomCommandEngine.cooldownSet)) {
+        if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
             response = (await this.parse(response)).trim();
             if (!this.silent && response.length !== 0) {
                 this.assertLimit('message', 1);
-                await this.params.msg.channel.send(response);
+                await this.params.src.send(response);
             }
         }
     }

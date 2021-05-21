@@ -1,6 +1,6 @@
-import { Command } from '../base';
+import { CommandTypeArray } from '../base';
 import { MediaWikiCommands } from './wiki';
 
-export const ExternalCommands: Array<{ new(): Command }> = [
+export const ExternalCommands: CommandTypeArray = [
     ...MediaWikiCommands,
 ];

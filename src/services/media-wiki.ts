@@ -1,6 +1,6 @@
-import { Message } from 'discord.js';
 import axios from 'axios';
 import { BaseService } from './base';
+import { CommandSource } from '../util/command-source';
 
 interface ConfirmedSiteEntry {
     siteName: string;
@@ -43,11 +43,12 @@ export class MediaWikiService extends BaseService {
         return `/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0|14&format=json`;
     }
 
-    public async searchSite(msg: Message, site: string, query: string) {
+    public async searchSite(src: CommandSource, site: string, query: string) {
         if (!query) {
             throw new Error(`Search query cannot be empty.`);
         }
 
+        await src.defer();
         site = site.toLowerCase();
         if (!this.confirmedSites.has(site)) {
             site = this.validateURL(site);
@@ -99,6 +100,6 @@ export class MediaWikiService extends BaseService {
             embed.setDescription(results.join('\n'));
         }
 
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

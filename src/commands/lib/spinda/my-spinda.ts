@@ -1,16 +1,27 @@
 import { MessageAttachment } from 'discord.js';
 import { SpindaColorChange } from '../../../data/model/caught-spinda';
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
-export class MySpindaCommand extends Command {
+interface MySpindaArgs {
+    position?: number;
+}
+
+export class MySpindaCommand extends ComplexCommand<MySpindaArgs> {
     public name = SpindaCommandNames.View;
-    public args = '(position)';
     public description = `Regenerates one, or all, of the Spinda you have previously caught.`;
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
+
+    public args: ArgumentsConfig<MySpindaArgs> = {
+        position: {
+            description: 'Position to regenerate. If none is given, your entire party will be generated.',
+            type: ArgumentType.Integer,
+            required: false,
+        },
+    };
 
     private readonly classifications: Partial<Record<SpindaColorChange, string>> = {
         [SpindaColorChange.Shiny]: 'Shiny \u{2728}',
@@ -24,35 +35,36 @@ export class MySpindaCommand extends Command {
         [SpindaColorChange.Custom]: 'Random \u{1F3B2}'
     };
 
-    public async run({ bot, msg, guild, content }: CommandParameters) {
-        const caughtSpinda = await bot.dataService.getCaughtSpinda(msg.author.id);
+    public async run({ bot, src, guild }: CommandParameters, args: MySpindaArgs) {
+        await src.defer();
+
+        const caughtSpinda = await bot.dataService.getCaughtSpinda(src.author.id);
         if (caughtSpinda.length === 0) {
             throw new Error(`You have not yet caught a Spinda! Use \`${guild.prefix}${SpindaCommandNames.Catch}\` to catch one of the last generated Spinda in the channel.`);
         }
 
-        if (!content) {
+        if (args.position === undefined) {
             const result = await bot.spindaGeneratorService.horde(caughtSpinda);
-            await msg.channel.send(new MessageAttachment(result.buffer));
+            await src.send(new MessageAttachment(result.buffer));
         }
         else {
-            const pos = parseInt(content);
-            if (isNaN(pos) || pos <= 0) {
+            if (args.position <= 0) {
                 throw new Error(`Position must be a positive integer.`);
             }
-            else if (pos > SpindaGeneratorService.partySize) {
+            else if (args.position > SpindaGeneratorService.partySize) {
                 throw new Error(`Position too large.`);
             }
-            else if (pos > caughtSpinda.length) {
+            else if (args.position > caughtSpinda.length) {
                 throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
             }
 
-            const result = await bot.spindaGeneratorService.generate(caughtSpinda[pos - 1]);
+            const result = await bot.spindaGeneratorService.generate(caughtSpinda[args.position - 1]);
 
             const embed = bot.createEmbed();
             const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
             embed.attachFiles(attachment as any).setThumbnail('attachment://thumbnail.png');
     
-            embed.setTitle(`${msg.author.username}'s Spinda`);
+            embed.setTitle(`${src.author.username}'s Spinda`);
             embed.addField('PID', result.info.pid, true);
     
             if (result.info.colorChange !== SpindaColorChange.None) {
@@ -61,7 +73,7 @@ export class MySpindaCommand extends Command {
               
             embed.addField('Generated At', result.info.generatedAt.toLocaleString(), true);
     
-            await msg.channel.send(embed);
+            await src.send(embed);
         }
     }
 }

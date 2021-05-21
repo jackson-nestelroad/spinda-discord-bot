@@ -1,30 +1,36 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
 import { MessageAttachment } from 'discord.js';
 import { SpindaCommandNames } from './command-names';
 import { SpindaColorChange } from '../../../data/model/caught-spinda';
 
-export class SpindaCommand extends Command {
+export class SpindaCommand extends SimpleCommand {
     public name = SpindaCommandNames.Generate;
-    public args = '';
-    public description = [
-        `Generates a random Spinda pattern from ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There are even random chances for Spinda with special features and colorings. The rarest Spinda is a shiny Spinda!`,
+    public description = 'Generates a random Spinda pattern.';
+    public moreDescription = [
+        `There are ${0xFFFFFFFF.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} possibilities. There are even random chances for Spinda with special features and colorings. The rarest Spinda is a shiny Spinda!`,
         `Use the \`${SpindaCommandNames.Catch}\` command to catch a Spinda you like!`
     ];
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
 
-    public async run({ bot, msg }: CommandParameters) {
+    public async run({ bot, src }: CommandParameters) {
+        await src.defer();
+        
         // Generate a new Spinda
         const result = await bot.spindaGeneratorService.generate();
         
         // Save it as the last Spinda generated in the channel
-        bot.spindaGeneratorService.pushToChannelHistory(msg.channel.id, result.info);
+        bot.spindaGeneratorService.pushToChannelHistory(src.channel.id, result.info);
 
         // Send the image
-        const sent = await msg.channel.send(new MessageAttachment(result.buffer));
+        const sent = await src.send(new MessageAttachment(result.buffer));
+
+        if (!sent.isMessage) {
+            throw new Error('Command reply did not produce a message.');
+        }
 
         if (result.info.colorChange === SpindaColorChange.Shiny) {
-            await sent.react('\u{2728}');
+            await sent.message.react('\u{2728}');
         }
     }
 }
