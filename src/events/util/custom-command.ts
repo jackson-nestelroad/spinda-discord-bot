@@ -133,7 +133,7 @@ export class CustomCommandEngine {
     ]);
 
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
-        'Arguments': [
+        'Runtime Arguments': [
             '$N',
             `\$${CustomCommandEngine.specialVars.allArguments}`,
             `\$${CustomCommandEngine.specialVars.loopCounter} (in repeat)`,
@@ -143,7 +143,7 @@ export class CustomCommandEngine {
             `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
         ],
         'Metadata': [
-            ...Object.entries(CustomCommandMetadata).map(([name, hasValue]) => `{%${CustomCommandMetadata[name]}${hasValue ? ' value' : ''}}`),
+            ...Object.keys(CustomCommandMetadata).map(key => `{%${CustomCommandMetadata[key]} value}`),
         ],
         'User Variables': [
             '{user}',
