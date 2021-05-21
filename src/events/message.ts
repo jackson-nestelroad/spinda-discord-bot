@@ -46,7 +46,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
             const customCommands = await this.bot.dataService.getCustomCommands(params.src.guild.id);
             if (customCommands[cmd]) {
                 try {
-                    await new CustomCommandEngine(params).run(customCommands[cmd].message);
+                    await new CustomCommandEngine(params, content, args).run(customCommands[cmd].message);
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
                 }

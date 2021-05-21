@@ -24,6 +24,6 @@ export class RunCustomCommand extends ComplexCommand<RunCustomArgs> {
             bot: params.bot,
             src: params.src,
             guild: params.guild,
-        }).run(args.code);
+        }, 'content').run(args.code);
     }
 }

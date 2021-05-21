@@ -67,10 +67,10 @@ export class CustomCommandEngine {
     private content: string;
     private args: string[];
 
-    constructor(private params: CommandParameters) {
+    constructor(private params: CommandParameters, content?: string, args?: string[]) {
         if (params.src.isMessage) {
-            const msg = params.src.message;
-            this.content = msg.content;
+            this.content = content || '';
+            this.args = args ? args : content ? content.split(' ') : [];
         }
         else {
             // Custom interactions have only a single parameter for all message content
