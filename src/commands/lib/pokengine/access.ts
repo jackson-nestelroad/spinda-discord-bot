@@ -2,10 +2,11 @@ import { CommandCategory, CommandPermission, CommandParameters, StandardCooldown
 import { Environment } from '../../../data/environment';
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
-import { Message, Role, TextChannel } from 'discord.js';
+import { Role, TextChannel } from 'discord.js';
+import { EmbedTemplates } from '../../../util/embed';
 
 interface AccessArgs {
-    username: string;
+    username?: string;
 }
 
 export class AccessCommand extends ComplexCommand<AccessArgs> {
@@ -29,7 +30,9 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
         username: {
             description: 'Pok\u{00E9}ngine username.',
             type: ArgumentType.RestOfContent,
-            required: true,
+            // Setting required false skips parsing for empty messages, which is better for
+            // ignoring this command for users who already have access
+            required: false,
         },
     }
 
@@ -62,7 +65,14 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
 
             // Ignore members that already have access
             if (src.member.roles.cache.has(this.accessRole.id)) {
-                throw new Error(`You already have access!`);
+                if (src.isInteraction) {
+                    const embed = bot.createEmbed(EmbedTemplates.Error);
+                    embed.setDescription(`You already have access!`);
+                    await src.replyEphemeral(embed);
+                }
+                else {
+                    return;
+                }
             }
             else {
                 if (src.channel.id !== this.accessChannel.id) {
