@@ -79,7 +79,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
             else if (DiscordUtil.baseStringEqual(CommandCategory.Custom, query)) {
                 embed.setTitle(`${CommandCategory.Custom} Commands for ${src.guild.name}`);
                 const customCommands = await bot.dataService.getCustomCommands(src.guild.id);
-                const commandsString = Object.values(customCommands).map(data => `\`${this.customCommandString(data, prefix)}\``).join(', ');
+                const commandsString = Object.values(customCommands).map(data => `\`${prefix}${data.name}\``).join(', ');
                 embed.setDescription(commandsString);
             }
             // Query is a global command
@@ -118,6 +118,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
                     if (!customCommand.noContent) {
                         embed.addField('Arguments', `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`, true);
                     }
+                    embed.addField('Code', `\`${CustomCommandEngine.addMetadata(customCommand)}\``);
                 }
                 else {
                     embed.setTitle('No Command Found');

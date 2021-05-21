@@ -4,6 +4,7 @@ import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
 import { ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
+import { CustomCommandData } from '../../data/model/custom-command';
 
 interface ResponseParseResult {
     response: string;
@@ -246,6 +247,27 @@ export class CustomCommandEngine {
         }
         result.code = code.trim();
         return result as ParseMetadataResult;
+    }
+
+    private static makeMetadataFunction(name: string, value?: string): string {
+        return `{${SpecialChars.MetadataBegin}${name}${value ? ` ${value}` : ''}}`;
+    }
+
+    public static addMetadata(data: CustomCommandData): string {
+        const code = [
+            CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description),
+        ];
+
+        if (data.noContent) {
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
+        }
+        else {
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName));
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentDescription, data.contentDescription));
+        }
+
+        code.push(data.message);
+        return code.join(' ');
     }
 
     private assertLimit(name: string, increase: number) {
