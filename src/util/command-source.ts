@@ -88,7 +88,7 @@ export class CommandSource {
 
     // Only interactions can be deferred
     public async defer(): Promise<void> {
-        if (this.isInteraction && !this.interaction.deferred) {
+        if (this.isInteraction && !this.interaction.deferred && !this.interaction.replied) {
             return await this.interaction.defer();
         }
     }
