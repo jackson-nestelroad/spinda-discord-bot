@@ -10,7 +10,7 @@ import { BotsnackCommand } from './lib/fun/botsnack';
 import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
 import { ConchCommand } from './lib/fun/conch';
-import { ImposterCommand } from './lib/fun/imposter';
+import { ImpostorCommand } from './lib/fun/impostor';
 import { RollCommand } from './lib/fun/roll';
 import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
@@ -40,7 +40,7 @@ const CommandTypes: CommandTypeArray = [
     EightBallCommand,
     RollCommand,
     RoutletteCommand,
-    ImposterCommand,
+    ImpostorCommand,
     ChooseCommand,
     ColorCommand,
     ScreenshotCommand,

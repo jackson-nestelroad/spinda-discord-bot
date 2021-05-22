@@ -3,18 +3,18 @@ import { CommandCategory, CommandPermission, CommandParameters, StandardCooldown
 
 type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
 
-interface ImposterArgs {
+interface ImpostorArgs {
     user: GuildMember;
 }
 
-export class ImposterCommand extends ComplexCommand<ImposterArgs> {
-    public name = 'imposter';
-    public description = 'Checks if a user is an imposter.';
+export class ImpostorCommand extends ComplexCommand<ImpostorArgs> {
+    public name = 'impostor';
+    public description = 'Checks if a user is an impostor.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public args: ArgumentsConfig<ImposterArgs> = {
+    public args: ArgumentsConfig<ImpostorArgs> = {
         user: {
             description: 'Member to check. If none is given, a random guild member is selected.',
             type: ArgumentType.User,
@@ -22,10 +22,10 @@ export class ImposterCommand extends ComplexCommand<ImposterArgs> {
         },
     };
 
-    private readonly imposter = '\u{D9E}';
-    private readonly chanceForImposter = 0.1;
+    private readonly impostor = '\u{D9E}';
+    private readonly chanceForImpostor = 0.1;
     private readonly linePadding = 3;
-    private readonly identity = 'An Imposter';
+    private readonly identity = 'An Impostor';
 
     private readonly stars: WeightedDistribution<string[] | string> = [
         { weight: 800, value: ' ' },
@@ -63,8 +63,8 @@ export class ImposterCommand extends ComplexCommand<ImposterArgs> {
         return Array.isArray(value) ? value[Math.floor(Math.random() * value.length)] : value;
     }
 
-    private isImposter(): boolean {
-        return Math.random() < this.chanceForImposter;
+    private isImpostor(): boolean {
+        return Math.random() < this.chanceForImpostor;
     }
 
     private generateSpaceLine(length: number): string {
@@ -75,7 +75,7 @@ export class ImposterCommand extends ComplexCommand<ImposterArgs> {
         return line;
     }
 
-    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImposter()): string {
+    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImpostor()): string {
         // Calculate line lengths
         const revealMsg = `${subject} was ${isIdentity ? '' : 'not '}${identity}`;
         const lineLength = revealMsg.length + this.linePadding * 2 + (revealMsg.length % 2 === 0 ? 1 : 0);
@@ -85,7 +85,7 @@ export class ImposterCommand extends ComplexCommand<ImposterArgs> {
 
         message.push(this.generateSpaceLine(lineLength));
         let line = this.generateSpaceLine(lineLength);
-        message.push(line.substr(0, halfLine) + this.imposter + line.substr(halfLine + 1));
+        message.push(line.substr(0, halfLine) + this.impostor + line.substr(halfLine + 1));
         message.push(' '.repeat(this.linePadding) + revealMsg + ' '.repeat(this.linePadding));
         message.push(this.generateSpaceLine(lineLength));
         message.push(this.generateSpaceLine(lineLength));
@@ -93,7 +93,7 @@ export class ImposterCommand extends ComplexCommand<ImposterArgs> {
         return `\`\`\`${message.join('\n')}\`\`\``;
     }
 
-    public async run({ bot, src }: CommandParameters, args: ImposterArgs) {
+    public async run({ bot, src }: CommandParameters, args: ImpostorArgs) {
         const name = args.user?.user.username ?? (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
 
         await src.send(this.generateText(name, this.identity));
