@@ -19,7 +19,7 @@ export class MediaWikiCommand extends ComplexCommand<MediaWikiArgs> {
             required: true,
         },
         query: {
-            description: 'Search query',
+            description: 'Search query.',
             type: ArgumentType.RestOfContent,
             required: true,
         },
