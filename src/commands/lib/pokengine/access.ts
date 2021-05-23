@@ -25,14 +25,13 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
     public cooldown = StandardCooldowns.Low;
 
     public slashGuildId = Environment.Pokengine.getGuildId();
+    public suppressChatArgumentsError = true;
 
     public args: ArgumentsConfig<AccessArgs> = {
         username: {
             description: 'Pok\u{00E9}ngine username.',
             type: ArgumentType.RestOfContent,
-            // Setting required false skips parsing for empty messages, which is better for
-            // ignoring this command for users who already have access
-            required: false,
+            required: true,
         },
     }
 

@@ -281,6 +281,12 @@ abstract class ParameterizedCommand<T extends object> extends BaseCommand {
 
 export type ArgumentsConfig<T> = { readonly [key in keyof T]-?: SingleArgumentConfig };
 
+export interface ComplexCommand<T extends object> {
+    // Suppresses chat arguments parsing errors, allowing the command to run anyway
+    // Input validation should be done in the command handler, then
+    readonly suppressChatArgumentsError?: boolean;
+}
+
 // Command handler that automatically parses chat and slash arguments the same way
 export abstract class ComplexCommand<T extends object> extends ParameterizedCommand<T> {
     public argsString(): string {
@@ -312,7 +318,9 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
             
             if (i >= params.args.length) {
                 if (data.required) {
-                    throw new Error(`Missing required argument \`${arg}\``);
+                    if (!this.suppressChatArgumentsError) {
+                        throw new Error(`Missing required argument \`${arg}\``);
+                    }
                 }
                 else {
                     parsed[arg] = undefined;
@@ -328,7 +336,7 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
                 case ArgumentType.String: {
                     if (data.choices) {
                         const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
-                        if (choice === undefined) {
+                        if (choice === undefined && !this.suppressChatArgumentsError) {
                             throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\``);
                         }
                         parsed[arg] = choice.value;
@@ -344,21 +352,21 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
                     else if (DiscordUtil.accentStringEqual('false', nextArg)) {
                         parsed[arg] = false;
                     }
-                    else {
+                    else if (!this.suppressChatArgumentsError) {
                         throw new Error(`Invalid boolean value \`${nextArg}\` for argument \`${arg}\``);
                     }
                 } break;
                 case ArgumentType.Integer: {
                     if (data.choices) {
                         const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
-                        if (choice === undefined) {
+                        if (choice === undefined && !this.suppressChatArgumentsError) {
                             throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\``);
                         }
                         parsed[arg] = choice.value;
                     }                    
                     else {
                         const num = parseInt(nextArg);
-                        if (isNaN(num)) {
+                        if (isNaN(num) && !this.suppressChatArgumentsError) {
                             throw new Error(`Invalid integer value \`${nextArg}\` for argument \`${arg}\``);
                         }
                         parsed[arg] = num;
@@ -366,21 +374,21 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
                 } break;
                 case ArgumentType.Channel: {
                     const channel = params.bot.getChannelFromString(nextArg, params.guild.id);
-                    if (!channel) {
+                    if (!channel && !this.suppressChatArgumentsError) {
                         throw new Error(`Invalid channel \`${nextArg}\` for argument \`${arg}\``);
                     }
                     parsed[arg] = channel;
                 } break;
                 case ArgumentType.Role: {
                     const role = params.bot.getRoleFromString(nextArg, params.guild.id);
-                    if (!role) {
+                    if (!role && !this.suppressChatArgumentsError) {
                         throw new Error(`Invalid role \`${nextArg}\` for argument \`${arg}\``);
                     }
                     parsed[arg] = role;
                 } break;
                 case ArgumentType.User: {
                     const member = await params.bot.getMemberFromString(nextArg, params.guild.id);
-                    if (!member) {
+                    if (!member && !this.suppressChatArgumentsError) {
                         throw new Error(`Invalid guild member \`${nextArg}\` for argument \`${arg}\``);
                     }
                     parsed[arg] = member;
