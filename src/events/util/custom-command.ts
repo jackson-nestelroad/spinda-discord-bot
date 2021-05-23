@@ -286,7 +286,7 @@ export class CustomCommandEngine {
     }
 
     private assertLimit(name: ExecutionLimit, increase: number) {
-        if (!this.limitProgress[name]) {
+        if (this.limitProgress[name] === undefined) {
             this.limitProgress[name] = 0;
         }
         if (increase + this.limitProgress[name] > CustomCommandEngine.limits[name]) {
@@ -1017,7 +1017,7 @@ export class CustomCommandEngine {
                 this.assertLimit(ExecutionLimit.Message, 1);
                 await this.params.src.send(response);
             }
-            else if (this.params.src.isInteraction && this.checkLimitProgress(ExecutionLimit.Message) === 0) {
+            else if (this.params.src.isInteraction && !this.params.src.interaction.replied) {
                 this.assertLimit(ExecutionLimit.Message, 1);
                 await this.params.src.replyEphemeral('\u{2705}');
             }
