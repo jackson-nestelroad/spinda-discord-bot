@@ -32,8 +32,14 @@ export class DiscordBot {
     public commands: CommandMap<string>;
 
     public readonly startedAt = new Date();
-    // TODO: Remove unneeded intents
-    public readonly client = new Client({ intents: Intents.ALL & ~Intents.FLAGS.GUILD_PRESENCES });
+    public readonly client = new Client({
+        intents: [
+            Intents.FLAGS.GUILDS,
+            Intents.FLAGS.GUILD_BANS,
+            Intents.FLAGS.GUILD_MEMBERS,
+            Intents.FLAGS.GUILD_MESSAGES,
+        ],
+    });
     public readonly dataService = new DataService(this);
     public readonly resourceService = new ResourceService(this);
     public readonly memberListService = new MemberListService(this);
