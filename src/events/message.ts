@@ -2,9 +2,10 @@ import { Message } from 'discord.js';
 import { BaseEvent } from './base';
 import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
-import { CommandParameters } from '../commands/lib/base';
+import { ChatCommandParameters } from '../commands/lib/base';
 import { CustomCommandEngine } from './util/custom-command';
 import { GuildAttributes } from '../data/model/guild';
+import { CommandSource } from '../util/command-source';
 
 const event = 'message';
 
@@ -21,26 +22,33 @@ export class MessageEvent extends BaseEvent<typeof event> {
         content = content.substr(cmd.length).trim();
         content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
 
-        const params: CommandParameters = { bot: this.bot, msg, args, content, guild };
+        const params: ChatCommandParameters = {
+            bot: this.bot,
+            src: new CommandSource(msg),
+            args,
+            content,
+            guild,
+        };
+
         // Global command
         if (this.bot.commands.has(cmd)) {
             try {
                 const command = this.bot.commands.get(cmd)
-                if (Validation.validate(params, command, params.msg.member)) {
-                    await command.execute(params);
+                if (Validation.validate(params, command, params.src.member)) {
+                    await command.executeChat(params);
                 }
             } catch (error) {
-                await params.bot.sendError(params.msg, error);
+                await this.bot.sendError(params.src, error);
             }
         }
         // Could be a custom (guild) command
         else {
-            const customCommands = await this.bot.dataService.getCustomCommands(params.msg.guild.id);
+            const customCommands = await this.bot.dataService.getCustomCommands(params.src.guild.id);
             if (customCommands[cmd]) {
                 try {
-                    await new CustomCommandEngine(params).run(customCommands[cmd]);
+                    await new CustomCommandEngine(params, content, args).run(customCommands[cmd].message);
                 } catch (error) {
-                    await params.bot.sendError(params.msg, error);
+                    await this.bot.sendError(params.src, error);
                 }
             }
         }
@@ -57,9 +65,9 @@ export class MessageEvent extends BaseEvent<typeof event> {
             return;
         }
 
-        // User is blacklisted in this guild
-        const blacklist = await this.bot.dataService.getBlacklist(msg.guild.id);
-        if (blacklist.has(msg.author.id)) {
+        // User is blocklisted in this guild
+        const blocklist = await this.bot.dataService.getBlocklist(msg.guild.id);
+        if (blocklist.has(msg.author.id)) {
             return;
         }
     

@@ -1,27 +1,43 @@
 import { EmbedTemplates } from '../../../util/embed';
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
-export class RemoveCommandCommand extends Command {
+interface RemoveCommandArgs {
+    command: string;
+}
+
+export class RemoveCommandCommand extends ComplexCommand<RemoveCommandArgs> {
     public name = 'remove-command';
-    public args = 'command';
     public description = 'Removes a custom command that was previously set for the guild.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.High;
 
-    public async run({ bot, msg, args }: CommandParameters) {
-        if (args.length === 0) {
-            return;
+    public args: ArgumentsConfig<RemoveCommandArgs> = {
+        command: {
+            description: 'Custom command to remove.',
+            type: ArgumentType.String,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src }: CommandParameters, args: RemoveCommandArgs) {
+        const command = args.command.toLowerCase();
+        
+        // Remove slash command first
+        const slashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
+        if (slashCommand) {
+            await src.guild.commands.delete(slashCommand);
         }
 
-        const command = args[0];
-        const removed = await bot.dataService.removeCustomCommand(msg.guild.id, command);
+        // Remove from database second
+        // If removing slash command fails, we still want the handler to exist
+        const removed = await bot.dataService.removeCustomCommand(src.guild.id, command);
         if (!removed) {
             throw new Error(`Command \`${command}\` does not exist.`);
         }
-        
+
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully removed command \`${command}\`.`);
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

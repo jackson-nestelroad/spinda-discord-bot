@@ -1,14 +1,25 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
-export class RollCommand extends Command {
-    public readonly prefix = ':game_die: - ';
+interface RollArgs {
+    roll: string;
+}
 
+export class RollCommand extends ComplexCommand<RollArgs> {
+    public prefix = ':game_die: - ';
     public name = 'roll';
-    public args = 'XdY([+-x/]A(dB))';
-    public description = this.prefix + 'Rolls a die with a given number of sides, a given number of times, with the given mathematical operations. Mathematical operations can use the results of other dice rolls.';
+    public description = 'Rolls a die according to the dice format given.';
+    public moreDescription = 'You an specify the number of sides, number of rolls, and any extra mathematical operations on nested dice rolls. Mathematical operations can use the results of other dice rolls as well.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public args: ArgumentsConfig<RollArgs> = {
+        roll: {
+            description: 'Dice notation: XdY([+-x/]A(dB)).',
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
 
     private readonly rollCountLimit = 256;
     private readonly arrow = '\u21d2';
@@ -42,12 +53,8 @@ export class RollCommand extends Command {
         return rollCount;
     }
 
-    public async run({ bot, msg, args }: CommandParameters) {
-        if (args.length === 0) {
-            throw new Error(`Missing dice notation.`);
-        }
-
-        let roll = args[0];
+    public async run({ bot, src }: CommandParameters, args: RollArgs) {
+        let roll = args.roll;
         let rollCount = 0;
 
         let match: RegExpMatchArray = roll.match(this.diceRegex);
@@ -102,6 +109,6 @@ export class RollCommand extends Command {
         }
 
         embed.setTitle(`:game_die: ${this.arrow} ${result}`);
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

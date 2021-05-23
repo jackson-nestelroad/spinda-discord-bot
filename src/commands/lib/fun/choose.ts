@@ -1,31 +1,35 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
-import { FunUtil } from './util';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
-export class ChooseCommand extends Command {
+interface ChooseArgs {
+    choices: string;
+}
+
+export class ChooseCommand extends ComplexCommand<ChooseArgs> {
     public readonly separator: string = ';';
 
     public name = 'choose';
-    public args = `choice${this.separator} choice${this.separator} ...`;
-    public description = `Randomly selects one choice from a given list of options. Separate all choices using \`${this.separator}\`.`;
+    public description = 'Randomly selects one choice from a given list of options.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public args: ArgumentsConfig<ChooseArgs> = {
+        choices: {
+            description: `Any number of choices separated using \`${this.separator}\`. For example: choice${this.separator} choice${this.separator} ...`,
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
+
     public readonly header = 'I choose... ';
 
-    public async run({ msg, content }: CommandParameters) {
-        const choices = content.trim().split(this.separator);
+    public async run({ src }: CommandParameters, args: ChooseArgs) {
+        const choices = args.choices.trim().split(this.separator);
         let choice = 'nothing!';
         if (choices.length > 1 || choices[0]) {
             choice = '"' + choices[Math.floor(Math.random() * choices.length)].trim() + '"';
         }
 
-        await msg.channel.send(this.header + choice);
-
-        // Suspense version
-        // let response = await msg.channel.send(this.header);
-        // response = await FunUtil.addSuspense(response, this.header, 2);
-
-        // await response.edit(this.header + choice);
+        await src.send(this.header + choice);
     }
 }

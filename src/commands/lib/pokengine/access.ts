@@ -1,35 +1,52 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { Environment } from '../../../data/environment';
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { Role, TextChannel } from 'discord.js';
+import { EmbedTemplates } from '../../../util/embed';
 
-export class AccessCommand extends Command {
-    private readonly serverName = 'Official Pok\u00E9ngine Discord Server';
+interface AccessArgs {
+    username?: string;
+}
+
+export class AccessCommand extends ComplexCommand<AccessArgs> {
+    private readonly serverName = 'Official Pok\u{00E9}ngine Discord Server';
     private readonly site = 'http://pokengine.org';
     private readonly playerPath = '/players/';
+    private readonly successReact = '\u{2705}';
 
     private accessRole: Role = null;
     private accessChannel: TextChannel = null;
 
     public name = 'access';
-    public args = '(Pok\u00E9ngine username)';
     public description = `Requests access to the ${this.serverName}.`
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
-    public async run({ bot, msg, guild, content }: CommandParameters) {
-        if (msg.guild.id !== Environment.Pokengine.getGuildId()) {
+    public slashGuildId = Environment.Pokengine.getGuildId();
+
+    public args: ArgumentsConfig<AccessArgs> = {
+        username: {
+            description: 'Pok\u{00E9}ngine username.',
+            type: ArgumentType.RestOfContent,
+            // Setting required false skips parsing for empty messages, which is better for
+            // ignoring this command for users who already have access
+            required: false,
+        },
+    }
+
+    public async run({ bot, src }: CommandParameters, args: AccessArgs) {
+        if (src.guild.id !== Environment.Pokengine.getGuildId()) {
             const embed = bot.createEmbed();
             embed.setDescription(`Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`);
-            await msg.channel.send(embed);
+            await src.send(embed);
         }
         else {
             // Make sure the role we are granting exists
             if (!this.accessRole) {
                 const id = Environment.Pokengine.getAccessRoleId();
-                this.accessRole = msg.guild.roles.cache.find(role => role.id === id);
+                this.accessRole = src.guild.roles.cache.find(role => role.id === id);
                 if (!this.accessRole) {
                     throw new Error(`Role id \`${id}\` does not exist in this server.`);
                 }
@@ -37,7 +54,7 @@ export class AccessCommand extends Command {
             // Make sure access channel exists and is a text channel
             if (!this.accessChannel) {
                 const id = Environment.Pokengine.getAccessChannelId();
-                this.accessChannel = msg.guild.channels.cache.find(channel => channel.id === id) as TextChannel;
+                this.accessChannel = src.guild.channels.cache.find(channel => channel.id === id) as TextChannel;
                 if (!this.accessChannel) {
                     throw new Error(`Channel id \`${id}\` does not exist in this server.`);
                 }
@@ -47,15 +64,27 @@ export class AccessCommand extends Command {
             }
 
             // Ignore members that already have access
-            if (!msg.member.roles.cache.has(this.accessRole.id)) {
-                if (msg.channel.id !== this.accessChannel.id) {
-                    await msg.reply(`please go to ${this.accessChannel.toString()}.`);
-                }
-                else if (!content) {
-                    await msg.reply('please provide your Pok\u00E9ngine username.');
+            if (src.member.roles.cache.has(this.accessRole.id)) {
+                if (src.isInteraction) {
+                    const embed = bot.createEmbed(EmbedTemplates.Error);
+                    embed.setDescription(`You already have access!`);
+                    await src.replyEphemeral(embed);
                 }
                 else {
-                    const username = content;
+                    return;
+                }
+            }
+            else {
+                if (src.channel.id !== this.accessChannel.id) {
+                    await src.replyEphemeral(`Please go to ${this.accessChannel.toString()}.`);
+                }
+                else if (!args.username) {
+                    await src.replyEphemeral('Please provide your Pok\u00E9ngine username.');
+                }
+                else {
+                    await src.defer();
+
+                    const username = args.username;
                     const url = this.site + this.playerPath + username;
                     let response: AxiosResponse;
                     try {
@@ -70,7 +99,7 @@ export class AccessCommand extends Command {
                         throw new Error(`Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`);
                     }
 
-                    const profile = cheerio(response.data).find('.content-inner.profile');
+                    const profile = cheerio.load(response.data)('.content-inner.profile');
                     const siteName = profile.find('.scroll').eq(0).find('b').text();
                     const betaNode = profile.find('.flavor.other').eq(1).find('a').eq(0);
                     if (betaNode.text() === 'take it') {
@@ -78,13 +107,13 @@ export class AccessCommand extends Command {
                     }
 
                     // Update guild member
-                    let newMember = await msg.member.roles.add(this.accessRole);
+                    let newMember = await src.member.roles.add(this.accessRole);
 
                     // Don't fail the operation if setting the nickname fails
                     try {
                         newMember = await newMember.setNickname(siteName);
                     } catch (error) {
-                        await msg.reply('your nickname could not be updated. Please contact a staff member.');
+                        await src.reply('Your nickname could not be updated. Please contact a staff member.');
                     }
 
                     // Submit update to site
@@ -107,12 +136,19 @@ export class AccessCommand extends Command {
                     // Try to send a DM
                     // If it fails, add a reaction to signal the failure
                     try {
-                        await msg.author.send(embed);
+                        await src.sendDirect(embed);
                     } catch (error) {
-                        await msg.react('\u{1F614}');
+                        if (src.isMessage) {
+                            await src.message.react('\u{1F614}');
+                        }
                     }
 
-                    await msg.react('\u{2705}');
+                    if (src.isMessage) {
+                        await src.message.react(this.successReact);
+                    }
+                    else {
+                        await src.send(this.successReact);
+                    }
                 }
             }
         }

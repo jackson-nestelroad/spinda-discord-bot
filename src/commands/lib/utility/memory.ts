@@ -1,8 +1,7 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
 
-export class MemoryCommand extends Command {
+export class MemoryCommand extends SimpleCommand {
     public name = 'memory';
-    public args = '';
     public description = 'Gives the amount of memory currently used by the bot.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
@@ -10,7 +9,7 @@ export class MemoryCommand extends Command {
 
     private readonly precision = 2;
 
-    public async run({ msg }: CommandParameters) {
+    public async run({ src }: CommandParameters) {
         const bytes = process.memoryUsage().rss;
         let message: string;
         if (bytes >= 1 << 30) {
@@ -25,6 +24,6 @@ export class MemoryCommand extends Command {
         else {
             message = `${bytes} bytes`;
         }
-        await msg.channel.send('`' + message + '`');
+        await src.send('`' + message + '`');
     }
 }

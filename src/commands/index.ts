@@ -1,34 +1,32 @@
-import { Command } from './lib/base';
-import { PingCommand } from './lib/utility/ping';
-import { HelpCommand } from './lib/utility/help';
-import { ConchCommand } from './lib/fun/conch';
-import { BotsnackCommand } from './lib/fun/botsnack';
-import { EightBallCommand } from './lib/fun/8ball';
-import { PokengineCommands } from './lib/pokengine';
-import { RefreshCommand } from './lib/secret/refresh';
-import { CleanCommand } from './lib/utility/clean';
-import { RoutletteCommand } from './lib/fun/roulette';
-import { EvalCommand } from './lib/secret/eval';
-import { SayCommand } from './lib/secret/say';
-import { UptimeCommand } from './lib/utility/uptime';
-import { ImposterCommand } from './lib/fun/imposter';
-import { PrefixCommand } from './lib/config/prefix';
+import { CommandMap, CommandTypeArray } from './lib/base';
+import { BlocklistCommand } from './lib/config/blocklist';
 import { LogsCommand } from './lib/config/logs';
-import { SetCommandCommand } from './lib/config/set-command';
+import { PrefixCommand } from './lib/config/prefix';
 import { RemoveCommandCommand } from './lib/config/remove-command';
-import { CustomHelpCommand } from './lib/utility/custom';
-import { RunCustomCommand } from './lib/secret/run-custom';
+import { SetCommandCommand } from './lib/config/set-command';
+import { ExternalCommands } from './lib/external';
+import { EightBallCommand } from './lib/fun/8ball';
+import { BotsnackCommand } from './lib/fun/botsnack';
 import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
-import { ExternalCommands } from './lib/external';
-import { ScreenshotCommand } from './lib/fun/screenshot';
-import { BlacklistCommand } from './lib/config/blacklist';
+import { ConchCommand } from './lib/fun/conch';
+import { ImpostorCommand } from './lib/fun/impostor';
 import { RollCommand } from './lib/fun/roll';
+import { RoutletteCommand } from './lib/fun/roulette';
+import { ScreenshotCommand } from './lib/fun/screenshot';
+import { PokengineCommands } from './lib/pokengine';
+import { EvalCommand } from './lib/secret/eval';
+import { RefreshCommand } from './lib/secret/refresh';
+import { RunCustomCommand } from './lib/secret/run-custom';
+import { SayCommand } from './lib/secret/say';
 import { SpindaCommands } from './lib/spinda';
+import { CleanCommand } from './lib/utility/clean';
+import { HelpCommand } from './lib/utility/help';
 import { MemoryCommand } from './lib/utility/memory';
-import { MessageListenerCommand } from './lib/secret/message-listener';
+import { PingCommand } from './lib/utility/ping';
+import { UptimeCommand } from './lib/utility/uptime';
 
-const CommandTypes: Array<{ new(): Command }> = [
+const CommandTypes: CommandTypeArray = [
     PingCommand,
     HelpCommand,
     CleanCommand,
@@ -42,7 +40,7 @@ const CommandTypes: Array<{ new(): Command }> = [
     EightBallCommand,
     RollCommand,
     RoutletteCommand,
-    ImposterCommand,
+    ImpostorCommand,
     ChooseCommand,
     ColorCommand,
     ScreenshotCommand,
@@ -53,19 +51,21 @@ const CommandTypes: Array<{ new(): Command }> = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
-    CustomHelpCommand,
     RunCustomCommand,
-    MessageListenerCommand,
+
+    // TODO: Bring this command back somehow
+    // Maybe using sub-commands?
+    // MessageListenerCommand,
 
     PrefixCommand,
     LogsCommand,
-    BlacklistCommand,
+    BlocklistCommand,
     SetCommandCommand,
     RemoveCommandCommand,
 ];
 
 export namespace Commands {
-    export function buildCommandMap(): Map<string, Command> {
+    export function buildCommandMap(): CommandMap<string> {
         const map = new Map();
         for (const cmd of CommandTypes) {
             const instance = new cmd();

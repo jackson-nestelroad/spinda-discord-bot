@@ -1,14 +1,25 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../../base';
 
-export class WikipediaCommand extends Command {
+interface WikipediaArgs {
+    query: string;
+}
+
+export class WikipediaCommand extends ComplexCommand<WikipediaArgs> {
     public name = 'wikipedia';
-    public args = 'query';
     public description = 'Searches Wikipedia for a page matching the given query.'
     public category = CommandCategory.External;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public async run({ bot, msg, content }: CommandParameters) {
-        await bot.mediaWikiService.searchSite(msg, 'https://wikipedia.org/w', content);
+    public args: ArgumentsConfig<WikipediaArgs> = {
+        query: {
+            description: 'Search query.',
+            type: ArgumentType.String,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src }: CommandParameters, args: WikipediaArgs) {
+        await bot.mediaWikiService.searchSite(src, 'https://wikipedia.org/w', args.query);
     }
 }

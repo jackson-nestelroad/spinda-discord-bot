@@ -1,4 +1,4 @@
-import { TextChannel, Guild, User } from 'discord.js';
+import { TextChannel, GuildBan } from 'discord.js';
 import { BaseLogEvent } from './base';
 import { DiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
@@ -11,16 +11,15 @@ export class GuildBanAddEvent extends BaseLogEvent<typeof event> {
         super(bot, event, LogOptionBit.MemberUpdated);
     }
     
-    public async run(guild: Guild, user: User) {
-        const channel = await this.getDestination(guild.id);
+    public async run(ban: GuildBan) {
+        const channel = await this.getDestination(ban.guild.id);
         if (channel) {
             const embed = this.bot.createEmbed(EmbedTemplates.Log);
-            this.setAuthor(embed, user);
-            embed.setDescription(user.toString());
+            this.setAuthor(embed, ban.user);
+            embed.setDescription(ban.user.toString());
             embed.setTitle('Member Banned');
 
-            const banInfo = await guild.fetchBan(user);
-            embed.addField('Reason', banInfo.reason);
+            embed.addField('Reason', ban.reason);
 
             await (channel as TextChannel).send(embed);
         }

@@ -1,14 +1,24 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
-export class EightBallCommand extends Command {
-    public readonly prefix = ':8ball: - ';
+interface EightBallArgs {
+    question?: string;
+}
 
+export class EightBallCommand extends ComplexCommand<EightBallArgs> {
+    public prefix = ':8ball: - ';
     public name = '8ball';
-    public args = '(question)';
-    public description = this.prefix + 'Shakes the Magic 8-ball for a glimpse into the future.';
+    public description = 'Shakes the Magic 8-ball for a glimpse into the future.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
+
+    public args: ArgumentsConfig<EightBallArgs> = {
+        question: {
+            description: 'Question to ask.',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        },
+    };
 
     public readonly options = [
         'It is certain.',
@@ -33,7 +43,7 @@ export class EightBallCommand extends Command {
         'Very doubtful.'
     ];
 
-    public async run({ msg }: CommandParameters) {
-        await msg.channel.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
+    public async run({ src }: CommandParameters, args: EightBallArgs) {
+        await src.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
     }
 }

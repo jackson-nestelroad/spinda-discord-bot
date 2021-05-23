@@ -1,18 +1,39 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
-import { inspect } from 'util';
+import { CommandCategory, CommandPermission, CommandParameters, ComplexCommand, ArgumentsConfig, ArgumentType, LegacyCommand, ChatCommandParameters } from '../base';
 import { Environment } from '../../../data/environment';
-import { runInContext, createContext } from 'vm';
 import { DiscordUtil } from '../../../util/discord';
 import * as DiscordJS from 'discord.js'
 import { EvalUtil } from '../../../util/eval';
 
+interface EvalArgs {
+    code: string;
+    silent: boolean;
+}
+
 // This command is heavily unsafe, use at your own risk
-export class EvalCommand extends Command {
+export class EvalCommand extends LegacyCommand<EvalArgs> {
     public name = 'eval';
-    public args = '(silent?) code';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
+
+    public disableSlash = true;
+
+    public args: ArgumentsConfig<EvalArgs> = {
+        silent: {
+            description: 'Silence result output?',
+            type: ArgumentType.Boolean,
+            required: true,
+        },
+        code: {
+            description: 'Code to run. May be put in a code line or code block.',
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
+
+    public argsString(): string {
+        return '(silent?) code';
+    }
 
     public readonly silentArg = 'silent';
     public readonly maxLength = 1900;
@@ -27,22 +48,31 @@ export class EvalCommand extends Command {
         this.sensitivePattern = new RegExp(`${Environment.getDiscordToken()}`, 'g');
     }
 
-    public async run(params: CommandParameters) {
-        let { bot, msg, content, args } = params;
-        let silent = false;
+    public parseChatArgs({ args, content }: ChatCommandParameters): EvalArgs {
+        const parsed: Partial<EvalArgs> = { };
 
         if (args[0] === this.silentArg) {
-            silent = true;
-            content = content.substr(this.silentArg.length).trimLeft();
+            parsed.silent = true;
+            parsed.code = content.substr(this.silentArg.length).trimLeft();
+        }
+        else {
+            parsed.silent = false;
+            parsed.code = content;
         }
 
+        return parsed as EvalArgs;
+    }
+
+    public async run(params: CommandParameters, args: EvalArgs) {
+        let { bot, src } = params;
+
         // Parse code from code blocks/lines
-        const code = DiscordUtil.getCodeBlockOrLine(content) ?? content;
+        const code = DiscordUtil.getCodeBlockOrLine(args.code) ?? args.code;
 
         let res = await EvalUtil.runCodeToString(code, {
             params,
             bot,
-            msg,
+            src,
             discord: DiscordJS,
             setTimeout,
             setInterval,
@@ -52,8 +82,8 @@ export class EvalCommand extends Command {
             res = res.substr(0, this.maxLength) + '...';
         }
         res = res.replace(this.sensitivePattern, '???');
-        if (!silent) {
-            await msg.channel.send(`\`\`\`javascript\n${res}\n\`\`\``);
+        if (!args.silent) {
+            await src.send(`\`\`\`javascript\n${res}\n\`\`\``);
         }
     }
 }

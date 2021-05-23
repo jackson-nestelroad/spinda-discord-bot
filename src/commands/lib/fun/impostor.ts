@@ -1,19 +1,31 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { GuildMember } from 'discord.js';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 
 type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
 
-export class ImposterCommand extends Command {
-    public name = 'imposter';
-    public args = '(user)';
-    public description = 'Checks if a user is an imposter.';
+interface ImpostorArgs {
+    user: GuildMember;
+}
+
+export class ImpostorCommand extends ComplexCommand<ImpostorArgs> {
+    public name = 'impostor';
+    public description = 'Checks if a user is an impostor.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    private readonly imposter = '\u{D9E}';
-    private readonly chanceForImposter = 0.1;
+    public args: ArgumentsConfig<ImpostorArgs> = {
+        user: {
+            description: 'Member to check. If none is given, a random guild member is selected.',
+            type: ArgumentType.User,
+            required: false,
+        },
+    };
+
+    private readonly impostor = '\u{D9E}';
+    private readonly chanceForImpostor = 0.1;
     private readonly linePadding = 3;
-    private readonly identity = 'An Imposter';
+    private readonly identity = 'An Impostor';
 
     private readonly stars: WeightedDistribution<string[] | string> = [
         { weight: 800, value: ' ' },
@@ -51,8 +63,8 @@ export class ImposterCommand extends Command {
         return Array.isArray(value) ? value[Math.floor(Math.random() * value.length)] : value;
     }
 
-    private isImposter(): boolean {
-        return Math.random() < this.chanceForImposter;
+    private isImpostor(): boolean {
+        return Math.random() < this.chanceForImpostor;
     }
 
     private generateSpaceLine(length: number): string {
@@ -63,7 +75,7 @@ export class ImposterCommand extends Command {
         return line;
     }
 
-    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImposter()): string {
+    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImpostor()): string {
         // Calculate line lengths
         const revealMsg = `${subject} was ${isIdentity ? '' : 'not '}${identity}`;
         const lineLength = revealMsg.length + this.linePadding * 2 + (revealMsg.length % 2 === 0 ? 1 : 0);
@@ -73,7 +85,7 @@ export class ImposterCommand extends Command {
 
         message.push(this.generateSpaceLine(lineLength));
         let line = this.generateSpaceLine(lineLength);
-        message.push(line.substr(0, halfLine) + this.imposter + line.substr(halfLine + 1));
+        message.push(line.substr(0, halfLine) + this.impostor + line.substr(halfLine + 1));
         message.push(' '.repeat(this.linePadding) + revealMsg + ' '.repeat(this.linePadding));
         message.push(this.generateSpaceLine(lineLength));
         message.push(this.generateSpaceLine(lineLength));
@@ -81,20 +93,9 @@ export class ImposterCommand extends Command {
         return `\`\`\`${message.join('\n')}\`\`\``;
     }
 
-    public async run({ bot, msg, args, content }: CommandParameters) {
-        let name: string;
-        if (args.length > 0) {
-            if (msg.mentions.users.size > 0) {
-                name = msg.mentions.users.first().username;
-            }
-            else {
-                name = content;
-            }
-        }
-        else {
-            name = (await bot.memberListService.getMemberListForGuild(msg.guild.id)).random().user.username;
-        }
+    public async run({ bot, src }: CommandParameters, args: ImpostorArgs) {
+        const name = args.user?.user.username ?? (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
 
-        await msg.channel.send(this.generateText(name, this.identity));
+        await src.send(this.generateText(name, this.identity));
     }
 }

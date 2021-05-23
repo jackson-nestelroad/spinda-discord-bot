@@ -1,18 +1,29 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { DiscordUtil } from '../../../util/discord';
 import { EmbedTemplates } from '../../../util/embed';
 import { MessageEmbed } from 'discord.js';
 
-export class PrefixCommand extends Command {
+interface PrefixArgs {
+    prefix?: string;
+}
+
+export class PrefixCommand extends ComplexCommand<PrefixArgs> {
     public name = 'prefix';
-    public args = '(prefix)';
     public description = 'Sets the guild\'s prefix.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
 
-    public async run({ bot, msg, content, guild }: CommandParameters) {        
-        let newPrefix = content;
+    public args: ArgumentsConfig<PrefixArgs> = {
+        prefix: {
+            description: 'New guild prefix.',
+            type: ArgumentType.String,
+            required: false,
+        },
+    };
+
+    public async run({ bot, src, guild }: CommandParameters, args: PrefixArgs) {        
+        let newPrefix = args.prefix;
         
         const codeLine = DiscordUtil.getCodeLine(newPrefix);
         if (codeLine.match) {
@@ -30,6 +41,6 @@ export class PrefixCommand extends Command {
             await bot.dataService.updateGuild(guild);
             embed.setDescription(`Changed guild prefix to \`${guild.prefix}\``);
         }
-        await msg.channel.send(embed);
+        await src.send(embed);
     }
 }

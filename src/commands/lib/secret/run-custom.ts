@@ -1,20 +1,29 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, ArgumentsConfig, ArgumentType, ComplexCommand } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 
-export class RunCustomCommand extends Command {
+interface RunCustomArgs {
+    code: string;
+}
+
+export class RunCustomCommand extends ComplexCommand<RunCustomArgs> {
     public name = 'run-custom';
-    public args = 'message';
     public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Administrator;
 
-    public async run(params: CommandParameters) {
+    public args: ArgumentsConfig<RunCustomArgs> = {
+        code: {
+            description: 'Custom command code.',
+            type: ArgumentType.RestOfContent,
+            required: true,
+        },
+    };
+
+    public async run(params: CommandParameters, args: RunCustomArgs) {
         await new CustomCommandEngine({
             bot: params.bot,
-            msg: params.msg,
-            args: [],
-            content: 'content',
+            src: params.src,
             guild: params.guild,
-        }).run(params.content);
+        }, 'content').run(args.code);
     }
 }

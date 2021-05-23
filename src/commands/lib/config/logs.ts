@@ -1,4 +1,4 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { TextChannel } from 'discord.js';
 import { LogOptionBit } from '../../../data/model/guild';
 import { EmbedTemplates } from '../../../util/embed';
@@ -30,8 +30,11 @@ const LogEvents: { [name: string]: LogOptionBit } = {
 
 type LogOptionMap = { [name: string]: LogOptionType[] };
 
+interface LogsArgs {
+    options?: string;
+}
 
-export class LogsCommand extends Command {
+export class LogsCommand extends ComplexCommand<LogsArgs> {
     private readonly options: LogOptionMap = {
         [LogCommandOption.Channel]: [LogOptionType.Channel],
         [LogCommandOption.Enable]: [LogOptionType.None, LogOptionType.Events],
@@ -40,20 +43,22 @@ export class LogsCommand extends Command {
     };
 
     public name = 'logs';
-    public args = '(option = value;)*';
-    public description = `
-Manages the guild's logging configuration.
-
-Available options:
-${this.formatOptions()}
-
-Available events:
-${this.formatBitOptions()}
-`;
-
+    public description = 'Manages the guild\'s logging configuration.'
+    public moreDescription = [
+        `Available options: ${this.formatOptions()}`,
+        `Available events: ${this.formatBitOptions()}`,
+    ];
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
+
+    public args: ArgumentsConfig<LogsArgs> = {
+        options: {
+            description: 'Log options to change, in the format of "(option = value;)*".',
+            type: ArgumentType.RestOfContent,
+            required: false,
+        },
+    };
 
     private formatOptions(): string {
         return Object.entries(this.options)
@@ -75,10 +80,10 @@ ${this.formatBitOptions()}
         return Object.keys(LogEvents).map(key => `\`${key}\``).join(', ');
     }
 
-    public async run({ bot, msg, args, content, guild }: CommandParameters) {
-        if (args.length === 0) {
+    public async run({ bot, src, guild }: CommandParameters, args: LogsArgs) {
+        if (!args.options) {
             const embed = bot.createEmbed();
-            embed.setTitle(`Log Configuration for ${msg.guild.name}`);
+            embed.setTitle(`Log Configuration for ${src.guild.name}`);
             let fields = [];
             fields.push(`${LogCommandOption.Channel} = ${guild.logChannelId ? bot.client.channels.cache.get(guild.logChannelId)?.toString() ?? 'None' : 'None'}`);
             fields.push(`enabled = ${guild.logOptions & LogOptionBit.Enabled ? 'on' : 'off'}`);
@@ -86,10 +91,10 @@ ${this.formatBitOptions()}
                 fields.push(`${event} = ${guild.logOptions & bit ? 'on' : 'off'}`);
             }
             embed.setDescription(fields.join('\n'));
-            await msg.channel.send(embed);
+            await src.send(embed);
         }
         else {
-            const changes = content.split(';').map(val => val.trim());
+            const changes = args.options.split(';').map(val => val.trim());
             for (const change of changes) {
                 const split = change.split('=').map(val => val.trim());
 
@@ -118,7 +123,7 @@ ${this.formatBitOptions()}
                         if (channel.type !== 'text') {
                             throw new Error('Log channel must be a text channel.');
                         }
-                        if ((channel as TextChannel).guild.id !== msg.guild.id) {
+                        if ((channel as TextChannel).guild.id !== src.guild.id) {
                             throw new Error('Log channel must be in this guild.');
                         }
                         if (!((channel as TextChannel).viewable && (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES']))) {
@@ -170,7 +175,7 @@ ${this.formatBitOptions()}
             await bot.dataService.updateGuild(guild);
             const embed = bot.createEmbed(EmbedTemplates.Success);
             embed.setDescription('Successfully updated log configuration.');
-            await msg.channel.send(embed);
+            await src.send(embed);
         }
     }
 }

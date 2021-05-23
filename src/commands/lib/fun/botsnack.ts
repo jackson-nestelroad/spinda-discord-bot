@@ -1,14 +1,13 @@
-import { Command, CommandCategory, CommandPermission, CommandParameters, StandardCooldowns } from '../base';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
 
-export class BotsnackCommand extends Command {
+export class BotsnackCommand extends SimpleCommand {
     public name = 'botsnack';
-    public args = '';
     public description = 'Rewards the bot for good behavior.'
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
-    public async run({ msg }: CommandParameters) {
-        await msg.channel.send('botsnack, mmmmmm...');
+    public async run({ src }: CommandParameters) {
+        await src.send('botsnack, mmmmmm...');
     }
 }
