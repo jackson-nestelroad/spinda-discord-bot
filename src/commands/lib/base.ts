@@ -108,7 +108,7 @@ export abstract class BaseCommand {
     public abstract readonly category: CommandCategory;
     public abstract readonly permission: CommandPermission;
 
-    public abstract readonly args?: Dictionary<SingleArgumentConfig>;
+    public abstract readonly args?: ReadonlyDictionary<SingleArgumentConfig>;
 
     private cooldownSet: TimedCache<string, number> = null;
 
