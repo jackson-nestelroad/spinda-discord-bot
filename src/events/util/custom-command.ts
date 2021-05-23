@@ -6,11 +6,15 @@ import *  as mathjs from 'mathjs';
 import { ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 import { CustomCommandData } from '../../data/model/custom-command';
 
+// Result from parsing a portion of custom command code
 interface ResponseParseResult {
+    // The result of the parse
     response: string;
+    // The next index to start parsing at
     index: number;
 }
 
+// Support metadata functions
 export enum CustomCommandMetadata {
     Description = 'description',
     ContentName = 'content-name',
@@ -18,11 +22,15 @@ export enum CustomCommandMetadata {
     NoContent = 'no-content',
 }
 
+// Result from parsing all metadata from custom command code
 interface ParseMetadataResult {
+    // Parsed code, with no metadata
     code: string;
+    // Metadata values
     values: Map<CustomCommandMetadata, string | boolean>;
 }
 
+// Special characters within custom command code
 enum SpecialChars {
     FunctionBegin = '{',
     FunctionEnd = '}',
@@ -32,6 +40,13 @@ enum SpecialChars {
     FunctionAssign = ':=',
     AttributeSeparator = '.',
     ListSeparator = ';',
+}
+
+enum ExecutionLimit {
+    Message = 'message',
+    Command = 'command',
+    Wait = 'wait',
+    Repeat = 'repeat',
 }
 
 export class CustomCommandEngine {
@@ -270,7 +285,7 @@ export class CustomCommandEngine {
         return code.join(' ');
     }
 
-    private assertLimit(name: string, increase: number) {
+    private assertLimit(name: ExecutionLimit, increase: number) {
         if (!this.limitProgress[name]) {
             this.limitProgress[name] = 0;
         }
@@ -278,6 +293,13 @@ export class CustomCommandEngine {
             throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${CustomCommandEngine.limits[name]}) exceeded`);
         }
         this.limitProgress[name] += increase;
+    }
+
+    private checkLimitProgress(name: ExecutionLimit) {
+        if (!this.limitProgress[name]) {
+            this.limitProgress[name] = 0;
+        }
+        return this.limitProgress[name];
     }
 
     private getMember(): GuildMember {
@@ -351,7 +373,7 @@ export class CustomCommandEngine {
         }
         // Nested command call
         else if (name.startsWith(DataService.defaultPrefix)) {
-            this.assertLimit('command', 1);
+            this.assertLimit(ExecutionLimit.Command, 1);
             const cmd = name.substr(1);
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
@@ -417,17 +439,17 @@ export class CustomCommandEngine {
                     if (isNaN(ms) || ms < 0) {
                         throw new Error('Invalid value for wait');
                     }
-                    this.assertLimit(name, ms);
+                    this.assertLimit(ExecutionLimit.Wait, ms);
                     await this.params.bot.wait(ms);
                     return '';
                 } break;
                 case 'message': {
-                    this.assertLimit(name, 1);
+                    this.assertLimit(ExecutionLimit.Message, 1);
                     await this.params.src.send(args);
                     return '';
                 } break;
                 case 'embed': {
-                    this.assertLimit('message', 1);
+                    this.assertLimit(ExecutionLimit.Message, 1);
                     const embed = this.params.bot.createEmbed();
                     embed.setDescription(args);
                     await this.params.src.send(embed);
@@ -718,7 +740,7 @@ export class CustomCommandEngine {
                 if (isNaN(n) || n < 0) {
                     throw new Error('Invalid repeat number');
                 }
-                this.assertLimit(name, n);
+                this.assertLimit(ExecutionLimit.Repeat, n);
 
                 let result = '';
                 for (let i = 0; i < n; ++i) {
@@ -992,8 +1014,12 @@ export class CustomCommandEngine {
         if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
             response = (await this.parse(response)).trim();
             if (!this.silent && response.length !== 0) {
-                this.assertLimit('message', 1);
+                this.assertLimit(ExecutionLimit.Message, 1);
                 await this.params.src.send(response);
+            }
+            else if (this.params.src.isInteraction && this.checkLimitProgress(ExecutionLimit.Message) === 0) {
+                this.assertLimit(ExecutionLimit.Message, 1);
+                await this.params.src.replyEphemeral('\u{2705}');
             }
         }
     }
