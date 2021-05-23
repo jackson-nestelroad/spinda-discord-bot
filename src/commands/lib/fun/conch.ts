@@ -27,23 +27,26 @@ export class ConchCommand extends ComplexCommand<ConchArgs> {
     public readonly editedHeader = this.header + this.secondLine;
 
     public async run({ bot, src }: CommandParameters, args: ConchArgs) {
-        const question = args.question.toLowerCase().trim();
         let response = await src.send(this.header);
-
         response = await FunUtil.addSuspense(bot, response, this.editedHeader, 2);
 
         let res: string;
-        if (question.startsWith('which')) {
-            res = 'Neither.';
-        }
-        else if (question.startsWith('what')) {
-            res = 'Nothing.';
-        }
-        else if (question.startsWith('where')) {
-            res = 'Nowhere.';
-        }
-        else if (question.startsWith('who')) {
-            res = 'No one.';
+        if (args.question) {
+            if (args.question.startsWith('which')) {
+                res = 'Neither.';
+            }
+            else if (args.question.startsWith('what')) {
+                res = 'Nothing.';
+            }
+            else if (args.question.startsWith('where')) {
+                res = 'Nowhere.';
+            }
+            else if (args.question.startsWith('who')) {
+                res = 'No one.';
+            }
+            else {
+                res = this.options[Math.floor(Math.random() * this.options.length)];
+            }
         }
         else {
             res = this.options[Math.floor(Math.random() * this.options.length)];
