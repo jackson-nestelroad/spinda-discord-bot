@@ -51,19 +51,19 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
             },
             description: {
                 type: DataTypes.TEXT,
-                allowNull: true,
+                allowNull: false,
             },
             contentName: {
                 type: DataTypes.TEXT,
-                allowNull: true,
+                allowNull: false,
             },
             contentDescription: {
                 type: DataTypes.TEXT,
-                allowNull: true,
+                allowNull: false,
             },
             noContent: {
                 type: DataTypes.BOOLEAN,
-                allowNull: true,
+                allowNull: false,
             },
         }, {
             sequelize,
