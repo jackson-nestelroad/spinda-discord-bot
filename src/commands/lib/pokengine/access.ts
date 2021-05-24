@@ -81,7 +81,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     await src.replyEphemeral('Please provide your Pok\u00E9ngine username.');
                 }
                 else {
-                    await src.defer();
+                    await src.defer(true);
 
                     const username = args.username;
                     const url = this.site + this.playerPath + username;
