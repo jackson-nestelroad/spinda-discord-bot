@@ -1,12 +1,19 @@
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
+export enum CustomCommandFlag {
+    None = 0,
+    NoContent = 1 << 0,
+    ContentRequired = 1 << 1,
+    DisableSlash = 1 << 2,
+}
+
 export interface CustomCommandData {
     name: string;
     message: string;
     description: string;
     contentName: string;
     contentDescription: string;
-    noContent: boolean;
+    flags: number;
 }
 
 export interface CustomCommandAttributes extends CustomCommandData {
@@ -25,7 +32,7 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
     public description: string;
     public contentName: string;
     public contentDescription: string;
-    public noContent: boolean;
+    public flags: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -61,9 +68,10 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
                 type: DataTypes.TEXT,
                 allowNull: false,
             },
-            noContent: {
-                type: DataTypes.BOOLEAN,
+            flags: {
+                type: DataTypes.INTEGER,
                 allowNull: false,
+                defaultValue: CustomCommandFlag.None,
             },
         }, {
             sequelize,

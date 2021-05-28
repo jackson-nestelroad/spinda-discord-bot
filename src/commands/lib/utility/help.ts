@@ -1,4 +1,4 @@
-import { CustomCommandData } from '../../../data/model/custom-command';
+import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { DiscordUtil } from '../../../util/discord';
 import { ExpireAgeConversion } from '../../../util/timed-cache';
@@ -28,7 +28,11 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
     private commandListByCategory: Map<CommandCategory, string[]> = null;
 
     private customCommandString(data: CustomCommandData, prefix: string): string {
-        return `${prefix}${data.name}${data.noContent ? '' : ` (${data.contentName})`}`;
+        let str = prefix + data.name;
+        if (!(data.flags & CustomCommandFlag.NoContent)) {
+            str += ' ' + ((data.flags & CustomCommandFlag.ContentRequired) ? data.contentName : `(${data.contentName})`);
+        }
+        return str;
     }
 
     public async run({ bot, src, guild }: CommandParameters, args: HelpArgs) {
@@ -115,7 +119,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
                     embed.addField('Category', CommandCategory.Custom, true);
                     embed.addField('Permission', CommandPermission[CommandPermission.Everyone], true);
                     embed.addField('Cooldown', ExpireAgeConversion.toString(CustomCommandEngine.cooldownTime), true);
-                    if (!customCommand.noContent) {
+                    if (!(customCommand.flags & CustomCommandFlag.NoContent)) {
                         embed.addField('Arguments', `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`, true);
                     }
                     embed.addField('Code', `\`${CustomCommandEngine.addMetadata(customCommand)}\``);

@@ -3,7 +3,7 @@ import { CustomCommandEngine, CustomCommandMetadata } from '../../../events/util
 import { ApplicationCommandData, MessageEmbed } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 import { ApplicationCommandOptionType } from 'discord-api-types';
-import { CustomCommandData } from '../../../data/model/custom-command';
+import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 
 interface SetCommandArgs {
     command: string;
@@ -58,7 +58,6 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
         const description = values.get(CustomCommandMetadata.Description) as string;
         const contentName = values.get(CustomCommandMetadata.ContentName) as string;
         const contentDescription = values.get(CustomCommandMetadata.ContentDescription) as string;
-        const noContent = values.get(CustomCommandMetadata.NoContent) as boolean;
 
         if (description && description.length > this.maxDescriptionLength) {
             throw new Error(`Description cannot exceed ${this.maxDescriptionLength} characters.`);
@@ -73,38 +72,51 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
             throw new Error(`Command message cannot be empty (after metadata parsing).`);
         }
 
+        let flags = CustomCommandFlag.None;
+        if (values.get(CustomCommandMetadata.NoContent)) {
+            flags |= CustomCommandFlag.NoContent;
+        }
+        if (values.get(CustomCommandMetadata.ContentRequired)) {
+            flags |= CustomCommandFlag.ContentRequired;
+        }
+        if (values.get(CustomCommandMetadata.NoSlash)) {
+            flags |= CustomCommandFlag.DisableSlash;
+        }
+
         const data: CustomCommandData = {
             name: command,
             message: code,
             description: description || 'A custom command.',
             contentName: contentName || 'content',
             contentDescription: contentDescription || 'Message content.',
-            noContent: !!noContent,
+            flags,
         };
 
-        // Create slash command for this guild only
-        const newSlashCommandData: ApplicationCommandData = {
-            name: data.name,
-                description: data.description,
-                options: !data.noContent
-                    ? [
-                        { 
-                            name: data.contentName,
-                            description: data.contentDescription,
-                            type: ApplicationCommandOptionType.STRING,
-                            required: false,
-                        },
-                    ]
-                    : [],
-                defaultPermission: true,
-            
-        }
-        const oldSlashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
-        if (oldSlashCommand) {
-            await src.guild.commands.edit(oldSlashCommand, newSlashCommandData);
-        }
-        else {
-            await src.guild.commands.create(newSlashCommandData);
+        if (!(data.flags & CustomCommandFlag.DisableSlash)) {
+            // Create slash command for this guild only
+            const newSlashCommandData: ApplicationCommandData = {
+                name: data.name,
+                    description: data.description,
+                    options: !(data.flags & CustomCommandFlag.NoContent)
+                        ? [
+                            { 
+                                name: data.contentName,
+                                description: data.contentDescription,
+                                type: ApplicationCommandOptionType.STRING,
+                                required: (data.flags & CustomCommandFlag.ContentRequired) !== 0,
+                            },
+                        ]
+                        : [],
+                    defaultPermission: true,
+                
+            }
+            const oldSlashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
+            if (oldSlashCommand) {
+                await src.guild.commands.edit(oldSlashCommand, newSlashCommandData);
+            }
+            else {
+                await src.guild.commands.create(newSlashCommandData);
+            }
         }
 
         // Save to the database last

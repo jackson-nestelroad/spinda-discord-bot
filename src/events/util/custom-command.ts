@@ -4,7 +4,7 @@ import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
 import { ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
-import { CustomCommandData } from '../../data/model/custom-command';
+import { CustomCommandData, CustomCommandFlag } from '../../data/model/custom-command';
 
 // Result from parsing a portion of custom command code
 interface ResponseParseResult {
@@ -20,6 +20,8 @@ export enum CustomCommandMetadata {
     ContentName = 'content-name',
     ContentDescription = 'content-description',
     NoContent = 'no-content',
+    NoSlash = 'no-slash',
+    ContentRequired = 'content-required',
 }
 
 // Result from parsing all metadata from custom command code
@@ -273,12 +275,20 @@ export class CustomCommandEngine {
             CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description),
         ];
 
-        if (data.noContent) {
-            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
+        if (data.flags & CustomCommandFlag.DisableSlash) {
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoSlash));
         }
         else {
-            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName));
-            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentDescription, data.contentDescription));
+            if (data.flags & CustomCommandFlag.NoContent) {
+                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
+            }
+            else {
+                if (data.flags & CustomCommandFlag.ContentRequired) {
+                    code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentRequired));
+                }
+                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName));
+                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentDescription, data.contentDescription));
+            }
         }
 
         code.push(data.message);
@@ -960,6 +970,7 @@ export class CustomCommandEngine {
             // Function inside variable name
             if (char === SpecialChars.FunctionBegin) {
                 const nested = await this.parseFunction(code, index + 1);
+                // TODO: It might not be wanted for all of the result to be part of the variable name...
                 name += nested.response;
                 index = nested.index;
             }
