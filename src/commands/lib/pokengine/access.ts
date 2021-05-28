@@ -14,6 +14,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
     private readonly site = 'http://pokengine.org';
     private readonly playerPath = '/players/';
     private readonly successReact = '\u{2705}';
+    private readonly nicknameFailMsg = 'Your nickname could not be updated. Please contact a staff member.';
 
     private accessRole: Role = null;
     private accessChannel: TextChannel = null;
@@ -81,7 +82,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     await src.replyEphemeral('Please provide your Pok\u00E9ngine username.');
                 }
                 else {
-                    await src.defer(true);
+                    await src.defer();
 
                     const username = args.username;
                     const url = this.site + this.playerPath + username;
@@ -108,11 +109,12 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     // Update guild member
                     let newMember = await src.member.roles.add(this.accessRole);
 
+                    let nicknameFailed = false;
                     // Don't fail the operation if setting the nickname fails
                     try {
                         newMember = await newMember.setNickname(siteName);
                     } catch (error) {
-                        await src.reply('Your nickname could not be updated. Please contact a staff member.');
+                        nicknameFailed = true;
                     }
 
                     // Submit update to site
@@ -131,7 +133,20 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     const embed = bot.createEmbed();
                     embed.setTitle(this.serverName);
                     embed.setDescription(`You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`);
-                    
+
+                    if (nicknameFailed) {
+                        await src.reply(this.nicknameFailMsg);
+                    }
+                    else if (src.isMessage) {
+                        await src.message.react(this.successReact);
+                    }
+                    else {
+                        await src.interaction.reply(this.successReact);
+                    }
+
+                    // We do this after so that there is at least one message of confirmation in the chat
+                    // that can be seen by other users
+
                     // Try to send a DM
                     // If it fails, add a reaction to signal the failure
                     try {
@@ -140,13 +155,6 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                         if (src.isMessage) {
                             await src.message.react('\u{1F614}');
                         }
-                    }
-
-                    if (src.isMessage) {
-                        await src.message.react(this.successReact);
-                    }
-                    else {
-                        await src.send(this.successReact);
                     }
                 }
             }

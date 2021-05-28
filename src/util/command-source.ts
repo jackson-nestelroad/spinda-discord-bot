@@ -12,6 +12,7 @@ export class CommandSource {
     // A single flag records if the internal instance is a message so it is only checked once
     private messageFlag: boolean;
     private native: Receivable;
+    private deferredEphemeral: boolean = false;
 
     public constructor(received: Receivable) {
         this.messageFlag = received instanceof Message;
@@ -89,6 +90,7 @@ export class CommandSource {
     // Only interactions can be deferred
     public async defer(ephemeral: boolean = false): Promise<void> {
         if (this.isInteraction && !this.interaction.deferred && !this.interaction.replied) {
+            this.deferredEphemeral = ephemeral;
             return await this.interaction.defer(ephemeral);
         }
     }
@@ -99,11 +101,13 @@ export class CommandSource {
         }
     }
 
-    private static throwInvalidResponseObject() {
+    private throwInvalidResponseObject() {
         throw new Error('Invalid response object.');
     }
 
-    private static async respondInteraction(interaction: CommandInteraction, res: Response, ephemeral: boolean = false): Promise<CommandSource> {
+    private async respondInteraction(res: Response, ephemeral: boolean = false): Promise<CommandSource> {
+        const interaction = this.interaction;
+
         // No initial reply sent
         if (!interaction.replied) {
             // Interaction has not been deferred, so we use the original reply method
@@ -121,7 +125,7 @@ export class CommandSource {
                     this.throwInvalidResponseObject();
                 }
 
-                if (ephemeral) {
+                if (ephemeral || this.deferredEphemeral) {
                     return new CommandSource(interaction);
                 }
                 else {
@@ -151,7 +155,7 @@ export class CommandSource {
                 // This is very likely to not be intentional by the command, so it makes more sense to split things up
                 interaction.replied = true;
 
-                return new CommandSource(reply);
+                return new CommandSource(ephemeral || this.deferredEphemeral ? interaction : reply);
             }
         }
         // Send a follow-up message
@@ -170,7 +174,7 @@ export class CommandSource {
                 this.throwInvalidResponseObject();
             }
 
-            return new CommandSource(reply);
+            return new CommandSource(ephemeral || this.deferredEphemeral ? interaction : reply);
         }
     }
 
@@ -178,14 +182,14 @@ export class CommandSource {
     public async reply(res: Response): Promise<CommandSource> {
         return this.isMessage
             ? new CommandSource(await (this.native as Message).reply(res))
-            : await CommandSource.respondInteraction(this.native as CommandInteraction, res);
+            : await this.respondInteraction(res);
     }
 
     // Send to channel for message, reply/follow up for interaction
     public async send(res: Response): Promise<CommandSource> {
         return this.isMessage
             ? new CommandSource(await (this.native as Message).channel.send(res))
-            : await CommandSource.respondInteraction(this.native as CommandInteraction, res);
+            : await this.respondInteraction(res);
     }
 
     // Edit message or interaction reply
@@ -200,7 +204,7 @@ export class CommandSource {
                 edited = await this.message.edit(res);
             }
             else {
-                CommandSource.throwInvalidResponseObject();
+                this.throwInvalidResponseObject();
             }
         }
         else {
@@ -217,7 +221,7 @@ export class CommandSource {
                 edited = await this.interaction.editReply({ files: [res] }) as Message;
             }
             else {
-                CommandSource.throwInvalidResponseObject();
+                this.throwInvalidResponseObject();
             }
         }
 
@@ -240,20 +244,20 @@ export class CommandSource {
     public async replyEphemeral(res: Response): Promise<CommandSource> {
         return this.isMessage
             ? new CommandSource(await (this.native as Message).reply(res))
-            : await CommandSource.respondInteraction(this.native as CommandInteraction, res, true);
+            : await this.respondInteraction(res, true);
     }
 
     // Send to channel for message, ephemeral reply for interaction
     public async sendEphemeral(res: Response): Promise<CommandSource> {
         return this.isMessage
             ? new CommandSource(await (this.native as Message).channel.send(res))
-            : await CommandSource.respondInteraction(this.native as CommandInteraction, res, true);
+            : await this.respondInteraction(res, true);
     }
     
     // Direct message, ephemeral reply for interaction
     public async sendDirect(res: Response): Promise<CommandSource> {
         return this.isMessage
             ? new CommandSource(await (this.native as Message).author.send(res))
-            : await CommandSource.respondInteraction(this.native as CommandInteraction, res, true);
+            : await this.respondInteraction(res, true);
     }
 }
