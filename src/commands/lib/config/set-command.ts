@@ -92,6 +92,7 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
             flags,
         };
 
+        const oldSlashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
         if (!(data.flags & CustomCommandFlag.DisableSlash)) {
             // Create slash command for this guild only
             const newSlashCommandData: ApplicationCommandData = {
@@ -110,12 +111,17 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
                     defaultPermission: true,
                 
             }
-            const oldSlashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
             if (oldSlashCommand) {
                 await src.guild.commands.edit(oldSlashCommand, newSlashCommandData);
             }
             else {
                 await src.guild.commands.create(newSlashCommandData);
+            }
+        }
+        else {
+            // Slash command is now disabled on this command
+            if (oldSlashCommand) {
+                await src.guild.commands.delete(oldSlashCommand);
             }
         }
 
