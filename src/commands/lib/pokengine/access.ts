@@ -141,7 +141,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                         await src.message.react(this.successReact);
                     }
                     else {
-                        await src.interaction.reply(this.successReact);
+                        await src.reply(this.successReact);
                     }
 
                     // We do this after so that there is at least one message of confirmation in the chat
