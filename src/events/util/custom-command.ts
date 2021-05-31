@@ -1,4 +1,4 @@
-import { User, GuildMember, Guild, Channel, Role } from 'discord.js';
+import { User, GuildMember, Guild, Channel } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
@@ -12,6 +12,13 @@ interface ResponseParseResult {
     response: string;
     // The next index to start parsing at
     index: number;
+}
+
+interface VariableRuntimeData {
+    name: string;
+    isSubscripted: boolean;
+    begin: number;
+    end: number;
 }
 
 // Support metadata functions
@@ -42,6 +49,9 @@ enum SpecialChars {
     FunctionAssign = ':=',
     AttributeSeparator = '.',
     ListSeparator = ';',
+    SubscriptBegin = '[',
+    SubscriptEnd = ']',
+    SubscriptRange = '-',
 }
 
 enum ExecutionLimit {
@@ -55,12 +65,13 @@ export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
     private static readonly falseVar = 'false';
-    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$%>\+-]/;
+    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$%>\+\-\[\]]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly maxParseDepth = 32;
 
     private static readonly specialVars = {
         allArguments: 'ALL',
+        argCount: 'COUNT',
         loopCounter: 'i',
         regexMatchGroup: 'match-group-',
         regexMatchBegin: 'match-begin',
@@ -153,6 +164,7 @@ export class CustomCommandEngine {
         'Runtime Arguments': [
             '$N',
             `\$${CustomCommandEngine.specialVars.allArguments}`,
+            `\$${CustomCommandEngine.specialVars.argCount}`,
             `\$${CustomCommandEngine.specialVars.loopCounter} (in repeat)`,
             `\$${CustomCommandEngine.specialVars.regexMatchBegin} (after regex)`,
             `\$${CustomCommandEngine.specialVars.regexMatchEnd} (after regex)`,
@@ -200,6 +212,7 @@ export class CustomCommandEngine {
             `{empty? string}`,
             `{random a b}`,
             `{math expression}`,
+            `{nickname name}`,
             `{role name}`,
             `{+role name}`,
             `{-role name}`,
@@ -213,6 +226,11 @@ export class CustomCommandEngine {
             `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
             `{repeat n;code1;code2;...}`,
+        ],
+        'Indexing': [
+            `$var[0]`,
+            `$var[0-5]`,
+            `{$var[2-4] = value}`,
         ],
         'Programming:': [
             `{quote text}`,
@@ -324,6 +342,9 @@ export class CustomCommandEngine {
         else if (name === CustomCommandEngine.specialVars.allArguments) {
             return this.content;
         }
+        else if (name === CustomCommandEngine.specialVars.argCount) {
+            return this.args.length.toString();
+        }
         else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
             const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
             if (isNaN(argNum) || argNum < 1 || argNum > this.arguments.length) {
@@ -334,14 +355,88 @@ export class CustomCommandEngine {
         return this.vars.get(name);
     }
 
+    private parseRuntimeData(name: string): VariableRuntimeData {
+        const result: VariableRuntimeData = {
+            name,
+            isSubscripted: false,
+            begin: 0,
+            end: 0,
+        };
+
+        if (name.endsWith(SpecialChars.SubscriptEnd)) {
+            const subscriptBegin = name.indexOf(SpecialChars.SubscriptBegin);
+            if (subscriptBegin !== -1) {
+                const fullSubscriptRange = name.slice(subscriptBegin + 1, name.length - 1);
+                result.name = name.slice(0, subscriptBegin);
+                const indices = fullSubscriptRange.split(SpecialChars.SubscriptRange);
+
+                let invalid = false;
+                if (indices.length === 1) {
+                    result.begin = parseInt(indices[0]);
+                    result.end = result.begin + 1;
+                    invalid = isNaN(result.begin);
+                }
+                else if (indices.length === 2) {
+                    result.begin = parseInt(indices[0]);
+                    result.end = parseInt(indices[1]);
+                    invalid = isNaN(result.begin) || isNaN(result.end);
+                }
+                else {
+                    invalid = true;
+                }
+
+                if (invalid) {
+                    throw new Error(`Invalid subscript notation \`${SpecialChars.SubscriptBegin}${fullSubscriptRange}${SpecialChars.SubscriptEnd}\` attached to variable \`${SpecialChars.VarBegin}${name}\``);
+                }
+                
+                result.isSubscripted = true;
+            }
+        }
+
+        return result;
+    }
+
     private handleVariable(name: string): string {
-        return this.handleVariableNative(name) ?? CustomCommandEngine.undefinedVar;
+        const varData = this.parseRuntimeData(name);
+
+        const value = this.handleVariableNative(varData.name);
+        if (value === undefined || value === null) {
+            return CustomCommandEngine.undefinedVar;
+        }
+        else if (varData.isSubscripted) {
+            return value.slice(varData.begin, varData.end) ?? CustomCommandEngine.undefinedVar;
+        }
+        else {
+            return value;
+        }
+    }
+
+    private setVariable(name: string, value: string) {
+        const varData = this.parseRuntimeData(name);
+
+        let newValue: string = undefined;
+        if (varData.isSubscripted) {
+            const oldValue = this.handleVariableNative(varData.name);
+            if (oldValue) {
+                newValue = oldValue.slice(0, varData.begin) 
+                    + value
+                    + oldValue.slice(varData.end);
+            }
+        }
+        else {
+            newValue = value;
+        }
+
+        if (newValue !== undefined) {
+            this.vars.set(varData.name, newValue);
+        }
     }
 
     private async handleFunction(name: string, args: string): Promise<string | null> {
         // Variable function
         if (name.startsWith(SpecialChars.VarBegin)) {
             const varName = name.substr(1);
+
             // Assignment
             if (args.startsWith(SpecialChars.VarAssign)) {
                 const rightSide = args.substr(SpecialChars.VarAssign.length);
@@ -355,17 +450,17 @@ export class CustomCommandEngine {
                             break;
                         }
                     }
-                    this.vars.set(varName, potentialValues[i]);
+                    this.setVariable(varName, potentialValues[i]);
                 }
                 else {
-                    this.vars.set(varName, rightSide.trimLeft());
+                    this.setVariable(varName, rightSide.trimLeft());
                 }
                 return '';
             }
             // Function assignment, which means no null coalescing
             if (args.startsWith(SpecialChars.FunctionAssign)) {
                 const rightSide = args.substr(SpecialChars.FunctionAssign.length);
-                this.vars.set(varName, rightSide.trim());
+                this.setVariable(varName, rightSide.trim());
                 return '';
             }
             // Text replacement
@@ -541,6 +636,10 @@ export class CustomCommandEngine {
                         }
                     }
                     return null;
+                } break;
+                case 'nickname': {
+                    this.updatedMember = await this.getMember().setNickname(args);
+                    return '';
                 } break;
                 case 'role': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
