@@ -1,13 +1,13 @@
-import { RGBColor } from './rgb';
+import { RGBAColor } from './rgb';
 
-interface HSVInterface {
+interface HSVAInterface {
     hue: number;
     saturation: number;
     value: number;
     alpha: number;  
 }
 
-export class HSVColor implements HSVInterface {
+export class HSVAColor implements HSVAInterface {
     private h: number;
     private s: number;
     private v: number;
@@ -18,10 +18,10 @@ export class HSVColor implements HSVInterface {
     }
     public set hue(h: number) {
         if (h > 1) {
-            this.h = 1;
+            this.h = h % 1
         }
         else if (h < 0) {
-            this.h = 0;
+            this.h = 1 - h % 1;
         }
         else {
             this.h = h;
@@ -85,7 +85,7 @@ export class HSVColor implements HSVInterface {
         this.alpha = alpha;
     }
 
-    public integer(): HSVInterface {
+    public integer(): HSVAInterface {
         return {
             hue: Math.round(this.hue * 360),
             saturation: Math.round(this.saturation * 100),
@@ -94,7 +94,7 @@ export class HSVColor implements HSVInterface {
         }
     }
 
-    public toRGB(): RGBColor {
+    public toRGB(): RGBAColor {
         let r: number, g: number, b: number;
 
         const i = Math.floor(this.hue * 6);
@@ -112,7 +112,7 @@ export class HSVColor implements HSVInterface {
             case 5: r = this.value, g = p, b = q; break;
         }
         
-        return RGBColor.RGBA(
+        return RGBAColor.RGBA(
             Math.round(r * 0xFF),
             Math.round(g * 0xFF),
             Math.round(b * 0xFF),
@@ -121,6 +121,6 @@ export class HSVColor implements HSVInterface {
     }
 
     public static HSVA(h: number, s: number, v: number, a?: number) {
-        return new HSVColor(h, s, v, a);
+        return new HSVAColor(h, s, v, a);
     }
 }

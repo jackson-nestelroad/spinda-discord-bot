@@ -1,5 +1,5 @@
 import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { Color, RGBColor } from '../../../util/color';
+import { Color, RGBAColor } from '../../../util/color';
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
 
@@ -30,7 +30,7 @@ export class ColorCommand extends ComplexCommand<ColorArgs> {
     private readonly ctx: CanvasRenderingContext2D = this.canvas.getContext('2d');
 
     public async run({ bot, src }: CommandParameters, args: ColorArgs) {
-        let color: RGBColor = null;
+        let color: RGBAColor = null;
 
         // Random color
         if (!args.color) {
