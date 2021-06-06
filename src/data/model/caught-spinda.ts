@@ -2,16 +2,17 @@ import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export enum SpindaColorChange {
     Random = -1,
-    None,
-    Shiny,
-    Retro,
-    Gold,
-    Green,
-    Blue,
-    Purple,
-    Pink,
-    Gray,
-    Custom,
+    None = 0,
+    Shiny = 1,
+    Retro = 2,
+    Gold = 3,
+    Green = 4,
+    Blue = 5,
+    Purple = 6,
+    Pink = 7,
+    Gray = 8,
+    Custom = 9,
+    Rainbow = 10,
 }
 
 export enum SpindaFeatures {
