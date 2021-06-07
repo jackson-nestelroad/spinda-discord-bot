@@ -1,14 +1,12 @@
 import { GeneratedSpinda, SpindaColorChange } from '../../../../data/model/caught-spinda';
 import { Color, RGBAColor } from '../../../../util/color';
+import { CanvasBundle } from '../generator';
 
 export interface SpindaColorPalette {
     readonly base: RGBAColor;
     readonly shadow: RGBAColor;
     readonly outline: RGBAColor;
 }
-
-export type ColorPositionGetter = (x: number, y: number) => RGBAColor;
-type ColorPositionGetterGenerator = (spinda: GeneratedSpinda) => ColorPositionGetter;
 
 export const ShaderConstants = {
     ShadowMultiplier: 0.7093,
@@ -32,6 +30,14 @@ export const SpindaColorPalettes = {
     outlineMask: Color.RGBA(0, 0, 50, 1 - ShaderConstants.ShadowMultiplier * ShaderConstants.OutlineMultiplier),
     transparent: Color.HexAlpha(0x00000000),
 } as const;
+
+export const SpindaColors = {
+    base: Color.Hex(0xFFDBAA),
+    spot: Color.Hex(0xF75D5D),
+    black: Color.Hex(0x000000),
+    white: Color.Hex(0xFFFFFF),
+    transparent: Color.HexAlpha(0x00000000),
+}
 
 // No longer used, but kept here for reference.
 const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaColorPalette } = {
@@ -78,27 +84,60 @@ const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaCo
     },
 } as const;
 
-function RainbowGenerator(pid: number): ColorPositionGetter {
-    const hueIncrement = 0.05;  // or 18/360
-    const startingHue = (pid % 360) / 360;
-    const hsv = Color.HSV(0, 0.60, 0.95);
+// function RainbowGenerator(pid: number): ColorPositionGetter {
+//     const hueIncrement = 0.05;  // or 18/360
+//     const startingHue = (pid % 360) / 360;
+//     const hsv = Color.HSV(0, 0.60, 0.95);
 
-    return function(x, y) {
-        hsv.hue = y * hueIncrement + startingHue;
-        return hsv.toRGB();
+//     return function(x, y) {
+//         hsv.hue = y * hueIncrement + startingHue;
+//         return hsv.toRGB();
+//     }
+// }
+
+// function VerticalGradientGenerator(top: RGBAColor, bottom: RGBAColor)
+
+const SpindaColorChanges: { readonly[key in SpindaColorChange]?: RGBAColor } = {
+    [SpindaColorChange.None]: SpindaColorPalettes.normal.base,
+    [SpindaColorChange.Shiny]: Color.Hex(0xACC44E),
+    [SpindaColorChange.Retro]: Color.Hex(0xEA8356),
+    [SpindaColorChange.Gold]: Color.Hex(0xF7BD1D),
+    [SpindaColorChange.Green]: Color.Hex(0x52A55B),
+    [SpindaColorChange.Blue]: Color.Hex(0x40B7F7),
+    [SpindaColorChange.Purple]: Color.Hex(0xC467EF),
+    [SpindaColorChange.Pink]: Color.Hex(0xFF84EE),
+    [SpindaColorChange.Gray]: Color.Hex(0x717187),
+} as const;
+
+export namespace SpindaColorMask {
+    function solidColor(color: RGBAColor, bundle: CanvasBundle) {
+        bundle.fillCanvas('source-over', color);
+    }
+
+    const rainbow = (function () {
+        const hueIncrement = 0.05;  // or 18/360
+        const hsv = Color.HSV(0, 0.60, 0.95);
+
+        return function(pid: number, bundle: CanvasBundle) {
+            hsv.hue = (pid % 360) / 360;
+            for (let y = 0; y < bundle.height; ++y, hsv.hue += hueIncrement) {
+                bundle.ctx.fillStyle = hsv.toRGB().hexString();
+                bundle.ctx.fillRect(0, y, bundle.width, 1);
+            }
+        }
+    })();
+
+    export function draw(spinda: GeneratedSpinda, bundle: CanvasBundle) {
+        const predefinedColor = SpindaColorChanges[spinda.colorChange];
+        if (predefinedColor) {
+            solidColor(predefinedColor, bundle);
+        }
+        else {
+            switch (spinda.colorChange) {
+                case SpindaColorChange.Custom: solidColor(Color.Hex(spinda.customColor), bundle); break;
+                case SpindaColorChange.Rainbow: rainbow(spinda.pid, bundle); break;
+                default: throw new Error(`Unknown Spinda color change: \`${spinda.colorChange}\``);
+            }
+        }
     }
 }
-
-export const SpindaColorChangeGetterGenerators: { readonly[key in SpindaColorChange]?: ColorPositionGetterGenerator } = {
-    [SpindaColorChange.None]: () => () => SpindaColorPalettes.normal.base,
-    [SpindaColorChange.Shiny]: () => () => Color.Hex(0xACC44E),
-    [SpindaColorChange.Retro]: () => () => Color.Hex(0xEA8356),
-    [SpindaColorChange.Gold]: () => () => Color.Hex(0xF7BD1D),
-    [SpindaColorChange.Green]: () => () => Color.Hex(0x52A55B),
-    [SpindaColorChange.Blue]: () => () => Color.Hex(0x40B7F7),
-    [SpindaColorChange.Purple]: () => () => Color.Hex(0xC467EF),
-    [SpindaColorChange.Pink]: () => () => Color.Hex(0xFF84EE),
-    [SpindaColorChange.Gray]: () => () => Color.Hex(0x717187),
-    [SpindaColorChange.Custom]: spinda => () => Color.Hex(spinda.customColor),
-    [SpindaColorChange.Rainbow]: spinda => RainbowGenerator(spinda.pid),
-} as const;
