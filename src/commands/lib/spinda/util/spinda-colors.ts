@@ -111,14 +111,14 @@ const SpindaColorChanges: { readonly[key in SpindaColorChange]?: RGBAColor } = {
 
 export namespace SpindaColorMask {
     function solidColor(color: RGBAColor, bundle: CanvasBundle) {
-        bundle.fillCanvas('source-over', color);
+        bundle.fillColor('source-over', color);
     }
 
     const rainbow = (function () {
         const hueIncrement = 0.05;  // or 18/360
         const hsv = Color.HSV(0, 0.60, 0.95);
 
-        return function(pid: number, bundle: CanvasBundle) {
+        return (pid: number, bundle: CanvasBundle) => {
             hsv.hue = (pid % 360) / 360;
             for (let y = 0; y < bundle.height; ++y, hsv.hue += hueIncrement) {
                 bundle.ctx.fillStyle = hsv.toRGB().hexString();

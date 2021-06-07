@@ -102,12 +102,21 @@ export class CanvasBundle {
         this.drawImage(composite, bundle.canvas, 0, 0);
     }
 
-    public fillCanvas(
+    public fillColor(
         composite: CanvasGlobalCompositeOperation,
-        color: RGBAColor,
+        color: RGBAColor
     ) {
         this.ctx.globalCompositeOperation = composite;
         this.ctx.fillStyle = color.hexString();
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    public fillGradient(
+        composite: CanvasGlobalCompositeOperation,
+        gradient: CanvasGradient
+    ) {
+        this.ctx.globalCompositeOperation = composite;
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
@@ -176,7 +185,7 @@ export class SpindaGeneratorService extends BaseService {
             [SpindaColorChange.Pink]: 150,
             [SpindaColorChange.Gray]: 175,
             [SpindaColorChange.Custom]: 200,
-            [SpindaColorChange.Rainbow]: 50,
+            [SpindaColorChange.Rainbow]: 1,
         },
         features: {
             [SpindaFeatures.SmallSpots]: 25,
@@ -407,7 +416,7 @@ export class SpindaGeneratorService extends BaseService {
 
         // Inverted, so tan body is actually colored and spots are actually tan
         if (spinda.features & SpindaFeatures.Inverted) {
-            secondCanvas.fillCanvas('source-in', SpindaColors.base);
+            secondCanvas.fillColor('source-in', SpindaColors.base);
             thirdCanvas.drawCanvas('source-in', firstCanvas);
         }
         else if (spinda.colorChange !== SpindaColorChange.None) {
