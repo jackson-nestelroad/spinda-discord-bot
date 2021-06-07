@@ -8,7 +8,7 @@ import { NumberUtil } from '../../../util/number';
 import { Color, RGBAColor } from '../../../util/color';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
-import { SpindaColorMask, SpindaColorPalettes, SpindaColors } from './util/spinda-colors';
+import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
 
 enum SpotLocation {
     Start = 0,
@@ -292,7 +292,7 @@ export class SpindaGeneratorService extends BaseService {
 
     private drawOutline(bundle: CanvasBundle) {
         if (this.outlineThickness > 0) {
-            bundle.ctx.strokeStyle = SpindaColorPalettes.white.rgb();
+            bundle.ctx.strokeStyle = SpindaColors.white.hexString();
             bundle.ctx.lineWidth = this.outlineThickness * 2;
             bundle.ctx.beginPath();
             bundle.ctx.moveTo(this.outlinePolygon[0].x, this.outlinePolygon[0].y);

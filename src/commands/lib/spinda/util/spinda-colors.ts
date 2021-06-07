@@ -13,24 +13,6 @@ export const ShaderConstants = {
     OutlineMultiplier: 0.5,
 } as const;
 
-export const SpindaColorPalettes = {
-    base: {
-        base: Color.Hex(0xFFDBAA),
-        shadow: Color.Hex(0xBCA193),
-        outline: Color.Hex(0x6B5C65),
-    },
-    normal: {
-        base: Color.Hex(0xF75D5D),
-        shadow: Color.Hex(0xB54459),
-        outline: Color.Hex(0x682742),
-    },
-    black: Color.Hex(0x000000),
-    white: Color.Hex(0xFFFFFF),
-    shadowMask: Color.RGBA(0, 0, 50, 1 - ShaderConstants.ShadowMultiplier),
-    outlineMask: Color.RGBA(0, 0, 50, 1 - ShaderConstants.ShadowMultiplier * ShaderConstants.OutlineMultiplier),
-    transparent: Color.HexAlpha(0x00000000),
-} as const;
-
 export const SpindaColors = {
     base: Color.Hex(0xFFDBAA),
     spot: Color.Hex(0xF75D5D),
@@ -41,7 +23,6 @@ export const SpindaColors = {
 
 // No longer used, but kept here for reference.
 const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaColorPalette } = {
-    [SpindaColorChange.None]: SpindaColorPalettes.normal,
     [SpindaColorChange.Shiny]: {
         base: Color.Hex(0xACC44E),
         shadow: Color.Hex(0x798955),
@@ -84,21 +65,8 @@ const SpindaColorChangePalettes: { readonly[key in SpindaColorChange]?: SpindaCo
     },
 } as const;
 
-// function RainbowGenerator(pid: number): ColorPositionGetter {
-//     const hueIncrement = 0.05;  // or 18/360
-//     const startingHue = (pid % 360) / 360;
-//     const hsv = Color.HSV(0, 0.60, 0.95);
-
-//     return function(x, y) {
-//         hsv.hue = y * hueIncrement + startingHue;
-//         return hsv.toRGB();
-//     }
-// }
-
-// function VerticalGradientGenerator(top: RGBAColor, bottom: RGBAColor)
-
 const SpindaColorChanges: { readonly[key in SpindaColorChange]?: RGBAColor } = {
-    [SpindaColorChange.None]: SpindaColorPalettes.normal.base,
+    [SpindaColorChange.None]: SpindaColors.spot,
     [SpindaColorChange.Shiny]: Color.Hex(0xACC44E),
     [SpindaColorChange.Retro]: Color.Hex(0xEA8356),
     [SpindaColorChange.Gold]: Color.Hex(0xF7BD1D),

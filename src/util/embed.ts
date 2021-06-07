@@ -1,6 +1,6 @@
 import { MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../bot';
-import { SpindaColorPalettes } from '../commands/lib/spinda/util/spinda-colors';
+import { SpindaColors } from '../commands/lib/spinda/util/spinda-colors';
 import { PartialProps } from './partial-constructible';
 
 export enum EmbedType {
@@ -17,7 +17,7 @@ export class EmbedOptions {
     public type: EmbedType = EmbedType.Normal;
 
     private readonly colors = {
-        default: SpindaColorPalettes.normal.base.hexString(),
+        default: SpindaColors.spot.hexString(),
         error: '#F04947',
         success: '#43B581',
         blank: '#2F3136',
