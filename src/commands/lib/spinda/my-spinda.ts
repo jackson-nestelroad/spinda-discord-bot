@@ -32,7 +32,8 @@ export class MySpindaCommand extends ComplexCommand<MySpindaArgs> {
         [SpindaColorChange.Purple]: 'Ghost \u{1F47B}',
         [SpindaColorChange.Pink]: 'Valentine \u{1F495}',
         [SpindaColorChange.Gray]: 'Panda \u{1F43C}',
-        [SpindaColorChange.Custom]: 'Random \u{1F3B2}'
+        [SpindaColorChange.Custom]: 'Random \u{1F3B2}',
+        [SpindaColorChange.Rainbow]: 'Rainbow \u{1F308}',
     };
 
     public async run({ bot, src, guild }: CommandParameters, args: MySpindaArgs) {
