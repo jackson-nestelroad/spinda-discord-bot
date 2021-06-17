@@ -211,6 +211,7 @@ export class CustomCommandEngine {
             `{undefined? var}`,
             `{empty? string}`,
             `{random a b}`,
+            `{random-member}`,
             `{math expression}`,
             `{nickname name}`,
             `{role name}`,
@@ -584,6 +585,10 @@ export class CustomCommandEngine {
                         return CustomCommandEngine.undefinedVar;
                     }
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
+                } break;
+                case 'random-member': {
+                    const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
+                    return memberList.random().user.username;
                 } break;
                 case 'math': {
                     return mathjs.evaluate(args);
