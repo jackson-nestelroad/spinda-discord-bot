@@ -5,6 +5,7 @@ import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
 import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 import { CustomCommandData, CustomCommandFlag } from '../../data/model/custom-command';
+import { EmbedTemplates } from '../../util/embed';
 
 export interface CustomCommandEngineOptions {
     universal?: boolean;
@@ -1152,10 +1153,18 @@ export class CustomCommandEngine {
         if (this.options.universal) {
             if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.universalCooldownSet)) {
                 const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
+                let errorCount = 0;
                 for (const [key, member] of memberList) {
                     this.memberContext = member;
-                    await this.parse(response);
+                    try {
+                        await this.parse(response);
+                    } catch (error) {
+                        ++errorCount;
+                    }
                 }
+                const embed = this.params.bot.createEmbed(EmbedTemplates.Success);
+                embed.setDescription(`Finished running universally with ${errorCount} error${errorCount === 1 ? '' : 's'}. You can run another universal command in five minutes.`);
+                await this.params.src.send(embed);
             }
         }
         else if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
