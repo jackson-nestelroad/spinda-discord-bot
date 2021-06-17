@@ -167,6 +167,7 @@ export interface BaseCommand {
     readonly moreDescription?: string | string[];
     readonly cooldown?: ExpireAge;
     readonly examples?: string[];
+    readonly disableInCustomCommand?: boolean;
     readonly disableSlash?: boolean;
     readonly slashGuildId?: string;
 

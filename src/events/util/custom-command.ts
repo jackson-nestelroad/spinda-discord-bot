@@ -3,8 +3,13 @@ import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
 import *  as mathjs from 'mathjs';
-import { ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
+import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 import { CustomCommandData, CustomCommandFlag } from '../../data/model/custom-command';
+
+export interface CustomCommandEngineOptions {
+    universal?: boolean;
+    silent?: boolean;
+}
 
 // Result from parsing a portion of custom command code
 interface ResponseParseResult {
@@ -61,6 +66,8 @@ enum ExecutionLimit {
     Repeat = 'repeat',
 }
 
+type LimitsDictionary = { readonly [limit in ExecutionLimit]: number };
+
 export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
@@ -79,12 +86,20 @@ export class CustomCommandEngine {
         functionArgument: 'arg-',
     } as const;
 
-    private static readonly limits: ReadonlyDictionary<number> = {
-        repeat: 64,
-        wait: 10000,
-        message: 5,
-        command: 10,
-    };
+    private static readonly defaultLimits: ReadonlyDictionary<LimitsDictionary> = {
+        normal: {
+            repeat: 64,
+            wait: 10000,
+            message: 5,
+            command: 10,
+        },
+        universal: {
+            repeat: 0,
+            wait: 0,
+            message: 0,
+            command: 0,
+        },
+    }
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
@@ -92,10 +107,14 @@ export class CustomCommandEngine {
     public static readonly cooldownTime: ExpireAgeFormat = { seconds: 3 };
     private static readonly cooldownSet: TimedCache<string, number> = new TimedCache(CustomCommandEngine.cooldownTime);
 
+    public static readonly universalCooldown: ExpireAge = { minutes: 5 };
+    private static readonly universalCooldownSet: TimedCache<string, number> = new TimedCache(CustomCommandEngine.universalCooldown);
+
     private content: string;
     private args: string[];
+    private options: CustomCommandEngineOptions;
 
-    constructor(private params: CommandParameters, content?: string, args?: string[]) {
+    constructor(private params: CommandParameters, content?: string, args?: string[], options: CustomCommandEngineOptions = { }) {
         if (params.src.isMessage) {
             this.content = content || '';
             this.args = args ? args : content ? content.split(' ') : [];
@@ -111,6 +130,14 @@ export class CustomCommandEngine {
                 this.content = '';
                 this.args = [];
             }
+        }
+
+        this.options = options;
+        if (options.universal) {
+            this.limits = CustomCommandEngine.defaultLimits.universal;
+        }
+        else {
+            this.limits = CustomCommandEngine.defaultLimits.normal;
         }
     }
 
@@ -242,13 +269,13 @@ export class CustomCommandEngine {
         ],
     };
 
-    private silent: boolean = false;
     private vars: Map<string, string> = new Map();
     private arguments: string[] = [];
     private stack: Array<string[]> = [];
     private depth: number = 0;
-    private updatedMember: GuildMember = null;
-    private limitProgress: Dictionary<number> = { };
+    private memberContext: GuildMember = null;
+    private readonly limits: LimitsDictionary;
+    private limitProgress: Partial<Writeable<LimitsDictionary>> = { };
     
     // Parses all metadata out of the custom command code
     public static parseMetadata(code: string): ParseMetadataResult {
@@ -318,8 +345,8 @@ export class CustomCommandEngine {
         if (this.limitProgress[name] === undefined) {
             this.limitProgress[name] = 0;
         }
-        if (increase + this.limitProgress[name] > CustomCommandEngine.limits[name]) {
-            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${CustomCommandEngine.limits[name]}) exceeded`);
+        if (increase + this.limitProgress[name] > this.limits[name]) {
+            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${this.limits[name]}) exceeded`);
         }
         this.limitProgress[name] += increase;
     }
@@ -329,10 +356,6 @@ export class CustomCommandEngine {
             this.limitProgress[name] = 0;
         }
         return this.limitProgress[name];
-    }
-
-    private getMember(): GuildMember {
-        return this.updatedMember ?? this.params.src.member;
     }
 
     private handleVariableNative(name: string): string | undefined {
@@ -483,7 +506,7 @@ export class CustomCommandEngine {
             const cmd = name.substr(1);
             if (this.params.bot.commands.has(cmd)) {
                 const command = this.params.bot.commands.get(cmd);
-                if (Validation.validate(this.params, command, this.getMember())) {
+                if (!command.disableInCustomCommand && Validation.validate(this.params, command, this.memberContext)) {
                     args = args.trim();
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
@@ -512,7 +535,7 @@ export class CustomCommandEngine {
                     return this.params.guild.prefix;
                 } break;
                 case 'silent': {
-                    this.silent = true;
+                    this.options.silent = true;
                     return '';
                 } break;
                 case 'delete': {
@@ -643,7 +666,7 @@ export class CustomCommandEngine {
                     return null;
                 } break;
                 case 'nickname': {
-                    this.updatedMember = await this.getMember().setNickname(args);
+                    this.memberContext = await this.memberContext.setNickname(args);
                     return '';
                 } break;
                 case 'role': {
@@ -652,12 +675,12 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    const memberRoles = this.getMember().roles;
+                    const memberRoles = this.memberContext.roles;
                     if (memberRoles.cache.has(role.id)) {
-                        this.updatedMember = await memberRoles.remove(role);
+                        this.memberContext = await memberRoles.remove(role);
                     }
                     else {
-                        this.updatedMember = await memberRoles.add(role)
+                        this.memberContext = await memberRoles.add(role)
                     }
                     return '';
                 } break;
@@ -667,7 +690,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    return this.getMember().roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                    return this.memberContext.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
                 } break;
                 case '+role': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
@@ -675,7 +698,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    this.updatedMember = await this.getMember().roles.add(role);
+                    this.memberContext = await this.memberContext.roles.add(role);
                     return '';
                 } break;
                 case '-role': {
@@ -684,22 +707,22 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
-                    this.updatedMember = await this.getMember().roles.remove(role);
+                    this.memberContext = await this.memberContext.roles.remove(role);
                     return '';
                 } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.userParams[attr]) {
-                            return CustomCommandEngine.userParams[attr](this.params.src.author);
+                            return CustomCommandEngine.userParams[attr](this.memberContext.user);
                         }
                         else if (CustomCommandEngine.memberParams[attr]) {
-                            return CustomCommandEngine.memberParams[attr](this.getMember());
+                            return CustomCommandEngine.memberParams[attr](this.memberContext);
                         }
                         return null;
                     }
                     else {
-                        return this.params.src.author.toString();
+                        return this.memberContext.user.toString();
                     }
                 } break;
                 case 'guild':
@@ -1126,9 +1149,19 @@ export class CustomCommandEngine {
     }
 
     public async run(response: string) {
-        if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
+        if (this.options.universal) {
+            if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.universalCooldownSet)) {
+                const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
+                for (const [key, member] of memberList) {
+                    this.memberContext = member;
+                    await this.parse(response);
+                }
+            }
+        }
+        else if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
+            this.memberContext = this.params.src.member;
             response = (await this.parse(response)).trim();
-            if (!this.silent && response.length !== 0) {
+            if (!this.options.silent && response.length !== 0) {
                 this.assertLimit(ExecutionLimit.Message, 1);
                 await this.params.src.send(response);
             }
