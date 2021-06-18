@@ -80,7 +80,7 @@ export namespace DiscordUtil {
                 return false;
             }
             for (const key in a) {
-                if (!this.deepEqual(a[key], b[key])) {
+                if (!deepEqual(a[key], b[key])) {
                     return false;
                 }
             }
