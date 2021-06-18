@@ -131,6 +131,6 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
         
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully set command \`${command}\`.`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

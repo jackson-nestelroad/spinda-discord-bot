@@ -38,6 +38,6 @@ export class RemoveCommandCommand extends ComplexCommand<RemoveCommandArgs> {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully removed command \`${command}\`.`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

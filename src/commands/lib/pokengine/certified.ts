@@ -117,6 +117,6 @@ export class CertifiedCommand extends ComplexCommand<CertifiedArgs> {
         PokengineUtil.embedDexBlock(embed, chosenMon);
         embed.setAuthor(dex.name, dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined);
 
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

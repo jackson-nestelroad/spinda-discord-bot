@@ -1,3 +1,4 @@
+import { Snowflake } from 'discord.js';
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export enum SpindaColorChange {
@@ -34,7 +35,7 @@ export interface GeneratedSpinda {
 
 export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
     readonly id: number;
-    readonly userId: string;
+    readonly userId: Snowflake;
     readonly position: number;
 }
 
@@ -43,7 +44,7 @@ interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes
 export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
     implements CaughtSpindaAttributes {
     public readonly id: number;
-    public readonly userId: string;
+    public readonly userId: Snowflake;
     public readonly position: number;
     public readonly generatedAt: Date;
     public readonly pid: number;

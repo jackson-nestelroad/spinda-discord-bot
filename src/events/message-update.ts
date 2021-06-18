@@ -27,7 +27,7 @@ export class MessageUpdateEvent extends BaseLogEvent<typeof event> {
             embed.addField('Profile', newMsg.author.toString(), true);
             embed.addField('Message ID', newMsg.id, true);
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

@@ -22,7 +22,7 @@ export class HordeCommand extends SimpleCommand {
         bot.spindaGeneratorService.setChannelHistory(src.channel.id, result.info);
 
         // Send the image
-        const sent = await src.send(new MessageAttachment(result.buffer));
+        const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
 
         // Interaction reply must be a message, because we didn't choose ephemeral
         if (!sent.isMessage) {

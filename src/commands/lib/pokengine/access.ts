@@ -40,7 +40,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
         if (src.guild.id !== Environment.Pokengine.getGuildId()) {
             const embed = bot.createEmbed();
             embed.setDescription(`Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`);
-            await src.send(embed);
+            await src.send({ embeds: [embed] });
         }
         else {
             // Make sure the role we are granting exists
@@ -68,7 +68,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                 if (src.isInteraction) {
                     const embed = bot.createEmbed(EmbedTemplates.Error);
                     embed.setDescription(`You already have access!`);
-                    await src.replyEphemeral(embed);
+                    await src.reply({ embeds: [embed], ephemeral: true });
                 }
                 else {
                     return;
@@ -76,10 +76,10 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
             }
             else {
                 if (src.channel.id !== this.accessChannel.id) {
-                    await src.replyEphemeral(`Please go to ${this.accessChannel.toString()}.`);
+                    await src.reply({ content: `Please go to ${this.accessChannel.toString()}.`, ephemeral: true });
                 }
                 else if (!args.username) {
-                    await src.replyEphemeral('Please provide your Pok\u00E9ngine username.');
+                    await src.reply({ content: 'Please provide your Pok\u00E9ngine username.', ephemeral: true });
                 }
                 else {
                     await src.defer();
@@ -150,7 +150,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     // Try to send a DM
                     // If it fails, add a reaction to signal the failure
                     try {
-                        await src.sendDirect(embed);
+                        await src.sendDirect({ embeds: [embed] });
                     } catch (error) {
                         if (src.isMessage) {
                             await src.message.react('\u{1F614}');

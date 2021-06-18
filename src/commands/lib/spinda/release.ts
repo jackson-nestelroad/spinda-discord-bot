@@ -37,6 +37,6 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Goodbye, Spinda! Successfully released position ${args.position}.`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

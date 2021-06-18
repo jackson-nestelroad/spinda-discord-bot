@@ -1,3 +1,5 @@
+import { Snowflake } from 'discord.js';
+
 export namespace Environment {
     export function getEnvironment(): 'production' | 'development' | undefined {
         return process.env.NODE_ENV as any;
@@ -7,8 +9,8 @@ export namespace Environment {
         return process.env.DISCORD_TOKEN;
     }
 
-    export function getGlobalOwner(): string {
-        return process.env.GLOBAL_OWNER;
+    export function getGlobalOwner(): Snowflake {
+        return process.env.GLOBAL_OWNER as Snowflake;
     }
 
     export function getDatabaseUrl(): string {
@@ -20,16 +22,16 @@ export namespace Environment {
             return process.env.POKENGINE_COOKIE;
         }
     
-        export function getGuildId(): string {
-            return process.env.POKENGINE_GUILD_ID;
+        export function getGuildId(): Snowflake {
+            return process.env.POKENGINE_GUILD_ID as Snowflake;
         }
     
-        export function getAccessChannelId(): string {
-            return process.env.POKENGINE_ACCESS_CHANNEL_ID;
+        export function getAccessChannelId(): Snowflake {
+            return process.env.POKENGINE_ACCESS_CHANNEL_ID as Snowflake;
         }
     
-        export function getAccessRoleId(): string {
-            return process.env.POKENGINE_ACCESS_ROLE_ID;
+        export function getAccessRoleId(): Snowflake {
+            return process.env.POKENGINE_ACCESS_ROLE_ID as Snowflake;
         }
     }
 }

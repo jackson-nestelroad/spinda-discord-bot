@@ -21,7 +21,7 @@ export class GuildBanAddEvent extends BaseLogEvent<typeof event> {
 
             embed.addField('Reason', ban.reason);
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

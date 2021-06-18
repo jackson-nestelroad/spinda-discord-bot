@@ -54,8 +54,9 @@ export class ReadyEvent extends BaseEvent<typeof event> {
             else {
                 // Remove command if it exists when it should not
                 const cmdManager = await this.getCommandManager(cmd);
-                if (cmdManager.cache.has(cmd.name)) {
-                    await cmdManager.delete(cmd.name);
+                const old = cmdManager.cache.find(cmd => cmd.name === name);
+                if (old) {
+                    await cmdManager.delete(old);
                 }
             }
         }

@@ -30,7 +30,7 @@ export class SayCommand extends LegacyCommand<SayArgs> {
         return '(channel) message';
     }
 
-    public parseChatArgs({ src, args, content }: ChatCommandParameters): SayArgs {
+    public parseChatArgs({ bot, src, args, content }: ChatCommandParameters): SayArgs {
         const parsed: Partial<SayArgs> = { };
         const msg = src.message;
 
@@ -38,10 +38,9 @@ export class SayCommand extends LegacyCommand<SayArgs> {
         if (msg.mentions.channels.size > 0 && args.length > 0 && args[0] === msg.mentions.channels.first().toString()) {
             const channelMention = args.shift();
             content = content.substr(channelMention.length).trimLeft();
-            const id = channelMention.substring(2, channelMention.length - 1);
-            parsed.channel = msg.guild.channels.cache.get(id);
+            parsed.channel = bot.getChannelFromString(channelMention, src.guild.id);
             if (!parsed.channel) {
-                throw new Error(`Channel id ${id} not found.`);
+                throw new Error(`Channel \`${channelMention}\` not found.`);
             }
         }
         else {

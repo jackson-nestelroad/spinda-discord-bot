@@ -1,3 +1,4 @@
+import { Snowflake } from 'discord.js';
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export enum CustomCommandFlag {
@@ -18,7 +19,7 @@ export interface CustomCommandData {
 
 export interface CustomCommandAttributes extends CustomCommandData {
     readonly id: number;
-    readonly guildId: string;
+    readonly guildId: Snowflake;
 }
 
 interface CustomCommandCreationAttributes extends Optional<CustomCommandAttributes, 'id'> { };
@@ -26,7 +27,7 @@ interface CustomCommandCreationAttributes extends Optional<CustomCommandAttribut
 export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandCreationAttributes>
     implements CustomCommandAttributes {
     public readonly id: number;
-    public readonly guildId: string;
+    public readonly guildId: Snowflake;
     public name: string;
     public message: string;
     public description: string;

@@ -32,7 +32,7 @@ export class MessageDeleteEvent extends BaseLogEvent<typeof event> {
                 embed.setImage(attachment.proxyURL || attachment.url);
             }
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

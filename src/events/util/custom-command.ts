@@ -165,7 +165,7 @@ export class CustomCommandEngine {
         memberCount: guild => guild.memberCount.toString(),
         ownerId: guild => guild.ownerID,
         createdAt: guild => guild.createdAt.toLocaleDateString(),
-        region: guild => guild.region,
+        region: guild => guild.preferredLocale,
     };
 
     private static readonly channelParams: ReadonlyDictionary<(channel: Channel) => string> = {
@@ -582,7 +582,7 @@ export class CustomCommandEngine {
                     this.assertLimit(ExecutionLimit.Message, 1);
                     const embed = this.params.bot.createEmbed();
                     embed.setDescription(args);
-                    await this.params.src.send(embed);
+                    await this.params.src.send({ embeds: [embed] });
                     return '';
                 } break;
                 case 'random':
@@ -1164,7 +1164,7 @@ export class CustomCommandEngine {
                 }
                 const embed = this.params.bot.createEmbed(EmbedTemplates.Success);
                 embed.setDescription(`Finished running universally with ${errorCount} error${errorCount === 1 ? '' : 's'}. You can run another universal command in five minutes.`);
-                await this.params.src.send(embed);
+                await this.params.src.send({ embeds: [embed] });
             }
         }
         else if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
@@ -1176,7 +1176,7 @@ export class CustomCommandEngine {
             }
             else if (this.params.src.isInteraction && !this.params.src.interaction.replied) {
                 this.assertLimit(ExecutionLimit.Message, 1);
-                await this.params.src.replyEphemeral('\u{2705}');
+                await this.params.src.reply({ content: '\u{2705}', ephemeral: true });
             }
         }
     }

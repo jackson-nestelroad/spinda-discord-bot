@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents, CommandInteraction, GuildChannel, Role } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents, CommandInteraction, GuildChannel, Role, Snowflake } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -71,25 +71,25 @@ export class DiscordBot {
     public async sendError(src: CommandSource, error: any) {
         const embed = this.createEmbed(EmbedTemplates.Error);
         embed.setDescription(error.message || error.toString());
-        await src.sendEphemeral(embed);
+        await src.send({ embeds: [embed], ephemeral: true });
     }
 
     public splitIntoArgs(str: string): string[] {
         return str.split(' ');
     }
 
-    public async getMemberFromString(str: string, guildId: string): Promise<GuildMember | null> {
+    public async getMemberFromString(str: string, guildId: Snowflake): Promise<GuildMember | null> {
         // Try mention first
         const guild = this.client.guilds.cache.get(guildId);
         const match = DiscordUtil.userMentionRegex.exec(str);
         if (match) {
-            return guild.members.cache.get(match[1]) || null;
+            return guild.members.cache.get(match[1] as Snowflake) || null;
         }
 
         // Try user ID then username
         const members = await this.memberListService.getMemberListForGuild(guildId);
-        if (members.has(str)) {
-            return members.get(str);
+        if (members.has(str as Snowflake)) {
+            return members.get(str as Snowflake);
         }
         return members.find(member => DiscordUtil.accentStringEqual(member.user.username, str)) || null;
     }
@@ -97,7 +97,7 @@ export class DiscordBot {
     public getUserFromMention(mention: string): User | null {
         const match = DiscordUtil.userMentionRegex.exec(mention);
         if (match) {
-            return this.client.users.cache.get(match[1]) || null;
+            return this.client.users.cache.get(match[1] as Snowflake) || null;
         }
         return null;
     }
@@ -105,37 +105,37 @@ export class DiscordBot {
     public getChannelFromMention(mention: string): Channel | null {
         const match = DiscordUtil.channelMentionRegex.exec(mention);
         if (match) {
-            return this.client.channels.cache.get(match[1]) || null;
+            return this.client.channels.cache.get(match[1] as Snowflake) || null;
         }
         return null;
     }
 
-    public getChannelFromString(str: string, guildId: string): GuildChannel | null {
+    public getChannelFromString(str: string, guildId: Snowflake): GuildChannel | null {
         // Try mention first
         const guild = this.client.guilds.cache.get(guildId);
         const match = DiscordUtil.channelMentionRegex.exec(str);
         if (match) {
-            return guild.channels.cache.get(match[1]) || null;
+            return guild.channels.cache.get(match[1] as Snowflake) || null;
         }
 
         // Try channel ID then name
-        if (guild.channels.cache.has(str)) {
-            return guild.channels.cache.get(str);
+        if (guild.channels.cache.has(str as Snowflake)) {
+            return guild.channels.cache.get(str as Snowflake);
         }
         return guild.channels.cache.find(channel => DiscordUtil.accentStringEqual(channel.name, str)) || null;
     }
 
-    public getRoleFromString(str: string, guildId: string): Role | null {
+    public getRoleFromString(str: string, guildId: Snowflake): Role | null {
         // Try mention first
         const guild = this.client.guilds.cache.get(guildId);
         const match = DiscordUtil.roleMentionRegex.exec(str);
         if (match) {
-            return guild.roles.cache.get(match[1]) || null;
+            return guild.roles.cache.get(match[1] as Snowflake) || null;
         }
 
         // Try role ID then name
-        if (guild.roles.cache.has(str)) {
-            return guild.roles.cache.get(str);
+        if (guild.roles.cache.has(str as Snowflake)) {
+            return guild.roles.cache.get(str as Snowflake);
         }
         return guild.roles.cache.find(role => DiscordUtil.accentStringEqual(role.name, str)) || null;
     }
@@ -172,7 +172,7 @@ export class DiscordBot {
             else {
                 if (offenses === 0) {
                     cooldownSet.update(id, 1);
-                    const reply = await src.replyEphemeral('Slow down!');
+                    const reply = await src.reply({ content: 'Slow down!', ephemeral: true });
                     if (reply.isMessage) {
                         await this.wait(10000);
                         await reply.delete();

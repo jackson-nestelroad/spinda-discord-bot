@@ -62,7 +62,7 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
 
             const embed = bot.createEmbed(EmbedTemplates.Error);
             embed.setDescription(`You have too many Spinda in your party. Respond with a number 1 through ${SpindaGeneratorService.partySize} to replace one of your party slots with this new Spinda. Send anything else to cancel.`);
-            await src.reply(embed);
+            await src.reply({ embeds: [embed] });
 
             try {
                 const messages = await src.channel.awaitMessages((newMsg: Message) => newMsg.author.id === src.author.id, {
@@ -91,7 +91,7 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
                 }
                 const embed = bot.createEmbed(EmbedTemplates.Error);
                 embed.setDescription('You did not respond in time.');
-                const reply = await src.reply(embed);
+                const reply = await src.reply({ embeds: [embed] });
                 await bot.wait(10000);
                 await reply.delete();
                 return;
@@ -105,6 +105,6 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${guild.prefix}${SpindaCommandNames.View} ${pos + 1}\`. You have ${remaining} party slot${remaining === 1 ? '' : 's'} remaining.`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

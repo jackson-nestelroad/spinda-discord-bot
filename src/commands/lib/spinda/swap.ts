@@ -52,6 +52,6 @@ export class SwapCommand extends ComplexCommand<SwapArgs> {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully swapped positions ${first} and ${second}.`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

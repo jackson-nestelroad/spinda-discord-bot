@@ -50,7 +50,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
 
     private async sendEmbed(src: CommandSource, embed: MessageEmbed, searchUrl: string) {
         embed.setDescription(`[See more results](${searchUrl})`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 
     public async run({ bot, src }: CommandParameters, args: SearchArgs) {

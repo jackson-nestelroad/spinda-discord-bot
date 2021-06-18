@@ -100,6 +100,6 @@ export class MediaWikiService extends BaseService {
             embed.setDescription(results.join('\n'));
         }
 
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

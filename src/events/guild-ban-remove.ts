@@ -19,7 +19,7 @@ export class GuildBanRemoveEvent extends BaseLogEvent<typeof event> {
             embed.setDescription(ban.user.toString());
             embed.setTitle('Member Unbanned');
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

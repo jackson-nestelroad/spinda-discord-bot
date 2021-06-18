@@ -19,7 +19,7 @@ export class GuildMemberRemoveEvent extends BaseLogEvent<typeof event> {
             embed.setDescription(member.toString());
             embed.setTitle('Member Removed');
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

@@ -91,7 +91,7 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
                 fields.push(`${event} = ${guild.logOptions & bit ? 'on' : 'off'}`);
             }
             embed.setDescription(fields.join('\n'));
-            await src.send(embed);
+            await src.send({ embeds: [embed] });
         }
         else {
             const changes = args.options.split(';').map(val => val.trim());
@@ -175,7 +175,7 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
             await bot.dataService.updateGuild(guild);
             const embed = bot.createEmbed(EmbedTemplates.Success);
             embed.setDescription('Successfully updated log configuration.');
-            await src.send(embed);
+            await src.send({ embeds: [embed] });
         }
     }
 }

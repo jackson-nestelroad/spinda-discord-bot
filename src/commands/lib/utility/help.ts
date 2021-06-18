@@ -151,6 +151,6 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
             }
         }
 
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

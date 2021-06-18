@@ -19,7 +19,7 @@ export class GuildMemberAddEvent extends BaseLogEvent<typeof event> {
             embed.setDescription(member.toString());
             embed.setTitle('Member Joined');
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

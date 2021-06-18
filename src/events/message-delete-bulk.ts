@@ -28,8 +28,8 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<typeof event> {
                     file += `${this.getUserString(msg.author)}\n[${new Date(msg.createdTimestamp).toLocaleString()}]\n${msg.content || 'No content'}\n\n`;
                 }
 
-                embed.attachFiles(new MessageAttachment(Buffer.from(file, 'utf16le'), `${embed.timestamp}.txt`) as any);
-                await (channel as TextChannel).send(embed);
+                const attachment = new MessageAttachment(Buffer.from(file, 'utf16le'), `${embed.timestamp}.txt`);
+                await (channel as TextChannel).send({ embeds: [embed], files: [attachment] });
             }
         }
     }

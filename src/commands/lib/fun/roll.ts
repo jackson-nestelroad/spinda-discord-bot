@@ -109,6 +109,6 @@ export class RollCommand extends ComplexCommand<RollArgs> {
         }
 
         embed.setTitle(`:game_die: ${this.arrow} ${result}`);
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

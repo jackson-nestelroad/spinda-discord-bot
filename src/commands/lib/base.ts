@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord-api-types';
-import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionData, Collection, CommandInteractionOption, MessageEmbed } from 'discord.js';
+import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionData, Collection, CommandInteractionOption, MessageEmbed, Snowflake } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 import { DiscordUtil } from '../../util/discord';
@@ -109,7 +109,7 @@ export interface BaseCommand {
     readonly examples?: string[];
     readonly disableInCustomCommand?: boolean;
     readonly disableSlash?: boolean;
-    readonly slashGuildId?: string;
+    readonly slashGuildId?: Snowflake;
     readonly isNested?: boolean;
     readonly subCommands?: CommandMap<string>;
 

@@ -36,7 +36,7 @@ export class GuildMemberUpdateEvent extends BaseLogEvent<typeof event> {
                 return;
             }
 
-            await (channel as TextChannel).send(embed);
+            await (channel as TextChannel).send({ embeds: [embed] });
         }
     }
 }

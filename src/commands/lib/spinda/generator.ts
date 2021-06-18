@@ -1,5 +1,5 @@
 import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D, ImageData } from 'canvas';
-import { Message, MessageAttachment } from 'discord.js';
+import { Message, MessageAttachment, Snowflake } from 'discord.js';
 import { DiscordBot } from '../../../bot';
 import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
 import { BaseService } from '../../../services/base';
@@ -334,7 +334,7 @@ export class SpindaGeneratorService extends BaseService {
         return spots as SpotData<Spot>;
     }
 
-    private getChannelHistory(id: string): CircularBuffer<GeneratedSpinda> {
+    private getChannelHistory(id: Snowflake): CircularBuffer<GeneratedSpinda> {
         let buffer = this.history.get(id);
         if (!buffer) {
             buffer = new CircularBuffer(SpindaGeneratorService.historySize);
@@ -343,22 +343,22 @@ export class SpindaGeneratorService extends BaseService {
         return buffer;
     }
 
-    public pushToChannelHistory(id: string, spinda: GeneratedSpinda) {
+    public pushToChannelHistory(id: Snowflake, spinda: GeneratedSpinda) {
         const buffer = this.getChannelHistory(id);
         buffer.push(spinda);
     }
 
-    public getFromChannelHistory(id: string, offset: number = 0): GeneratedSpinda | undefined {
+    public getFromChannelHistory(id: Snowflake, offset: number = 0): GeneratedSpinda | undefined {
         const buffer = this.getChannelHistory(id);
         return buffer.get(offset);
     }
 
-    public setChannelHistory(id: string, spinda: Array<GeneratedSpinda>) {
+    public setChannelHistory(id: Snowflake, spinda: Array<GeneratedSpinda>) {
         const buffer = this.getChannelHistory(id);
         buffer.set(spinda);
     }
 
-    public clearChannelHistory(id: string) {
+    public clearChannelHistory(id: Snowflake) {
         const buffer = this.getChannelHistory(id);
         buffer.clear();
     }
@@ -480,7 +480,7 @@ export class SpindaGeneratorService extends BaseService {
     }
 
     public async generateAndSend(msg: Message, spinda: GeneratedSpinda): Promise<void> {
-        await msg.channel.send(new MessageAttachment((await this.generate(spinda)).buffer));
+        await msg.channel.send({ files: [new MessageAttachment((await this.generate(spinda)).buffer)] });
     }
 
     public newSpinda(): GeneratedSpinda {

@@ -12,6 +12,7 @@
         "isolatedModules": false,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
+        "esModuleInterop": true,
         "declaration": false,
         "noImplicitAny": false,
         "removeComments": true,

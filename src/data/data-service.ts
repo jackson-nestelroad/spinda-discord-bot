@@ -7,6 +7,7 @@ import { BlocklistEntry } from './model/blocklist';
 import { CaughtSpinda, CaughtSpindaAttributes, GeneratedSpinda } from './model/caught-spinda';
 import { BaseService } from '../services/base';
 import { DiscordBot } from '../bot';
+import { Snowflake } from 'discord.js';
 
 export class DataService extends BaseService {
     public static readonly defaultPrefix: string = '>';
@@ -18,10 +19,10 @@ export class DataService extends BaseService {
     private caughtSpindas = CaughtSpinda;
 
     private cache = {
-        guilds: new Map<string, GuildAttributes>(),
+        guilds: new Map<Snowflake, GuildAttributes>(),
         customCommands: new Map<string, Dictionary<CustomCommandData>>(),
-        blocklist: new Map<string, Set<string>>(),
-        caughtSpindas: new Map<string, Array<CaughtSpindaAttributes>>(),
+        blocklist: new Map<Snowflake, Set<Snowflake>>(),
+        caughtSpindas: new Map<Snowflake, Array<CaughtSpindaAttributes>>(),
     } as const;
 
     constructor(bot: DiscordBot) {
@@ -66,7 +67,7 @@ export class DataService extends BaseService {
         this.cache.caughtSpindas.clear();
     }
 
-    private async getGuildModel(id: string): Promise<Guild> {
+    private async getGuildModel(id: Snowflake): Promise<Guild> {
         let entry = await this.guilds.findOne({ where: { id }});
         if (entry === null) {
             entry = await this.guilds.create({
@@ -77,7 +78,7 @@ export class DataService extends BaseService {
         return entry;
     }
 
-    public async getGuild(id: string): Promise<GuildAttributes> {
+    public async getGuild(id: Snowflake): Promise<GuildAttributes> {
         if (!this.cache.guilds.has(id)) {
             const model = await this.getGuildModel(id);
             this.cache.guilds.set(id, model.get());
@@ -90,12 +91,12 @@ export class DataService extends BaseService {
         this.cache.guilds.set(updated.id, updated.get());
     }
 
-    private async getCustomCommandModels(guildId: string): Promise<CustomCommand[]> {
+    private async getCustomCommandModels(guildId: Snowflake): Promise<CustomCommand[]> {
         let entries = await this.customCommands.findAll({ where: { guildId }});
         return entries;
     }
 
-    private async assureCustomCommandsCache(guildId: string) {
+    private async assureCustomCommandsCache(guildId: Snowflake) {
         if (!this.cache.customCommands.has(guildId)) {
             const models = await this.getCustomCommandModels(guildId);
             const map: Dictionary<CustomCommandData> = { };
@@ -106,12 +107,12 @@ export class DataService extends BaseService {
         }
     }
 
-    public async getCustomCommands(guildId: string): Promise<ReadonlyDictionary<CustomCommandData>> {
+    public async getCustomCommands(guildId: Snowflake): Promise<ReadonlyDictionary<CustomCommandData>> {
         await this.assureCustomCommandsCache(guildId);
         return this.cache.customCommands.get(guildId);
     }
 
-    public async setCustomCommand(guildId: string, data: CustomCommandData): Promise<void> {
+    public async setCustomCommand(guildId: Snowflake, data: CustomCommandData): Promise<void> {
         await this.assureCustomCommandsCache(guildId);
         const map = this.cache.customCommands.get(guildId);
         if (map[data.name]) {
@@ -123,22 +124,22 @@ export class DataService extends BaseService {
         map[data.name] = data;
     }
 
-    public async removeCustomCommand(guildId: string, name: string): Promise<boolean> {
+    public async removeCustomCommand(guildId: Snowflake, name: string): Promise<boolean> {
         await this.assureCustomCommandsCache(guildId);
         const removed = (await this.customCommands.destroy({ where: { guildId, name }})) !== 0;
         delete this.cache.customCommands.get(guildId)[name];
         return removed;
     }
 
-    private async getBlocklistModels(guildId: string): Promise<BlocklistEntry[]> {
+    private async getBlocklistModels(guildId: Snowflake): Promise<BlocklistEntry[]> {
         let entries = await this.blocklist.findAll({ where: { guildId }});
         return entries;
     }
 
-    private async assureBlocklistCache(guildId: string) {
+    private async assureBlocklistCache(guildId: Snowflake) {
         if (!this.cache.blocklist.has(guildId)) {
             const models = await this.getBlocklistModels(guildId);
-            const set: Set<string> = new Set();
+            const set: Set<Snowflake> = new Set();
             for (const model of models) {
                 set.add(model.userId);
             }
@@ -146,12 +147,12 @@ export class DataService extends BaseService {
         }
     }
 
-    public async getBlocklist(guildId: string): Promise<ReadonlySet<string>> {
+    public async getBlocklist(guildId: Snowflake): Promise<ReadonlySet<Snowflake>> {
         await this.assureBlocklistCache(guildId);
         return this.cache.blocklist.get(guildId);
     }
 
-    public async addToBlocklist(guildId: string, userId: string): Promise<void> {
+    public async addToBlocklist(guildId: Snowflake, userId: Snowflake): Promise<void> {
         await this.assureBlocklistCache(guildId);
         const list = this.cache.blocklist.get(guildId);
         if (!list.has(userId)) {
@@ -160,18 +161,18 @@ export class DataService extends BaseService {
         }
     }
 
-    public async removeFromBlocklist(guildId: string, userId: string): Promise<boolean> {
+    public async removeFromBlocklist(guildId: Snowflake, userId: Snowflake): Promise<boolean> {
         await this.assureBlocklistCache(guildId);
         const removed = (await this.blocklist.destroy({ where: { guildId, userId }})) !== 0;
         this.cache.blocklist.get(guildId).delete(userId);
         return removed;
     }
 
-    private async getCaughtSpindaModels(userId: string): Promise<Array<CaughtSpinda>> {
+    private async getCaughtSpindaModels(userId: Snowflake): Promise<Array<CaughtSpinda>> {
         return await this.caughtSpindas.findAll({ where: { userId }, order: [['position', 'ASC']] });
     }
 
-    private async assureCaughtSpindaCache(userId: string): Promise<Array<CaughtSpindaAttributes>> {
+    private async assureCaughtSpindaCache(userId: Snowflake): Promise<Array<CaughtSpindaAttributes>> {
         let cached = this.cache.caughtSpindas.get(userId);
         if (cached === undefined) {
             const found = await this.getCaughtSpindaModels(userId);
@@ -182,7 +183,7 @@ export class DataService extends BaseService {
         return cached;
     }
 
-    private async correctCaughtSpindaModels(userId: string) {
+    private async correctCaughtSpindaModels(userId: Snowflake) {
         this.cache.caughtSpindas.delete(userId);
 
         // Get all models for this user
@@ -241,11 +242,11 @@ export class DataService extends BaseService {
         this.cache.caughtSpindas.set(userId, cached);
     }
 
-    public async getCaughtSpinda(userId: string): Promise<Readonly<Array<CaughtSpindaAttributes>>> {
+    public async getCaughtSpinda(userId: Snowflake): Promise<Readonly<Array<CaughtSpindaAttributes>>> {
         return this.assureCaughtSpindaCache(userId);
     }
 
-    public async swapCaughtSpindaPositions(userId: string, first: number, second: number) {
+    public async swapCaughtSpindaPositions(userId: Snowflake, first: number, second: number) {
         const firstModels = await this.caughtSpindas.findAll({ where: { userId, position: first }});
         if (firstModels.length !== 1) {
             await this.correctCaughtSpindaModels(userId);
@@ -266,12 +267,12 @@ export class DataService extends BaseService {
         collection[second] = newSecond.get();
     }
 
-    public async releaseCaughtSpinda(userId: string, pos: number) {
+    public async releaseCaughtSpinda(userId: Snowflake, pos: number) {
         await this.caughtSpindas.destroy({ where: { userId, position: pos }});
         await this.correctCaughtSpindaModels(userId);
     }
 
-    public async catchSpinda(userId: string, spinda: GeneratedSpinda, pos: number, allowCorrection: boolean = true): Promise<void> {
+    public async catchSpinda(userId: Snowflake, spinda: GeneratedSpinda, pos: number, allowCorrection: boolean = true): Promise<void> {
         const collection = await this.assureCaughtSpindaCache(userId);
         
         let model: CaughtSpinda;

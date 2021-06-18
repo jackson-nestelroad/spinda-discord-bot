@@ -1,11 +1,11 @@
-import { GuildMember, Collection } from 'discord.js';
+import { GuildMember, Collection, Snowflake } from 'discord.js';
 import { TimedCache } from '../util/timed-cache';
 import { BaseService } from './base';
 
 export class MemberListService extends BaseService {
-    private readonly cache: TimedCache<string, Collection<string, GuildMember>> = new TimedCache({ minutes: 30 });
+    private readonly cache: TimedCache<Snowflake, Collection<Snowflake, GuildMember>> = new TimedCache({ minutes: 30 });
 
-    private async fetchMemberListForGuild(id: string): Promise<Collection<string, GuildMember>> {
+    private async fetchMemberListForGuild(id: Snowflake): Promise<Collection<Snowflake, GuildMember>> {
         const guild = this.bot.client.guilds.cache.get(id);
         if (!guild) {
             throw new Error(`Guild ${id} could not be found.`);
@@ -15,7 +15,7 @@ export class MemberListService extends BaseService {
         return members;
     }
 
-    public async getMemberListForGuild(id: string): Promise<Collection<string, GuildMember>> {
+    public async getMemberListForGuild(id: Snowflake): Promise<Collection<Snowflake, GuildMember>> {
         return this.cache.get(id) ?? await this.fetchMemberListForGuild(id);
     }
 }

@@ -46,7 +46,7 @@ export class MySpindaCommand extends ComplexCommand<MySpindaArgs> {
 
         if (args.position === undefined) {
             const result = await bot.spindaGeneratorService.horde(caughtSpinda);
-            await src.send(new MessageAttachment(result.buffer));
+            await src.send({ files: [new MessageAttachment(result.buffer)] });
         }
         else {
             if (args.position <= 0) {
@@ -63,10 +63,10 @@ export class MySpindaCommand extends ComplexCommand<MySpindaArgs> {
 
             const embed = bot.createEmbed();
             const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
-            embed.attachFiles(attachment as any).setThumbnail('attachment://thumbnail.png');
+            embed.setThumbnail('attachment://thumbnail.png');
     
             embed.setTitle(`${src.author.username}'s Spinda`);
-            embed.addField('PID', result.info.pid, true);
+            embed.addField('PID', result.info.pid.toString(), true);
     
             if (result.info.colorChange !== SpindaColorChange.None) {
                 embed.addField('Classification', this.classifications[result.info.colorChange], true);
@@ -74,7 +74,7 @@ export class MySpindaCommand extends ComplexCommand<MySpindaArgs> {
               
             embed.addField('Generated At', result.info.generatedAt.toLocaleString(), true);
     
-            await src.send(embed);
+            await src.send({ embeds: [embed], files: [attachment] });
         }
     }
 }

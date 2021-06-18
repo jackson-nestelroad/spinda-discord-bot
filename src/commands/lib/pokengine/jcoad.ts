@@ -101,7 +101,7 @@ export class JcoadCommand extends ComplexCommand<JcoadArgs> {
                 }
             }
 
-            await src.send(embed);
+            await src.send({ embeds: [embed] });
         }
     }
 }

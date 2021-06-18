@@ -41,6 +41,6 @@ export class PrefixCommand extends ComplexCommand<PrefixArgs> {
             await bot.dataService.updateGuild(guild);
             embed.setDescription(`Changed guild prefix to \`${guild.prefix}\``);
         }
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

@@ -1,9 +1,10 @@
+import { Snowflake } from 'discord.js';
 import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export interface BlocklistEntryAttributes {
     readonly id: number;
-    readonly guildId: string;
-    readonly userId: string;
+    readonly guildId: Snowflake;
+    readonly userId: Snowflake;
 }
 
 interface BlocklistEntryCreationAttributes extends Optional<BlocklistEntryAttributes, 'id'> { };
@@ -11,8 +12,8 @@ interface BlocklistEntryCreationAttributes extends Optional<BlocklistEntryAttrib
 export class BlocklistEntry extends Model<BlocklistEntryAttributes, BlocklistEntryCreationAttributes>
     implements BlocklistEntryAttributes {
     public readonly id: number;
-    public readonly guildId: string;
-    public readonly userId: string;
+    public readonly guildId: Snowflake;
+    public readonly userId: Snowflake;
     
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

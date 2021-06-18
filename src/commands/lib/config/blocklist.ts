@@ -64,8 +64,8 @@ export class BlocklistCommand extends ComplexCommand<BlocklistArgs> {
                 const description = [`**Page ${pageNumber + 1}**`]
                     .concat(blocklistArray
                         .slice(index, index + this.pageSize)
-                        .map(id => `<@${id}>`)
-                        .join('\n'));
+                        .map(id => `<@${id}>`))
+                    .join('\n');
                 embed.setDescription(description);
             }
         }
@@ -85,6 +85,6 @@ export class BlocklistCommand extends ComplexCommand<BlocklistArgs> {
             }
         }
 
-        await src.send(embed);
+        await src.send({ embeds: [embed] });
     }
 }

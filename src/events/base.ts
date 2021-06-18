@@ -1,4 +1,4 @@
-import { ClientEvents, Channel, MessageEmbed, User } from 'discord.js';
+import { ClientEvents, Channel, MessageEmbed, User, Snowflake } from 'discord.js';
 import { DiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
 
@@ -36,7 +36,7 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
         embed.setAuthor(this.getUserString(user), user.avatarURL());
     }
     
-    public async getDestination(guildId: string): Promise<Channel | null> {
+    public async getDestination(guildId: Snowflake): Promise<Channel | null> {
         if (!guildId) {
             return null;
         }

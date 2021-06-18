@@ -77,8 +77,8 @@ export class ColorCommand extends ComplexCommand<ColorArgs> {
         
         // Attach generated file (.png extension is needed)
         const attachment = new MessageAttachment(this.canvas.toBuffer(), 'thumbnail.png');
-        embed.attachFiles(attachment as any).setThumbnail('attachment://thumbnail.png');
+        embed.setThumbnail('attachment://thumbnail.png');
 
-        await src.send(embed);
+        await src.send({ embeds: [embed], files: [attachment] });
     }
 }

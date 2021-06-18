@@ -305,6 +305,6 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         this.croppedCanvas.height = currentLineTop + this.contentProperties.size / 2;
         this.croppedCtx.drawImage(this.canvas, 0, 0);
 
-        await src.send(new MessageAttachment(this.croppedCanvas.toBuffer()));
+        await src.send({ files: [new MessageAttachment(this.croppedCanvas.toBuffer())] });
     }
 }
