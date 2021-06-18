@@ -17,7 +17,7 @@ export class MessageEvent extends BaseEvent<typeof event> {
     }
 
     private async runCommand(content: string, msg: Message, guild: GuildAttributes) {
-        const args = content.split(' ');
+        const args = this.bot.splitIntoArgs(content);
         const cmd = args.shift();
         content = content.substr(cmd.length).trim();
         content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');

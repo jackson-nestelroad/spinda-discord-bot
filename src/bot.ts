@@ -74,6 +74,10 @@ export class DiscordBot {
         await src.sendEphemeral(embed);
     }
 
+    public splitIntoArgs(str: string): string[] {
+        return str.split(' ');
+    }
+
     public async getMemberFromString(str: string, guildId: string): Promise<GuildMember | null> {
         // Try mention first
         const guild = this.client.guilds.cache.get(guildId);

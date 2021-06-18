@@ -118,14 +118,14 @@ export class CustomCommandEngine {
     constructor(private params: CommandParameters, content?: string, args?: string[], options: CustomCommandEngineOptions = { }) {
         if (params.src.isMessage) {
             this.content = content || '';
-            this.args = args ? args : content ? content.split(' ') : [];
+            this.args = args ? args : content ? params.bot.splitIntoArgs(content) : [];
         }
         else {
             // Custom interactions have only a single parameter for all message content
             const interaction = params.src.interaction;
             if (interaction.options[0]) {
                 this.content = interaction.options[0].value.toString();
-                this.args = this.content.split(' ');
+                this.args = params.bot.splitIntoArgs(this.content);
             }
             else {
                 this.content = '';
@@ -517,7 +517,7 @@ export class CustomCommandEngine {
                         src: this.params.src,
                         guild: this.params.guild,
                         content: args,
-                        args: args ? args.split(' ') : [],
+                        args: args ? this.params.bot.splitIntoArgs(' ') : [],
                     });
                 }
             }
