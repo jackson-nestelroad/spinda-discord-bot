@@ -1,10 +1,11 @@
 import { ApplicationCommandOptionType } from 'discord-api-types';
-import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionData, CommandInteractionOption, MessageEmbed } from 'discord.js';
+import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionData, Collection, CommandInteractionOption, MessageEmbed } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 import { DiscordUtil } from '../../util/discord';
 import { CommandSource } from '../../util/command-source';
 import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
+import { Validation } from '../../events/util/validate';
 
 export enum CommandCategory {
     Config = 'Config',
@@ -62,9 +63,6 @@ export interface SingleArgumentConfig {
     type: ArgumentType;
     required: boolean;
     choices?: ApplicationCommandOptionChoice[];
-    
-    // TODO: Maybe allow nested options in the future if we add sub-commands
-    // options?: ApplicationCommandOption[];
 }
 
 // Disable these types, as they are unneeded for this bot
@@ -88,7 +86,7 @@ export interface ChatCommandParameters extends CommandParameters {
 
 // Parameters exclusive to slash commands
 export interface SlashCommandParameters extends CommandParameters {
-    options: CommandInteractionOption[];
+    options: Collection<string, CommandInteractionOption>;
 }
 
 const StandardCooldownObject = {
@@ -99,6 +97,25 @@ const StandardCooldownObject = {
 } as const;
 
 export const StandardCooldowns: Readonly<Record<keyof typeof StandardCooldownObject, Readonly<ExpireAgeFormat>>> = StandardCooldownObject;
+
+export type CommandTypeArray = Array<{ new(): BaseCommand }>;
+export type CommandMap<K> = Map<K, BaseCommand>;
+
+// Optional fields for command handlers
+export interface BaseCommand {
+    readonly prefix?: string;
+    readonly moreDescription?: string | string[];
+    readonly cooldown?: ExpireAge;
+    readonly examples?: string[];
+    readonly disableInCustomCommand?: boolean;
+    readonly disableSlash?: boolean;
+    readonly slashGuildId?: string;
+    readonly isNested?: boolean;
+    readonly subCommands?: CommandMap<string>;
+
+    // Add any additional fields to the help message
+    addHelpFields?(embed: MessageEmbed): void;
+}
 
 // A single command handler
 // Do not inherit directly from this!
@@ -139,7 +156,15 @@ export abstract class BaseCommand {
     // Runs the command when it is called from an interaction
     public abstract runSlash(params: SlashCommandParameters): Promise<void>;
 
+    protected throwConfigurationError(msg: string) {
+        throw new Error(`Configuration error for command "${this.name}": ${msg}`);
+    }
+
     public initialize(): void {
+        if (/\s/.test(this.name)) {
+            this.throwConfigurationError('Command names may not include whitespace.');
+        }
+        
         if (this.cooldown !== undefined) {
             this.cooldownSet = new TimedCache(this.cooldown);
             if (this.cooldownSet.expireAge <= 0) {
@@ -161,23 +186,10 @@ export abstract class BaseCommand {
     }
 }
 
-// Optional fields for command handlers
-export interface BaseCommand {
-    readonly prefix?: string;
-    readonly moreDescription?: string | string[];
-    readonly cooldown?: ExpireAge;
-    readonly examples?: string[];
-    readonly disableInCustomCommand?: boolean;
-    readonly disableSlash?: boolean;
-    readonly slashGuildId?: string;
-
-    // Add any additional fields to the help message
-    addHelpFields?(embed: MessageEmbed): void;
-}
-
 // Command handler that takes no arguments
 export abstract class SimpleCommand extends BaseCommand {
     public args = null;
+    public isNested: false = false;
 
     public abstract run(params: CommandParameters): Promise<void>;
 
@@ -204,6 +216,8 @@ export abstract class SimpleCommand extends BaseCommand {
     }
 }
 
+export type ArgumentsConfig<T> = { readonly [key in keyof T]-?: SingleArgumentConfig };
+
 // Command handler that takes one or more arguments
 abstract class ParameterizedCommand<T extends object> extends BaseCommand {
     public abstract readonly args?: ArgumentsConfig<T>;
@@ -215,10 +229,6 @@ abstract class ParameterizedCommand<T extends object> extends BaseCommand {
             case ArgumentType.RestOfContent: return ApplicationCommandOptionType.STRING;
             default: return type as number as ApplicationCommandOptionType;
         }
-    }
-
-    private throwConfigurationError(msg: string) {
-        throw new Error(`Configuration error for command "${this.name}": ${msg}`);
     }
 
     private validateArgumentConfig(): void {
@@ -280,8 +290,6 @@ abstract class ParameterizedCommand<T extends object> extends BaseCommand {
     }
 }
 
-export type ArgumentsConfig<T> = { readonly [key in keyof T]-?: SingleArgumentConfig };
-
 export interface ComplexCommand<T extends object> {
     // Suppresses chat arguments parsing errors, allowing the command to run anyway
     // Input validation should be done in the command handler, then
@@ -290,6 +298,8 @@ export interface ComplexCommand<T extends object> {
 
 // Command handler that automatically parses chat and slash arguments the same way
 export abstract class ComplexCommand<T extends object> extends ParameterizedCommand<T> {
+    public isNested: false = false;
+
     public argsString(): string {
         return Object.entries(this.args).map(([name, data]: [string, SingleArgumentConfig]) => {
             if (!data.required) {
@@ -406,6 +416,8 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
 // Thus, legacy commands allow chat-only commands to be expressed without having to set up an arguments object
 // The lib/fun/screenshot command is a good example of this
 export abstract class LegacyCommand<T extends object> extends ParameterizedCommand<T> {
+    public isNested: false = false;
+
     protected abstract parseChatArgs(params: ChatCommandParameters): T;
 
     public async runChat(params: ChatCommandParameters) {
@@ -413,5 +425,90 @@ export abstract class LegacyCommand<T extends object> extends ParameterizedComma
     }
 }
 
-export type CommandTypeArray = Array<{ new(): BaseCommand }>;
-export type CommandMap<K> = Map<K, BaseCommand>;
+// Command that delegates to sub-commands
+export abstract class NestedCommand extends BaseCommand {
+    public args = null;
+    public isNested: true = true;
+
+    public subCommands: CommandMap<string>;
+    public abstract subCommandConfig: CommandTypeArray;
+
+    public argsString() {
+        return `(${[...this.subCommands.keys()].join(' | ')})`;
+    }
+
+    public initialize() {
+        super.initialize();
+
+        if (this.subCommandConfig.length === 0) {
+            this.throwConfigurationError(`Sub-command array cannot be empty.`); 
+        }
+        if (this.subCommandConfig.length > 25) {
+            this.throwConfigurationError(`Command can only have up to 25 sub-commands.`);
+        }
+
+        this.subCommands = new Map();
+        for (const cmd of this.subCommandConfig) {
+            const instance = new cmd();
+            instance.initialize();
+
+            if (instance.isNested) {
+                this.throwConfigurationError(`Sub-command ${instance.name} is nested, but commands only support 1 level of nesting.`);
+            }
+
+            this.subCommands.set(instance.name, instance);
+        }
+    }
+
+    public commandData(): ApplicationCommandData {
+        const data = { } as ApplicationCommandData;
+
+        data.name = this.name;
+        data.description = this.description;
+        data.defaultPermission = this.permission === CommandPermission.Everyone;
+        data.options = [];
+
+        for (const [key, cmd] of [...this.subCommands.entries()]) {
+            const subData = cmd.commandData();
+            data.options.push({
+                name: cmd.name,
+                description: cmd.description,
+                type: ApplicationCommandOptionType.SUB_COMMAND,
+                options: subData.options as ApplicationCommandOption[],
+            });
+        }
+
+        return data;
+    }
+
+    public addHelpFields(embed: MessageEmbed) {
+        embed.addField('Sub-Commands', [...this.subCommands.keys()].map(key => `\`${key}\``).join(', '));
+    }
+
+    public async runChat(params: ChatCommandParameters) {
+        if (params.args.length === 0) {
+            throw new Error(`Missing sub-command for command \`${this.name}\``);
+        }
+
+        const subName = params.args.shift();
+        const subNameIndex = params.content.indexOf(subName);
+        if (subNameIndex === -1) {
+            throw new Error(`Could not find sub-command name in content field`);
+        }
+        params.content = params.content.substring(subNameIndex).trimLeft();
+
+        if (this.subCommands.has(subName)) {
+            const subCommand = this.subCommands.get(subName);
+            if (Validation.validate(params, subCommand, params.src.member)) {
+                await subCommand.executeChat(params);
+            }
+        }
+        else {
+            throw new Error(`Invalid sub-command for command \`${this.name}\``);
+        }
+    }
+
+    public async runSlash(params: SlashCommandParameters) {
+        console.log(params.options);
+    }
+}

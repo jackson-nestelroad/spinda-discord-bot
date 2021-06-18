@@ -2,7 +2,7 @@ import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { DiscordUtil } from '../../../util/discord';
 import { ExpireAgeConversion } from '../../../util/timed-cache';
-import { ArgumentsConfig, ArgumentType, CommandCategory, CommandParameters, CommandPermission, ComplexCommand, StandardCooldowns } from '../base';
+import { ArgumentsConfig, ArgumentType, CommandCategory, CommandMap, CommandParameters, CommandPermission, ComplexCommand, StandardCooldowns } from '../base';
 
 interface HelpArgs {
     query?: string;
@@ -18,7 +18,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
     public args: ArgumentsConfig<HelpArgs> = {
         query: {
             description: 'Command category or individual command.',
-            type: ArgumentType.String,
+            type: ArgumentType.RestOfContent,
             required: false,
         },
     };
@@ -26,6 +26,22 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
     // Cache for list of command names by category
     // Key is a lowercase, normalized version of the category name
     private commandListByCategory: Map<CommandCategory, string[]> = null;
+
+    private addCommandsToCommandListByCategory(map: CommandMap<string>, nameChain: string[] = []): void {
+        map.forEach((cmd, name) => {
+            if (cmd.isNested) {
+                nameChain.push(name);
+                this.addCommandsToCommandListByCategory(cmd.subCommands, nameChain);
+                nameChain.pop();
+            }
+            else {
+                if (!this.commandListByCategory.has(cmd.category)) {
+                    this.commandListByCategory.set(cmd.category, []);
+                }
+                this.commandListByCategory.get(cmd.category).push(`${nameChain.length > 0 ? nameChain.join(' ') + ' ' : ''}${name} ${cmd.argsString()}`);
+            }
+        });
+    }
 
     private customCommandString(data: CustomCommandData, prefix: string): string {
         let str = prefix + data.name;
@@ -43,12 +59,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
         // Organize commands by category only once, since category shouldn't ever change
         if (!this.commandListByCategory) {
             this.commandListByCategory = new Map();
-            bot.commands.forEach((cmd, name) => {
-                if (!this.commandListByCategory.has(cmd.category)) {
-                    this.commandListByCategory.set(cmd.category, []);
-                }
-                this.commandListByCategory.get(cmd.category).push(`${name} ${cmd.argsString()}`);
-            });
+            this.addCommandsToCommandListByCategory(bot.commands);
         }
 
         // Blank, give all command categories
@@ -86,47 +97,56 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
                 const commandsString = Object.values(customCommands).map(data => `\`${prefix}${data.name}\``).join(', ');
                 embed.setDescription(commandsString);
             }
-            // Query is a global command
-            else if (bot.commands.has(query)) {
-                const cmd = bot.commands.get(query);
-                embed.setTitle(`${prefix}${cmd.name} ${cmd.argsString()}`);
-                embed.addField('Description', cmd.fullDescription());
-                embed.addField('Category', cmd.category, true);
-                embed.addField('Permission', CommandPermission[cmd.permission], true);
-                embed.addField('Cooldown', cmd.cooldown ? ExpireAgeConversion.toString(cmd.cooldown) : 'None', true);
-                if (cmd.args) {
-                    const argumentsField: string[] = [];
-                    for (const [name, data] of Object.entries(cmd.args)) {
-                        argumentsField.push(`\`${name}\` - ${data.description}`);
-                    }
-                    embed.addField('Arguments', argumentsField.join('\n'), true);
-                }
-                if (cmd.addHelpFields) {
-                    cmd.addHelpFields(embed);
-                }
-                if (cmd.examples && cmd.examples.length > 0) {
-                    embed.addField('Examples', cmd.examples.map(example => `${prefix}${this.name} ${example}`).join('\n'));
-                }
-            }
+            // Query is some global command
             else {
-                const customCommands = await bot.dataService.getCustomCommands(src.guild.id);
+                const queryList = bot.splitIntoArgs(query);
+                let cmd = bot.commands.get(queryList[0]);
+                let i = 1;
+                while (cmd && cmd.isNested && i < queryList.length) {
+                    cmd = cmd.subCommands.get(queryList[i++]);
+                }
 
-                // Query is a guild-specific custom command
-                const customCommand = customCommands[query.toLowerCase()];
-                if (customCommand) {
-                    embed.setTitle(this.customCommandString(customCommand, prefix));
-                    embed.addField('Description', customCommand.description);
-                    embed.addField('Category', CommandCategory.Custom, true);
-                    embed.addField('Permission', CommandPermission[CommandPermission.Everyone], true);
-                    embed.addField('Cooldown', ExpireAgeConversion.toString(CustomCommandEngine.cooldownTime), true);
-                    if (!(customCommand.flags & CustomCommandFlag.NoContent)) {
-                        embed.addField('Arguments', `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`, true);
+                const fullName = queryList.slice(0, i).join(' ');
+                if (cmd) {
+                    embed.setTitle(`${prefix}${fullName} ${cmd.argsString()}`);
+                    embed.addField('Description', cmd.fullDescription());
+                    embed.addField('Category', cmd.category, true);
+                    embed.addField('Permission', CommandPermission[cmd.permission], true);
+                    embed.addField('Cooldown', cmd.cooldown ? ExpireAgeConversion.toString(cmd.cooldown) : 'None', true);
+                    if (cmd.args) {
+                        const argumentsField: string[] = [];
+                        for (const [name, data] of Object.entries(cmd.args)) {
+                            argumentsField.push(`\`${name}\` - ${data.description}`);
+                        }
+                        embed.addField('Arguments', argumentsField.join('\n'), true);
                     }
-                    embed.addField('Code', `\`${CustomCommandEngine.addMetadata(customCommand)}\``);
+                    if (cmd.addHelpFields) {
+                        cmd.addHelpFields(embed);
+                    }
+                    if (cmd.examples && cmd.examples.length > 0) {
+                        embed.addField('Examples', cmd.examples.map(example => `${prefix}${this.name} ${example}`).join('\n'));
+                    }
                 }
                 else {
-                    embed.setTitle('No Command Found');
-                    embed.setDescription(`Command "${prefix}${args.query}" does not exist.`);
+                    const customCommands = await bot.dataService.getCustomCommands(src.guild.id);
+    
+                    // Query is a guild-specific custom command
+                    const customCommand = customCommands[query.toLowerCase()];
+                    if (customCommand) {
+                        embed.setTitle(this.customCommandString(customCommand, prefix));
+                        embed.addField('Description', customCommand.description);
+                        embed.addField('Category', CommandCategory.Custom, true);
+                        embed.addField('Permission', CommandPermission[CommandPermission.Everyone], true);
+                        embed.addField('Cooldown', ExpireAgeConversion.toString(CustomCommandEngine.cooldownTime), true);
+                        if (!(customCommand.flags & CustomCommandFlag.NoContent)) {
+                            embed.addField('Arguments', `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`, true);
+                        }
+                        embed.addField('Code', `\`${CustomCommandEngine.addMetadata(customCommand)}\``);
+                    }
+                    else {
+                        embed.setTitle('No Command Found');
+                        embed.setDescription(`Command "${prefix}${args.query}" does not exist.`);
+                    }
                 }
             }
         }
