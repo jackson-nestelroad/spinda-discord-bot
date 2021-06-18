@@ -25,6 +25,7 @@ import { HelpCommand } from './lib/utility/help';
 import { MemoryCommand } from './lib/utility/memory';
 import { PingCommand } from './lib/utility/ping';
 import { UptimeCommand } from './lib/utility/uptime';
+import { SnapshotMembersCommand } from './lib/config/snapshot-members';
 
 const CommandTypes: CommandTypeArray = [
     PingCommand,
@@ -51,7 +52,6 @@ const CommandTypes: CommandTypeArray = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
-    RunCustomCommand,
 
     // TODO: Bring this command back somehow
     // Maybe using sub-commands?
@@ -62,6 +62,8 @@ const CommandTypes: CommandTypeArray = [
     BlocklistCommand,
     SetCommandCommand,
     RemoveCommandCommand,
+    RunCustomCommand,
+    SnapshotMembersCommand,
 ];
 
 export namespace Commands {
