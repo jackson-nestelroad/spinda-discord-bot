@@ -2,12 +2,27 @@ import { BaseEvent } from './base';
 import { DiscordBot } from '../bot';
 import { DiscordUtil } from '../util/discord';
 import { ApplicationCommandManager } from 'discord.js';
+import { BaseCommand } from '../commands/lib/base';
 
 const event = 'ready';
 
 export class ReadyEvent extends BaseEvent<typeof event> {
     constructor(bot: DiscordBot) {
         super(bot, event);
+    }
+
+    // Get the proper command manager this command would belong to
+    private async getCommandManager(cmd: BaseCommand): Promise<ApplicationCommandManager> {
+        if (cmd.slashGuildId) {
+            const cmdGuild = this.bot.client.guilds.cache.get(cmd.slashGuildId);
+            if (cmdGuild.commands.cache.size === 0) {
+                await cmdGuild.commands.fetch();
+            }
+            return cmdGuild.commands;
+        }
+        else {
+            return this.bot.client.application.commands;
+        }
     }
 
     public async run() {
@@ -22,19 +37,7 @@ export class ReadyEvent extends BaseEvent<typeof event> {
         for (const [name, cmd] of this.bot.commands) {
             if (cmd.isSlashCommand) {
                 const newData = cmd.commandData();
-
-                // Get proper command manager this command would belong to
-                let cmdManager: ApplicationCommandManager;
-                if (cmd.slashGuildId) {
-                    const cmdGuild = this.bot.client.guilds.cache.get(cmd.slashGuildId);
-                    if (cmdGuild.commands.cache.size === 0) {
-                        await cmdGuild.commands.fetch();
-                    }
-                    cmdManager = cmdGuild.commands;
-                }
-                else {
-                    cmdManager = this.bot.client.application.commands;
-                }
+                const cmdManager = await this.getCommandManager(cmd);
 
                 // Check if command already exists
                 // If so, check if it has been updated in any way
@@ -46,6 +49,13 @@ export class ReadyEvent extends BaseEvent<typeof event> {
                 }
                 else {
                     cmdManager.create(newData);
+                }
+            }
+            else {
+                // Remove command if it exists when it should not
+                const cmdManager = await this.getCommandManager(cmd);
+                if (cmdManager.cache.has(cmd.name)) {
+                    await cmdManager.delete(cmd.name);
                 }
             }
         }
