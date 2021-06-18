@@ -11,7 +11,7 @@ export class RunCustomCommand extends LegacyCommand<RunCustomArgs> {
     public name = 'run-custom';
     public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';
     public moreDescription = `The \`universal\` option will run the command universally, which means it is run for every member of the guild. This can only be run every ${ExpireAgeConversion.toString(CustomCommandEngine.universalCooldown)}.`;
-    public category = CommandCategory.Secret;
+    public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     
     public disableInCustomCommand = true;

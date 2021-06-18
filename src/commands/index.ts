@@ -17,7 +17,7 @@ import { ScreenshotCommand } from './lib/fun/screenshot';
 import { PokengineCommands } from './lib/pokengine';
 import { EvalCommand } from './lib/secret/eval';
 import { RefreshCommand } from './lib/secret/refresh';
-import { RunCustomCommand } from './lib/secret/run-custom';
+import { RunCustomCommand } from './lib/config/run-custom';
 import { SayCommand } from './lib/secret/say';
 import { SpindaCommands } from './lib/spinda';
 import { CleanCommand } from './lib/utility/clean';
