@@ -491,13 +491,14 @@ export abstract class NestedCommand extends BaseCommand {
         }
 
         const subName = params.args.shift();
-        const subNameIndex = params.content.indexOf(subName);
-        if (subNameIndex === -1) {
-            throw new Error(`Could not find sub-command name in content field`);
-        }
-        params.content = params.content.substring(subNameIndex).trimLeft();
 
         if (this.subCommands.has(subName)) {
+            const subNameIndex = params.content.indexOf(subName);
+            if (subNameIndex === -1) {
+                throw new Error(`Could not find sub-command name in content field`);
+            }
+            params.content = params.content.substring(subNameIndex).trimLeft();
+
             const subCommand = this.subCommands.get(subName);
             if (Validation.validate(params, subCommand, params.src.member)) {
                 await subCommand.executeChat(params);
@@ -509,6 +510,24 @@ export abstract class NestedCommand extends BaseCommand {
     }
 
     public async runSlash(params: SlashCommandParameters) {
-        console.log(params.options);
+        const subCommandOption = params.options.find(option => 
+            DiscordUtil.ApplicationCommandOptionTypeConverter[option.type]
+            === ApplicationCommandOptionType.SUB_COMMAND
+        );
+        if (!subCommandOption) {
+            throw new Error(`Missing sub-command for command \`${this.name}\``);
+        }
+
+        if (this.subCommands.has(subCommandOption.name)) {
+            params.options.delete(subCommandOption.name);
+
+            const subCommand = this.subCommands.get(subCommandOption.name);
+            if (Validation.validate(params, subCommand, params.src.member)) {
+                await subCommand.executeSlash(params);
+            }
+        }
+        else {
+            throw new Error(`Invalid sub-command for command \`${this.name}\``);
+        }
     }
 }
