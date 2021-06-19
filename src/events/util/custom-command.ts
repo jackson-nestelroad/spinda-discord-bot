@@ -97,11 +97,11 @@ export class CustomCommandEngine {
             api: 3,
         },
         universal: {
-            repeat: 0,
+            repeat: 64,
             wait: 0,
             message: 0,
             command: 0,
-            api: 3,
+            api: 1,
         },
     }
 
@@ -1164,6 +1164,7 @@ export class CustomCommandEngine {
                 for (const [key, member] of memberList) {
                     this.memberContext = member;
                     try {
+                        this.limitProgress = { };
                         await this.parse(response);
                     } catch (error) {
                         ++errorCount;
