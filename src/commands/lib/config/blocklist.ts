@@ -1,90 +1,126 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ArgumentsConfig, ComplexCommand, ArgumentType } from '../base';
-import { MessageEmbed } from 'discord.js';
+import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ArgumentsConfig, ComplexCommand, ArgumentType, NestedCommand } from '../base';
+import { GuildMember, MessageEmbed } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 
-interface BlocklistArgs {
-    arg?: string;
+interface ToggleMemberOnBlocklistArgs {
+    member: GuildMember;
 }
 
-export class BlocklistCommand extends ComplexCommand<BlocklistArgs> {
-    public name = 'blocklist';
-    public description = 'Adds or removes a member from the guild\'s blocklist.';
-    public moreDescription = 'Blocklisted members will be unable to use bot commands in the guild. If no member is given, members on the blocklist will be given in pages of 10.';
+class AddMemberOnBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlocklistArgs> {
+    public name = 'add';
+    public description = 'Adds a member to the guild\'s blocklist, preventing them from using commands.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    public cooldown = StandardCooldowns.Medium;
 
-    public args: ArgumentsConfig<BlocklistArgs> = {
-        arg: {
-            description: 'User to add or remove, or page number to view.',
-            type: ArgumentType.RestOfContent,
+    public args: ArgumentsConfig<ToggleMemberOnBlocklistArgs> = {
+        member: {
+            description: 'Member to blocklist.',
+            type: ArgumentType.User,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src, guild }: CommandParameters, args: ToggleMemberOnBlocklistArgs) {
+        if (args.member.id === src.author.id) {
+            throw new Error(`You cannot add yourself to the blocklist.`);
+        }
+
+        await bot.dataService.addToBlocklist(guild.id, args.member.id);
+        
+        const embed = bot.createEmbed(EmbedTemplates.Success);
+        embed.setDescription(`Added ${args.member.user.username} to the blocklist.`);
+
+        await src.send({ embeds: [embed] });
+    }
+}
+
+class RemoveMemberFromBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlocklistArgs> {
+    public name = 'remove';
+    public description = 'Removes a member from the guild\'s blocklist.';
+    public category = CommandCategory.Config;
+    public permission = CommandPermission.Administrator;
+
+    public args: ArgumentsConfig<ToggleMemberOnBlocklistArgs> = {
+        member: {
+            description: 'Member to remove from the blocklist.',
+            type: ArgumentType.User,
+            required: true,
+        },
+    };
+
+    public async run({ bot, src, guild }: CommandParameters, args: ToggleMemberOnBlocklistArgs) {
+        await bot.dataService.removeFromBlocklist(guild.id, args.member.id);
+        
+        const embed = bot.createEmbed(EmbedTemplates.Success);
+        embed.setDescription(`Removed ${args.member.user.username} from the blocklist.`);
+
+        await src.send({ embeds: [embed] });
+    }
+}
+
+interface ViewBlocklistPageArgs {
+    page?: number;
+}
+
+class ViewBlocklistPageSubCommand extends ComplexCommand<ViewBlocklistPageArgs> {
+    private readonly pageSize = 10;
+
+    public name = 'view';
+    public description = `Views the guild's blocklist in pages of ${this.pageSize} members.`;
+    public category = CommandCategory.Config;
+    public permission = CommandPermission.Administrator;
+
+    public args: ArgumentsConfig<ViewBlocklistPageArgs> = {
+        page: {
+            description: 'Page number to view, starting at 1.',
+            type: ArgumentType.Integer,
             required: false,
         },
     };
 
-    private readonly pageSize = 10;
+    public async run({ bot, src, guild }: CommandParameters, args: ViewBlocklistPageArgs) {
+        let pageNumber = args.page - 1 ?? 0;
 
-    public async run({ bot, src, guild }: CommandParameters, args: BlocklistArgs) {
-        let embed: MessageEmbed;
         const blocklist = await bot.dataService.getBlocklist(guild.id);
-        const member = args.arg ? await bot.getMemberFromString(args.arg, guild.id) : null;
 
-        // Member was not found or not given
-        if (!member) {
-            // Content may be blank, a page number, or an unknown member
-            let pageNumber: number;
-            const givenPageNumber = parseInt(args.arg);
+        // Display blocklist
+        const embed = bot.createEmbed(EmbedTemplates.Bare);
+        embed.setTitle(`Blocklist for ${src.guild.name}`);
+        const blocklistArray = [...blocklist.values()];
+        
+        const lastPageNumber = Math.ceil(blocklistArray.length / 10) - 1;
+        pageNumber = Math.min(pageNumber, lastPageNumber);
 
-            // Blank
-            if (!args.arg) {
-                pageNumber = 0;
-            }
-            // Not a page number, so must be an unknown member
-            else if (isNaN(givenPageNumber) || givenPageNumber <= 0) {
-                throw new Error(`Member "${args.arg}" could not be found.`);
-            }
-            // A page number
-            else {
-                pageNumber = givenPageNumber - 1;
-            }
-
-            // Display blocklist
-            embed = bot.createEmbed(EmbedTemplates.Bare);
-            embed.setTitle(`Blocklist for ${src.guild.name}`);
-            const blocklistArray = [...blocklist.values()];
-            
-            const lastPageNumber = Math.ceil(blocklistArray.length / 10) - 1;
-            pageNumber = Math.min(pageNumber, lastPageNumber);
-
-            if (blocklistArray.length === 0) {
-                embed.setDescription('No one!');
-            }
-            else {
-                const index = pageNumber * this.pageSize;
-                const description = [`**Page ${pageNumber + 1}**`]
-                    .concat(blocklistArray
-                        .slice(index, index + this.pageSize)
-                        .map(id => `<@${id}>`))
-                    .join('\n');
-                embed.setDescription(description);
-            }
+        if (blocklistArray.length === 0) {
+            embed.setDescription('No one!');
         }
-        else if (member.id === src.author.id) {
-            throw new Error(`You cannot add yourself to the blocklist.`);
-        }
-        // Add or remove member
         else {
-            embed = bot.createEmbed(EmbedTemplates.Success);
-            if (blocklist.has(member.id)) {
-                await bot.dataService.removeFromBlocklist(guild.id, member.id);
-                embed.setDescription(`Removed ${member.user.username} from the blocklist.`);
-            }
-            else {
-                await bot.dataService.addToBlocklist(guild.id, member.id);
-                embed.setDescription(`Added ${member.user.username} to the blocklist.`);
-            }
+            const index = pageNumber * this.pageSize;
+            const description = [`**Page ${pageNumber + 1}**`]
+                .concat(blocklistArray
+                    .slice(index, index + this.pageSize)
+                    .map(id => `<@${id}>`))
+                .join('\n');
+            embed.setDescription(description);
         }
 
         await src.send({ embeds: [embed] });
     }
+}
+
+export class BlocklistCommand extends NestedCommand {
+    public name = 'blocklist';
+    public description = 'Adds or removes a member from the guild\'s blocklist.';
+    public moreDescription = 'Blocklisted members will be unable to use bot commands in the guild.';
+    public category = CommandCategory.Config;
+    public permission = CommandPermission.Administrator;
+    public cooldown = StandardCooldowns.Medium;
+    
+    public initializeShared() { }
+
+    public subCommands = [
+        AddMemberOnBlocklistSubCommand,
+        RemoveMemberFromBlocklistSubCommand,
+        ViewBlocklistPageSubCommand,
+    ];
 }
