@@ -65,7 +65,6 @@ class BaseTimedCache<K, T> {
         if (this.cache.has(key)) {
             const entry = this.cache.get(key);
             if (new Date().valueOf() >= entry.expireAt) {
-                this.cache.delete(key);
                 return false;
             }
             return true;
@@ -77,7 +76,6 @@ class BaseTimedCache<K, T> {
         if (this.cache.has(key)) {
             const entry = this.cache.get(key);
             if (new Date().valueOf() >= entry.expireAt) {
-                this.cache.delete(key);
                 return undefined;
             }
             return entry.data;
