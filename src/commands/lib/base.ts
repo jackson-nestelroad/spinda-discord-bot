@@ -7,6 +7,7 @@ import { CommandSource } from '../../util/command-source';
 import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 import { Validation } from '../../events/util/validate';
 
+// Every command category for this bot
 export enum CommandCategory {
     Config = 'Config',
     Utility = 'Utility',
@@ -18,12 +19,14 @@ export enum CommandCategory {
     Custom = 'Custom',
 }
 
+// Supported command permissions
 export enum CommandPermission {
     Owner,
     Administrator,
     Everyone,
 }
 
+// Argument types supported by the internal parser
 export enum ArgumentType {
     String = 3,                 // A single string
                                 // Chat commands will parse as one string with no spaces
@@ -58,6 +61,8 @@ export enum ArgumentType {
                                 // MENTIONABLE
 }
 
+// Configuration for a single argument
+// This is slightly different than what Discord offers since we handle sub-commands differently
 export interface SingleArgumentConfig {
     description: string;
     type: ArgumentType;
@@ -65,13 +70,13 @@ export interface SingleArgumentConfig {
     choices?: ApplicationCommandOptionChoice[];
 }
 
-// Disable these types, as they are unneeded for this bot
+// Disable these types, as they are unneeded for this bot or handled differently
 export type RestrictedCommandOptionType = Exclude<
     ApplicationCommandOptionType,
     ApplicationCommandOptionType.SUB_COMMAND | ApplicationCommandOptionType.SUB_COMMAND_GROUP | ApplicationCommandOptionType.MENTIONABLE
 >;
 
-// Parameters given to all commands
+// Parameters given to all commands, whether running as a chat command or slash command
 export interface CommandParameters {
     bot: DiscordBot,
     guild: GuildAttributes,
@@ -89,6 +94,7 @@ export interface SlashCommandParameters extends CommandParameters {
     options: Collection<string, CommandInteractionOption>;
 }
 
+// Standard cooldowns available for any command to use
 const StandardCooldownObject = {
     Low: { seconds: 3 },
     Medium: { seconds: 5 },
@@ -96,11 +102,17 @@ const StandardCooldownObject = {
     Minute: { minutes: 1 },
 } as const;
 
+// Better typing for the above cooldowns
 export const StandardCooldowns: Readonly<Record<keyof typeof StandardCooldownObject, Readonly<ExpireAgeFormat>>> = StandardCooldownObject;
 
+// Array of command types that can be instantiated
 export type CommandTypeArray<Shared = any> = Array<{ new(): BaseCommand<Shared> }>;
+
+// Maps a command name to the command that handles it
 export type CommandMap<K, Shared = any> = Map<K, BaseCommand<Shared>>;
 
+// Functions that internally modify command fields
+// These functions should not be exposed externally
 namespace InternalCommandModifiers {
     export function setShared<Shared>(cmd: BaseCommand<Shared>, shared: Shared) {
         cmd['shared' as string] = shared;
@@ -111,42 +123,160 @@ namespace InternalCommandModifiers {
     }
 }
 
+/*
+
+    The following classes and interfaces make up the command framework.
+    The primary goal of this framework is to allow chat commands (over
+        message) and slash commands (over interaction) to be handled
+        using the same code.
+    This framework also aims to minimize command handling code, especially
+        in terms of parsing arguments.
+
+    The command framework has the following structure:
+
+
+                            BaseCommand
+                                |
+          -------------------------------------------------                 
+          |                     |                         |
+    SimpleCommand       ParameterizedCommand        NestedCommand
+                                |
+                        ------------------------
+                        |                      |
+                ComplexCommand          LegacyCommand
+
+
+    BaseCommand ---             The base type that all commands derive from. Represents
+                                any command that can be run as a chat or slash command.
+    SimpleCommand ---           A command that takes no arguments. Only the command name
+                                is needed to run the command.
+    ParameterizedCommand ---    A command that takes one or more arguments. This command
+                                requires an ArgumentsConfig object to set up slash commands
+                                and internal parsing.
+    ComplexCommand ---          A parameterized command that uses the internal parser for
+                                chat commands. The chat command parser aims to parse
+                                arguments in a very similar way to how slash commands
+                                are automatically parsed.
+    LegacyCommand ---           A parameterized command that specifies custom parsing for
+                                chat commands. Commands that specify arguments using
+                                special formatting must use their own parser.
+    NestedCommand ---           A command with one level of sub-commands. Nested commands
+                                delegate running the command to a sub-command based on the
+                                first argument.
+
+    Furthermore, there are generic types across each class.
+    Args ---                    An interface that is provided to the implementation-specific
+                                command handler. An Args object is produced by all internal
+                                and legacy parsers.
+    Shared ---                  The type of the `BaseCommand.shared` object, which provides
+                                data and methods that can be used across a nested command
+                                chain. Commands that do not have sub-commands use the `never`
+                                type to communicate that there is never shared data, while
+                                nested commands provide shared data to its sub-commands.
+
+    See the following commands and how they would be represented in this framework:
+        
+        /ping ---                       BaseCommand >>> SimpleCommand
+                No arguments, so this command is simple.
+
+        /8ball (question) ---           BaseCommand >>> ParameterizedCommand >>> ComplexCommand
+                One argument which is trivial to parse, so this command is complex.
+
+        /say (#channel) message ---     BaseCommand >>> ParameterizedCommand >>> LegacyCommand
+                Two arguments, but they are not trivial to parse, since the `#channel`
+                argument may or may not be specified. This would obviously be trivial
+                as a slash command, but it needs special parsing if ran as a chat
+                command, so a legacy command works well here.
+        
+        /message-listener add code ---  BaseCommand >>> NestedCommand
+        /message-listener remove id
+                This command could be represented as a ComplexCommand with two arguments,
+                but the first argument changes how the command works. The `add` sub-command
+                takes in code (which can be the rest of the message's content), while the
+                `remove` sub-command takes in a single integer. This scenario suits the use
+                case for a nested command, which will then have two sub-command objects, both
+                represented as a complex command.
+
+*/
+
+
 // Optional fields for command handlers
 export interface BaseCommand<Shared = any> {
+    // Prefix of the command for descriptions and messages
+    // Mostly a legacy field that goes mostly unused
     readonly prefix?: string;
+
+    // More description exclusively available on the help page
     readonly moreDescription?: string | string[];
+
+    // Cooldown between multiple uses of the command
+    // Default is no cooldown
     readonly cooldown?: ExpireAge;
+
+    // Examples for the help page
     readonly examples?: string[];
+
+    // Prevent this command from being ran inside of a custom command
+    // Default is false, which allows commands to run inside of custom commands
     readonly disableInCustomCommand?: boolean;
+
+    // Prevent this command from being added as a slash command
+    // Default is conditional on the command's permission
     readonly disableSlash?: boolean;
+
+    // The guild this command should be added to as a slash command
+    // If left blank, it is added as a global slash command
     readonly slashGuildId?: Snowflake;
+
+    // A flag that signals to the outside world if this command should
+    // be treated as a nested command
+    // Do not set this manually implementation classes
     readonly isNested?: boolean;
+
+    // Map of sub-commands, which is only useful if the command is nested
     readonly subCommands?: CommandMap<string, Shared>;
 
-    // Add any additional fields to the help message
+    // Add any additional fields to the help page if desired
     addHelpFields?(embed: MessageEmbed): void;
 }
 
-// A single command handler
+// Any command that can run as a chat or slash command
 // Do not inherit directly from this!
 export abstract class BaseCommand<Shared = any> {
+    // Name of the command, which is used to run the command
     public abstract readonly name: string;
+
+    // Description of the command that appears on the slash command screen
+    // and the help page
     public abstract readonly description: string;
+
+    // Category of the command
     public abstract readonly category: CommandCategory;
+
+    // Specifies the level of permission needed to run the command
     public abstract readonly permission: CommandPermission;
 
+    // Optional object for specifying the arguments the command takes
     public abstract readonly args?: ReadonlyDictionary<SingleArgumentConfig>;
 
+    // An object that provides shared access to data inside of this command handler
+    // Only used for sub-commands to share common data
     protected readonly shared: Shared;
+
+    // The parent of this command if it is a sub-command
     protected readonly parentCommand: Shared extends never ? never : BaseCommand<Shared>;
 
-    private cooldownSet: TimedCache<string, number> = null;
+    // Maps user IDs to the number of times they have tried to use this command
+    // before their cooldown has finished
+    private cooldownSet: TimedCache<Snowflake, number> = null;
 
+    // Checks if the command should be created as a slash command
     public get isSlashCommand(): boolean {
         // Command must be public
         return !this.disableSlash && this.permission === CommandPermission.Everyone && this.category !== CommandCategory.Secret;
     }
 
+    // Generates the full description to display on the help page
     public fullDescription(): string {
         if (!this.moreDescription) {
             return this.description;
@@ -157,7 +287,7 @@ export abstract class BaseCommand<Shared = any> {
         return this.description + '\n\n' + this.moreDescription;
     }
 
-    // Generates symbolic form of command arguments
+    // Generates symbolic form of command arguments for the help page
     public abstract argsString(): string;
 
     // Generates data to be used for slash command configuration
@@ -173,6 +303,7 @@ export abstract class BaseCommand<Shared = any> {
         throw new Error(`Configuration error for command "${this.name}": ${msg}`);
     }
 
+    // Initializes the internal state of the command and performs a few validation tests
     public initialize(): void {
         if (/\s/.test(this.name)) {
             this.throwConfigurationError('Command names may not include whitespace.');
@@ -186,12 +317,14 @@ export abstract class BaseCommand<Shared = any> {
         }
     }
 
+    // Executes the command as a chat command
     public async executeChat(params: ChatCommandParameters): Promise<void> {
         if (await params.bot.handleCooldown(params.src, this.cooldownSet)) {
             return this.runChat(params);
         }
     }
 
+    // Executes the command as a slash command
     public async executeSlash(params: SlashCommandParameters): Promise<void> {
         if (await params.bot.handleCooldown(params.src, this.cooldownSet)) {
             return this.runSlash(params);
@@ -199,11 +332,12 @@ export abstract class BaseCommand<Shared = any> {
     }
 }
 
-// Command handler that takes no arguments
+// A command that takes no other arguments besides its name
 export abstract class SimpleCommand<Shared = never> extends BaseCommand<Shared> {
     public args = null;
     public isNested: false = false;
 
+    // Generalized command handler for both chat and slash commands
     public abstract run(params: CommandParameters): Promise<void>;
 
     public argsString(): string {
@@ -229,12 +363,15 @@ export abstract class SimpleCommand<Shared = never> extends BaseCommand<Shared> 
     }
 }
 
+// Object for configuring arguments accepted and used by the command
 export type ArgumentsConfig<Args> = { readonly [arg in keyof Args]-?: SingleArgumentConfig };
 
-// Command handler that takes one or more arguments
+// A command that takes one or more arguments
 abstract class ParameterizedCommand<Args extends object, Shared = never> extends BaseCommand<Shared> {
-    public abstract readonly args?: ArgumentsConfig<Args>;
+    // Stronger typing for the args configuration
+    public abstract readonly args: ArgumentsConfig<Args>;
 
+    // Generalized command handler for chat and slash commands
     public abstract run(params: CommandParameters, args: Args): Promise<void>;
 
     private static convertArgumentType(type: ArgumentType): ApplicationCommandOptionType {
@@ -244,6 +381,7 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
         }
     }
 
+    // Validates the arguments config object is possible to use
     private validateArgumentConfig(): void {
         // Non-required arguments must be listed last (consecutively)
         // RestOfContent argument can only be at the very end
@@ -285,6 +423,8 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
         }
     }
 
+    // Shared parsing for slash commands
+    // Trivial since all arguments are parsed by Discord
     public async runSlash(params: SlashCommandParameters): Promise<void> {
         // No parsing needed for slash commands
         // Discord has already done it for us!
@@ -305,11 +445,11 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
 
 export interface ComplexCommand<Args extends object, Shared = never> {
     // Suppresses chat arguments parsing errors, allowing the command to run anyway
-    // Input validation should be done in the command handler, then
+    // If true, input validation should be done in the command handler
     readonly suppressChatArgumentsError?: boolean;
 }
 
-// Command handler that automatically parses chat and slash arguments the same way
+// A command that automatically parses chat and slash arguments the same way
 export abstract class ComplexCommand<Args extends object, Shared = never> extends ParameterizedCommand<Args, Shared> {
     public isNested: false = false;
 
@@ -324,6 +464,7 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
         }).join(' ');
     }
 
+    // Parses chat commands to make them appear like slash commands
     public async runChat(params: ChatCommandParameters): Promise<void> {
         // Parse message according to arguments configuration
         // This allows chat commands to behave almost exactly like slash commands
@@ -424,13 +565,14 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
     }
 }
 
-// Command handler that implements its own parsing within the command itself
+// A command that implements its own parsing within the command itself
 // Some commands have very complex parsing methods, which make slash commands impractical
 // Thus, legacy commands allow chat-only commands to be expressed without having to set up an arguments object
-// The lib/fun/screenshot command is a good example of this
+// The `lib/fun/screenshot` command is a good example of this
 export abstract class LegacyCommand<Args extends object, Shared = never> extends ParameterizedCommand<Args, Shared> {
     public isNested: false = false;
 
+    // Custom parser for chat commands
     protected abstract parseChatArgs(params: ChatCommandParameters): Args;
 
     public async runChat(params: ChatCommandParameters) {
@@ -438,14 +580,19 @@ export abstract class LegacyCommand<Args extends object, Shared = never> extends
     }
 }
 
-// Command that delegates to sub-commands
+// A command that delegates to sub-commands
+// Currently only one level of nesting is supported
 export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
     public args = null;
     public isNested: true = true;
 
-    public subCommands: CommandMap<string, Shared>;
+    // Configuration array of sub-command types to initialize internally
     public abstract subCommandConfig: CommandTypeArray<Shared>;
 
+    // Actual sub-command map to delegate commands to
+    public subCommands: CommandMap<string, Shared>;
+
+    // Creates the object that will be shared with all children of this nested command
     public abstract initializeShared(): Shared;
 
     public argsString() {
@@ -462,6 +609,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             this.throwConfigurationError(`Command can only have up to 25 sub-commands.`);
         }
 
+        // Set up all sub-command instances
         InternalCommandModifiers.setShared(this, this.initializeShared());
         this.subCommands = new Map();
         for (const cmd of this.subCommandConfig) {
@@ -503,6 +651,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
         embed.addField('Sub-Commands', [...this.subCommands.keys()].map(key => `\`${key}\``).join(', '));
     }
 
+    // Delegates a chat command to a sub-command
     public async runChat(params: ChatCommandParameters) {
         if (params.args.length === 0) {
             throw new Error(`Missing sub-command for command \`${this.name}\`.`);
@@ -527,6 +676,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
         }
     }
 
+    // Delegates a slash command to a sub-command
     public async runSlash(params: SlashCommandParameters) {
         const subCommandOption = params.options.find(option => 
             DiscordUtil.ApplicationCommandOptionTypeConverter[option.type]
