@@ -1,5 +1,5 @@
 import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ArgumentsConfig, ComplexCommand, ArgumentType, NestedCommand } from '../base';
-import { GuildMember, MessageEmbed } from 'discord.js';
+import { GuildMember } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 
 interface ToggleMemberOnBlocklistArgs {
