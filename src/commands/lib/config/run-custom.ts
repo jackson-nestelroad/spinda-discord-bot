@@ -1,7 +1,7 @@
 import { CommandCategory, CommandPermission, CommandParameters, ArgumentsConfig, ArgumentType, LegacyCommand, ChatCommandParameters } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { ExpireAgeConversion } from '../../../util/timed-cache';
-import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
+import { MessageButton, MessageComponentInteraction } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 
 interface RunCustomArgs {
@@ -59,17 +59,15 @@ export class RunCustomCommand extends LegacyCommand<RunCustomArgs> {
             otherAdmins.delete(src.author.id);
 
             if (otherAdmins.size > 0) {
-                const row = new MessageActionRow();
                 const button = new MessageButton();
                 button.setCustomID('confirm');
                 button.setLabel('Run Universal Command');
                 button.setEmoji(`\u{2755}`);
                 button.setStyle('DANGER');
-                row.addComponents(button);
     
                 let response = await src.reply({
                     content: 'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
-                    components: [row],
+                    components: [[button]],
                 });
 
                 if (!response.isMessage) {
@@ -77,10 +75,8 @@ export class RunCustomCommand extends LegacyCommand<RunCustomArgs> {
                 }
 
                 const disableButton = async () => {
-                    const updatedRow = new MessageActionRow();
                     button.setDisabled(true);
-                    updatedRow.addComponents(button);
-                    response = await response.edit({ components: [updatedRow] });
+                    return await response.edit({ components: [[button]] });
                 };
 
                 let interaction: MessageComponentInteraction;
@@ -89,14 +85,14 @@ export class RunCustomCommand extends LegacyCommand<RunCustomArgs> {
                         return interaction.customID === 'confirm' && otherAdmins.has(interaction.member.user.id);
                     }, { time: 60 * 1000 });
                 } catch (error) {
-                    await disableButton();
+                    response = await disableButton();
                     const embed = bot.createEmbed(EmbedTemplates.Error);
                     embed.setDescription('Universal command confirmation timed out.');
                     await src.reply({ embeds: [embed] });
                     return;
                 }
 
-                await disableButton();
+                response = await disableButton();
                 await interaction.reply(`Confirmation given by ${interaction.member.toString()}.`);
             }
         }
