@@ -151,7 +151,7 @@ export class SnapshotMembersCommand extends NestedCommand {
 
     public initializeShared() { }
 
-    public subCommandConfig = [
+    public subCommands = [
         SaveSnapshotSubCommand,
         RestoreFromSnapshotSubCommand,
     ];

@@ -111,7 +111,7 @@ export class MessageListenerCommand extends NestedCommand<SharedMessageListeners
         return new SharedMessageListeners();
     }
 
-    public subCommandConfig = [
+    public subCommands = [
         AddMessageListenerSubCommand,
         RemoveMessageListenerSubCommand,
     ];

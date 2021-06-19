@@ -234,7 +234,7 @@ export interface BaseCommand<Shared = any> {
     readonly isNested?: boolean;
 
     // Map of sub-commands, which is only useful if the command is nested
-    readonly subCommands?: CommandMap<string, Shared>;
+    readonly subCommandMap?: CommandMap<string, Shared>;
 
     // Add any additional fields to the help page if desired
     addHelpFields?(embed: MessageEmbed): void;
@@ -587,32 +587,32 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
     public isNested: true = true;
 
     // Configuration array of sub-command types to initialize internally
-    public abstract subCommandConfig: CommandTypeArray<Shared>;
+    public abstract subCommands: CommandTypeArray<Shared>;
 
     // Actual sub-command map to delegate commands to
-    public subCommands: CommandMap<string, Shared>;
+    public subCommandMap: CommandMap<string, Shared>;
 
     // Creates the object that will be shared with all children of this nested command
     public abstract initializeShared(): Shared;
 
     public argsString() {
-        return `(${[...this.subCommands.keys()].join(' | ')})`;
+        return `(${[...this.subCommandMap.keys()].join(' | ')})`;
     }
 
     public initialize() {
         super.initialize();
 
-        if (this.subCommandConfig.length === 0) {
+        if (this.subCommands.length === 0) {
             this.throwConfigurationError(`Sub-command array cannot be empty.`); 
         }
-        if (this.subCommandConfig.length > 25) {
+        if (this.subCommands.length > 25) {
             this.throwConfigurationError(`Command can only have up to 25 sub-commands.`);
         }
 
         // Set up all sub-command instances
         InternalCommandModifiers.setShared(this, this.initializeShared());
-        this.subCommands = new Map();
-        for (const cmd of this.subCommandConfig) {
+        this.subCommandMap = new Map();
+        for (const cmd of this.subCommands) {
             const instance = new cmd();
             instance.initialize();
             InternalCommandModifiers.setShared(instance, this.shared);
@@ -622,7 +622,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
                 this.throwConfigurationError(`Sub-command ${instance.name} is nested, but commands only support 1 level of nesting.`);
             }
 
-            this.subCommands.set(instance.name, instance);
+            this.subCommandMap.set(instance.name, instance);
         }
     }
 
@@ -634,7 +634,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
         data.defaultPermission = this.permission === CommandPermission.Everyone;
         data.options = [];
 
-        for (const [key, cmd] of [...this.subCommands.entries()]) {
+        for (const [key, cmd] of [...this.subCommandMap.entries()]) {
             const subData = cmd.commandData();
             data.options.push({
                 name: cmd.name,
@@ -648,7 +648,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
     }
 
     public addHelpFields(embed: MessageEmbed) {
-        embed.addField('Sub-Commands', [...this.subCommands.keys()].map(key => `\`${key}\``).join(', '));
+        embed.addField('Sub-Commands', [...this.subCommandMap.keys()].map(key => `\`${key}\``).join(', '));
     }
 
     // Delegates a chat command to a sub-command
@@ -659,14 +659,14 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
 
         const subName = params.args.shift();
 
-        if (this.subCommands.has(subName)) {
+        if (this.subCommandMap.has(subName)) {
             const subNameIndex = params.content.indexOf(subName);
             if (subNameIndex === -1) {
                 throw new Error(`Could not find sub-command name in content field.`);
             }
             params.content = params.content.substring(subNameIndex).trimLeft();
 
-            const subCommand = this.subCommands.get(subName);
+            const subCommand = this.subCommandMap.get(subName);
             if (Validation.validate(params, subCommand, params.src.member)) {
                 await subCommand.executeChat(params);
             }
@@ -686,10 +686,10 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             throw new Error(`Missing sub-command for command \`${this.name}\`.`);
         }
 
-        if (this.subCommands.has(subCommandOption.name)) {
+        if (this.subCommandMap.has(subCommandOption.name)) {
             params.options.delete(subCommandOption.name);
 
-            const subCommand = this.subCommands.get(subCommandOption.name);
+            const subCommand = this.subCommandMap.get(subCommandOption.name);
             if (Validation.validate(params, subCommand, params.src.member)) {
                 await subCommand.executeSlash(params);
             }

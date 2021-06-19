@@ -31,7 +31,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
         map.forEach((cmd, name) => {
             if (cmd.isNested) {
                 nameChain.push(name);
-                this.addCommandsToCommandListByCategory(cmd.subCommands, nameChain);
+                this.addCommandsToCommandListByCategory(cmd.subCommandMap, nameChain);
                 nameChain.pop();
             }
             else {
@@ -103,7 +103,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
                 let cmd = bot.commands.get(queryList[0]);
                 let i = 1;
                 while (cmd && cmd.isNested && i < queryList.length) {
-                    cmd = cmd.subCommands.get(queryList[i++]);
+                    cmd = cmd.subCommandMap.get(queryList[i++]);
                 }
 
                 const fullName = queryList.slice(0, i).join(' ');
