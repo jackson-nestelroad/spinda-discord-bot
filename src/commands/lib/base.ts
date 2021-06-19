@@ -98,11 +98,21 @@ const StandardCooldownObject = {
 
 export const StandardCooldowns: Readonly<Record<keyof typeof StandardCooldownObject, Readonly<ExpireAgeFormat>>> = StandardCooldownObject;
 
-export type CommandTypeArray = Array<{ new(): BaseCommand }>;
-export type CommandMap<K> = Map<K, BaseCommand>;
+export type CommandTypeArray<Shared = any> = Array<{ new(): BaseCommand<Shared> }>;
+export type CommandMap<K, Shared = any> = Map<K, BaseCommand<Shared>>;
+
+namespace InternalCommandModifiers {
+    export function setShared<Shared>(cmd: BaseCommand<Shared>, shared: Shared) {
+        cmd['shared' as string] = shared;
+    }
+
+    export function setParent<Shared>(child: BaseCommand<Shared>, parent: BaseCommand<Shared>) {
+        child['parentCommand' as string] = parent;
+    }
+}
 
 // Optional fields for command handlers
-export interface BaseCommand {
+export interface BaseCommand<Shared = any> {
     readonly prefix?: string;
     readonly moreDescription?: string | string[];
     readonly cooldown?: ExpireAge;
@@ -111,7 +121,7 @@ export interface BaseCommand {
     readonly disableSlash?: boolean;
     readonly slashGuildId?: Snowflake;
     readonly isNested?: boolean;
-    readonly subCommands?: CommandMap<string>;
+    readonly subCommands?: CommandMap<string, Shared>;
 
     // Add any additional fields to the help message
     addHelpFields?(embed: MessageEmbed): void;
@@ -119,13 +129,16 @@ export interface BaseCommand {
 
 // A single command handler
 // Do not inherit directly from this!
-export abstract class BaseCommand {
+export abstract class BaseCommand<Shared = any> {
     public abstract readonly name: string;
     public abstract readonly description: string;
     public abstract readonly category: CommandCategory;
     public abstract readonly permission: CommandPermission;
 
     public abstract readonly args?: ReadonlyDictionary<SingleArgumentConfig>;
+
+    protected readonly shared: Shared;
+    protected readonly parentCommand: Shared extends never ? never : BaseCommand<Shared>;
 
     private cooldownSet: TimedCache<string, number> = null;
 
@@ -187,7 +200,7 @@ export abstract class BaseCommand {
 }
 
 // Command handler that takes no arguments
-export abstract class SimpleCommand extends BaseCommand {
+export abstract class SimpleCommand<Shared = never> extends BaseCommand<Shared> {
     public args = null;
     public isNested: false = false;
 
@@ -216,13 +229,13 @@ export abstract class SimpleCommand extends BaseCommand {
     }
 }
 
-export type ArgumentsConfig<T> = { readonly [key in keyof T]-?: SingleArgumentConfig };
+export type ArgumentsConfig<Args> = { readonly [arg in keyof Args]-?: SingleArgumentConfig };
 
 // Command handler that takes one or more arguments
-abstract class ParameterizedCommand<T extends object> extends BaseCommand {
-    public abstract readonly args?: ArgumentsConfig<T>;
+abstract class ParameterizedCommand<Args extends object, Shared = never> extends BaseCommand<Shared> {
+    public abstract readonly args?: ArgumentsConfig<Args>;
 
-    public abstract run(params: CommandParameters, args: T): Promise<void>;
+    public abstract run(params: CommandParameters, args: Args): Promise<void>;
 
     private static convertArgumentType(type: ArgumentType): ApplicationCommandOptionType {
         switch (type) {
@@ -276,7 +289,7 @@ abstract class ParameterizedCommand<T extends object> extends BaseCommand {
         // No parsing needed for slash commands
         // Discord has already done it for us!
         // Just pick the right part of the option object depending on the type
-        const parsedOptions: T = params.options.reduce((obj, option) => {
+        const parsedOptions: Args = params.options.reduce((obj, option) => {
             const next = { ...obj };
             switch (DiscordUtil.ApplicationCommandOptionTypeConverter[option.type]) {
                 case ApplicationCommandOptionType.USER: next[option.name] = option.member; break;
@@ -285,19 +298,19 @@ abstract class ParameterizedCommand<T extends object> extends BaseCommand {
                 default: next[option.name] = option.value;
             }
             return next;
-        }, { } as T);
+        }, { } as Args);
         return this.run(params, parsedOptions);
     }
 }
 
-export interface ComplexCommand<T extends object> {
+export interface ComplexCommand<Args extends object, Shared = never> {
     // Suppresses chat arguments parsing errors, allowing the command to run anyway
     // Input validation should be done in the command handler, then
     readonly suppressChatArgumentsError?: boolean;
 }
 
 // Command handler that automatically parses chat and slash arguments the same way
-export abstract class ComplexCommand<T extends object> extends ParameterizedCommand<T> {
+export abstract class ComplexCommand<Args extends object, Shared = never> extends ParameterizedCommand<Args, Shared> {
     public isNested: false = false;
 
     public argsString(): string {
@@ -320,7 +333,7 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
                 // This allows later optional arguments to be defined while others are not
                 // Commands should consider this a possibility now
                 // Later optional commands cannot entirely depend on the presence of previous optional commands
-        const parsed: Partial<T> = { };
+        const parsed: Partial<Args> = { };
         let i = 0;
         for (const entry of Object.entries(this.args)) {
             // arg is really of type "keyof T"
@@ -407,7 +420,7 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
             }
             ++i;
         }
-        return this.run(params, parsed as T);
+        return this.run(params, parsed as Args);
     }
 }
 
@@ -415,10 +428,10 @@ export abstract class ComplexCommand<T extends object> extends ParameterizedComm
 // Some commands have very complex parsing methods, which make slash commands impractical
 // Thus, legacy commands allow chat-only commands to be expressed without having to set up an arguments object
 // The lib/fun/screenshot command is a good example of this
-export abstract class LegacyCommand<T extends object> extends ParameterizedCommand<T> {
+export abstract class LegacyCommand<Args extends object, Shared = never> extends ParameterizedCommand<Args, Shared> {
     public isNested: false = false;
 
-    protected abstract parseChatArgs(params: ChatCommandParameters): T;
+    protected abstract parseChatArgs(params: ChatCommandParameters): Args;
 
     public async runChat(params: ChatCommandParameters) {
         return this.run(params, this.parseChatArgs(params));
@@ -426,12 +439,14 @@ export abstract class LegacyCommand<T extends object> extends ParameterizedComma
 }
 
 // Command that delegates to sub-commands
-export abstract class NestedCommand extends BaseCommand {
+export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
     public args = null;
     public isNested: true = true;
 
-    public subCommands: CommandMap<string>;
-    public abstract subCommandConfig: CommandTypeArray;
+    public subCommands: CommandMap<string, Shared>;
+    public abstract subCommandConfig: CommandTypeArray<Shared>;
+
+    public abstract initializeShared(): Shared;
 
     public argsString() {
         return `(${[...this.subCommands.keys()].join(' | ')})`;
@@ -447,10 +462,13 @@ export abstract class NestedCommand extends BaseCommand {
             this.throwConfigurationError(`Command can only have up to 25 sub-commands.`);
         }
 
+        InternalCommandModifiers.setShared(this, this.initializeShared());
         this.subCommands = new Map();
         for (const cmd of this.subCommandConfig) {
             const instance = new cmd();
             instance.initialize();
+            InternalCommandModifiers.setShared(instance, this.shared);
+            InternalCommandModifiers.setParent(instance, this);
 
             if (instance.isNested) {
                 this.throwConfigurationError(`Sub-command ${instance.name} is nested, but commands only support 1 level of nesting.`);

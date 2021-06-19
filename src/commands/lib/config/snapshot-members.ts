@@ -149,6 +149,8 @@ export class SnapshotMembersCommand extends NestedCommand {
 
     public disableSlash = true;
 
+    public initializeShared() { }
+
     public subCommandConfig = [
         SaveSnapshotSubCommand,
         RestoreFromSnapshotSubCommand,

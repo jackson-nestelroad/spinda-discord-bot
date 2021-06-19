@@ -26,6 +26,7 @@ import { MemoryCommand } from './lib/utility/memory';
 import { PingCommand } from './lib/utility/ping';
 import { UptimeCommand } from './lib/utility/uptime';
 import { SnapshotMembersCommand } from './lib/config/snapshot-members';
+import { MessageListenerCommand } from './lib/secret/message-listener';
 
 const CommandTypes: CommandTypeArray = [
     PingCommand,
@@ -52,10 +53,7 @@ const CommandTypes: CommandTypeArray = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
-
-    // TODO: Bring this command back somehow
-    // Maybe using sub-commands?
-    // MessageListenerCommand,
+    MessageListenerCommand,
 
     PrefixCommand,
     LogsCommand,
