@@ -2,7 +2,7 @@ import { CommandCategory, CommandPermission, CommandParameters, StandardCooldown
 import { SpindaCommandNames } from './command-names';
 import { EmbedTemplates } from '../../../util/embed';
 import { SpindaGeneratorService } from './generator';
-import { MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
+import { MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
 
 interface ReleaseArgs {
     position: number;
@@ -34,7 +34,6 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
             throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
         }
 
-        const row = new MessageActionRow();
         const yesButton = new MessageButton();
         yesButton.setCustomID('confirm');
         yesButton.setStyle('DANGER');
