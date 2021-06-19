@@ -65,6 +65,7 @@ enum ExecutionLimit {
     Command = 'command',
     Wait = 'wait',
     Repeat = 'repeat',
+    API = 'api',
 }
 
 type LimitsDictionary = { readonly [limit in ExecutionLimit]: number };
@@ -93,12 +94,14 @@ export class CustomCommandEngine {
             wait: 10000,
             message: 5,
             command: 10,
+            api: 3,
         },
         universal: {
             repeat: 0,
             wait: 0,
             message: 0,
             command: 0,
+            api: 3,
         },
     }
 
@@ -667,6 +670,7 @@ export class CustomCommandEngine {
                     return null;
                 } break;
                 case 'nickname': {
+                    this.assertLimit(ExecutionLimit.API, 1);
                     this.memberContext = await this.memberContext.setNickname(args);
                     return '';
                 } break;
@@ -676,6 +680,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
+                    this.assertLimit(ExecutionLimit.API, 1);
                     const memberRoles = this.memberContext.roles;
                     if (memberRoles.cache.has(role.id)) {
                         this.memberContext = await memberRoles.remove(role);
@@ -699,6 +704,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
+                    this.assertLimit(ExecutionLimit.API, 1);
                     this.memberContext = await this.memberContext.roles.add(role);
                     return '';
                 } break;
@@ -708,6 +714,7 @@ export class CustomCommandEngine {
                         throw new Error(`Role "${args}" could not be found`);
                     }
 
+                    this.assertLimit(ExecutionLimit.API, 1);
                     this.memberContext = await this.memberContext.roles.remove(role);
                     return '';
                 } break;
