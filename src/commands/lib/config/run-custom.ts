@@ -1,7 +1,7 @@
 import { CommandCategory, CommandPermission, CommandParameters, ArgumentsConfig, ArgumentType, LegacyCommand, ChatCommandParameters } from '../base';
 import { CustomCommandEngine } from '../../../events/util/custom-command';
 import { ExpireAgeConversion } from '../../../util/timed-cache';
-import { GuildMember, MessageActionRow, MessageButton, MessageComponentInteraction, Permissions } from 'discord.js';
+import { GuildMember, MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 
 interface RunCustomArgs {
