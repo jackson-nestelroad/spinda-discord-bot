@@ -350,7 +350,7 @@ export class CustomCommandEngine {
             this.limitProgress[name] = 0;
         }
         if (increase + this.limitProgress[name] > this.limits[name]) {
-            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${this.limits[name]}) exceeded`);
+            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${this.limits[name]}) exceeded.`);
         }
         this.limitProgress[name] += increase;
     }
@@ -414,7 +414,7 @@ export class CustomCommandEngine {
                 }
 
                 if (invalid) {
-                    throw new Error(`Invalid subscript notation \`${SpecialChars.SubscriptBegin}${fullSubscriptRange}${SpecialChars.SubscriptEnd}\` attached to variable \`${SpecialChars.VarBegin}${name}\``);
+                    throw new Error(`Invalid subscript notation \`${SpecialChars.SubscriptBegin}${fullSubscriptRange}${SpecialChars.SubscriptEnd}\` attached to variable \`${SpecialChars.VarBegin}${name}\`.`);
                 }
                 
                 result.isSubscripted = true;
@@ -570,7 +570,7 @@ export class CustomCommandEngine {
                 case 'wait': {
                     const ms = parseInt(args);
                     if (isNaN(ms) || ms < 0) {
-                        throw new Error('Invalid value for wait');
+                        throw new Error('Invalid value for wait.');
                     }
                     this.assertLimit(ExecutionLimit.Wait, ms);
                     await this.params.bot.wait(ms);
@@ -634,7 +634,7 @@ export class CustomCommandEngine {
                     let startIndex = parseInt(args.substr(0, whitespace.index));
                     const str = args.substr(whitespace.index + whitespace.length);
                     if (isNaN(startIndex)) {
-                        throw new Error('Invalid value for substring');
+                        throw new Error('Invalid value for substring.');
                     }
                     if (startIndex < 0) {
                         startIndex += str.length;
@@ -677,7 +677,7 @@ export class CustomCommandEngine {
                 case 'role': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
-                        throw new Error(`Role "${args}" could not be found`);
+                        throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
@@ -693,7 +693,7 @@ export class CustomCommandEngine {
                 case 'role?': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
-                        throw new Error(`Role "${args}" could not be found`);
+                        throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     return this.memberContext.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
@@ -701,7 +701,7 @@ export class CustomCommandEngine {
                 case '+role': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
-                        throw new Error(`Role "${args}" could not be found`);
+                        throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
@@ -711,7 +711,7 @@ export class CustomCommandEngine {
                 case '-role': {
                     const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
                     if (!role) {
-                        throw new Error(`Role "${args}" could not be found`);
+                        throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
@@ -878,12 +878,12 @@ export class CustomCommandEngine {
             } break;
             case 'repeat': {
                 if (args.length < 2) {
-                    throw new Error('Not enough parameters for repeat');
+                    throw new Error('Not enough parameters for repeat.');
                 }
 
                 const n = parseInt(await this.parse(args.shift()));
                 if (isNaN(n) || n < 0) {
-                    throw new Error('Invalid repeat number');
+                    throw new Error('Invalid repeat number.');
                 }
                 this.assertLimit(ExecutionLimit.Repeat, n);
 
@@ -897,7 +897,7 @@ export class CustomCommandEngine {
             } break;  
             case 'call': {
                 if (args.length < 1) {
-                    throw new Error('Missing function call');
+                    throw new Error('Missing function call.');
                 }
 
                 // The code to run
@@ -1128,7 +1128,7 @@ export class CustomCommandEngine {
     // First level of parsing
     private async parse(code: string, index: number = 0): Promise<string> {
         if (++this.depth > CustomCommandEngine.maxParseDepth) {
-            throw new Error(`Maximum parse depth (${CustomCommandEngine.maxParseDepth}) exceeded`);
+            throw new Error(`Maximum parse depth (${CustomCommandEngine.maxParseDepth}) exceeded.`);
         }
         let response = '';
         while (index < code.length) {

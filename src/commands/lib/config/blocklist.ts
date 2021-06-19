@@ -41,7 +41,7 @@ export class BlocklistCommand extends ComplexCommand<BlocklistArgs> {
             }
             // Not a page number, so must be an unknown member
             else if (isNaN(givenPageNumber) || givenPageNumber <= 0) {
-                throw new Error(`Member "${args.arg}" could not be found`);
+                throw new Error(`Member "${args.arg}" could not be found.`);
             }
             // A page number
             else {
@@ -70,18 +70,18 @@ export class BlocklistCommand extends ComplexCommand<BlocklistArgs> {
             }
         }
         else if (member.id === src.author.id) {
-            throw new Error(`You cannot add yourself to the blocklist`);
+            throw new Error(`You cannot add yourself to the blocklist.`);
         }
         // Add or remove member
         else {
             embed = bot.createEmbed(EmbedTemplates.Success);
             if (blocklist.has(member.id)) {
                 await bot.dataService.removeFromBlocklist(guild.id, member.id);
-                embed.setDescription(`Removed ${member.user.username} from the blocklist`);
+                embed.setDescription(`Removed ${member.user.username} from the blocklist.`);
             }
             else {
                 await bot.dataService.addToBlocklist(guild.id, member.id);
-                embed.setDescription(`Added ${member.user.username} to the blocklist`);
+                embed.setDescription(`Added ${member.user.username} to the blocklist.`);
             }
         }
 

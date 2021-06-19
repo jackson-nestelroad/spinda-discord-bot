@@ -343,7 +343,7 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
             if (i >= params.args.length) {
                 if (data.required) {
                     if (!this.suppressChatArgumentsError) {
-                        throw new Error(`Missing required argument \`${arg}\``);
+                        throw new Error(`Missing required argument \`${arg}\`.`);
                     }
                 }
                 else {
@@ -361,7 +361,7 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                     if (data.choices) {
                         const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
                         if (choice === undefined && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\``);
+                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\`.`);
                         }
                         parsed[arg] = choice.value;
                     }
@@ -377,21 +377,21 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                         parsed[arg] = false;
                     }
                     else if (!this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid boolean value \`${nextArg}\` for argument \`${arg}\``);
+                        throw new Error(`Invalid boolean value \`${nextArg}\` for argument \`${arg}\`.`);
                     }
                 } break;
                 case ArgumentType.Integer: {
                     if (data.choices) {
                         const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
                         if (choice === undefined && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\``);
+                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\`.`);
                         }
                         parsed[arg] = choice.value;
                     }                    
                     else {
                         const num = parseInt(nextArg);
                         if (isNaN(num) && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid integer value \`${nextArg}\` for argument \`${arg}\``);
+                            throw new Error(`Invalid integer value \`${nextArg}\` for argument \`${arg}\`.`);
                         }
                         parsed[arg] = num;
                     }
@@ -399,21 +399,21 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                 case ArgumentType.Channel: {
                     const channel = params.bot.getChannelFromString(nextArg, params.guild.id);
                     if (!channel && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid channel \`${nextArg}\` for argument \`${arg}\``);
+                        throw new Error(`Invalid channel \`${nextArg}\` for argument \`${arg}\`.`);
                     }
                     parsed[arg] = channel;
                 } break;
                 case ArgumentType.Role: {
                     const role = params.bot.getRoleFromString(nextArg, params.guild.id);
                     if (!role && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid role \`${nextArg}\` for argument \`${arg}\``);
+                        throw new Error(`Invalid role \`${nextArg}\` for argument \`${arg}\`.`);
                     }
                     parsed[arg] = role;
                 } break;
                 case ArgumentType.User: {
                     const member = await params.bot.getMemberFromString(nextArg, params.guild.id);
                     if (!member && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid guild member \`${nextArg}\` for argument \`${arg}\``);
+                        throw new Error(`Invalid guild member \`${nextArg}\` for argument \`${arg}\`.`);
                     }
                     parsed[arg] = member;
                 } break;
@@ -505,7 +505,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
 
     public async runChat(params: ChatCommandParameters) {
         if (params.args.length === 0) {
-            throw new Error(`Missing sub-command for command \`${this.name}\``);
+            throw new Error(`Missing sub-command for command \`${this.name}\`.`);
         }
 
         const subName = params.args.shift();
@@ -513,7 +513,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
         if (this.subCommands.has(subName)) {
             const subNameIndex = params.content.indexOf(subName);
             if (subNameIndex === -1) {
-                throw new Error(`Could not find sub-command name in content field`);
+                throw new Error(`Could not find sub-command name in content field.`);
             }
             params.content = params.content.substring(subNameIndex).trimLeft();
 
@@ -523,7 +523,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             }
         }
         else {
-            throw new Error(`Invalid sub-command for command \`${this.name}\``);
+            throw new Error(`Invalid sub-command for command \`${this.name}\`.`);
         }
     }
 
@@ -533,7 +533,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             === ApplicationCommandOptionType.SUB_COMMAND
         );
         if (!subCommandOption) {
-            throw new Error(`Missing sub-command for command \`${this.name}\``);
+            throw new Error(`Missing sub-command for command \`${this.name}\`.`);
         }
 
         if (this.subCommands.has(subCommandOption.name)) {
@@ -545,7 +545,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             }
         }
         else {
-            throw new Error(`Invalid sub-command for command \`${this.name}\``);
+            throw new Error(`Invalid sub-command for command \`${this.name}\`.`);
         }
     }
 }

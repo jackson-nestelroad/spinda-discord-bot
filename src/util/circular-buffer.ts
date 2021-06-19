@@ -8,7 +8,7 @@ export class CircularBuffer<T> {
         public readonly size: number,
     ) { 
         if (size <= 0) {
-            throw new Error('Circular array size must be larger than 0');
+            throw new Error('Circular array size must be larger than 0.');
         }
         this.clear();
     }

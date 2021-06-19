@@ -46,12 +46,12 @@ export class JcoadCommand extends ComplexCommand<JcoadArgs> {
             const url = this.docUrl + this.apiPath + encodeURIComponent(query);
             const response = await axios.get(url, { responseType: 'json' });
             if (response.status !== 200) {
-                throw new Error(`Invalid HTTP response: ${response.status}`);
+                throw new Error(`Invalid HTTP response: ${response.status}.`);
             }
 
             const results = response.data.results;
             if (!results || !Array.isArray(results)) {
-                throw new Error(`Invalid data format received: ${typeof results}`);
+                throw new Error(`Invalid data format received: ${typeof results}.`);
             }
 
             const embed = bot.createEmbed();

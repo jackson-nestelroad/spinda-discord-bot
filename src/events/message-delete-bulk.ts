@@ -21,7 +21,7 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<typeof event> {
                 const embed = this.bot.createEmbed(EmbedTemplates.Log);
                 
                 embed.setTitle('Bulk Message Deletion');
-                embed.setDescription(`${messages.size} message${messages.size === 1 ? '' : 's'} deleted in ${firstMessage.channel.toString()}`);
+                embed.setDescription(`${messages.size} message${messages.size === 1 ? '' : 's'} deleted in ${firstMessage.channel.toString()}.`);
 
                 let file = '';
                 for (const [id, msg] of messages) {

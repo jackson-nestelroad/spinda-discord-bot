@@ -47,7 +47,7 @@ export class DataService extends BaseService {
         try {
             await this.sequelize.authenticate();
         } catch (error) {
-            console.error(`Unable to connect to database: ${error.message || error}`);
+            console.error(`Unable to connect to database: ${error.message || error}.`);
             exit(1);
         }
 

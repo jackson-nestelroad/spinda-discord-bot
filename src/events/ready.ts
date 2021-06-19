@@ -26,7 +26,7 @@ export class ReadyEvent extends BaseEvent<typeof event> {
     }
 
     public async run() {
-        console.log(`Bot is logged in as ${this.bot.client.user.tag}`);
+        console.log(`Bot is logged in as ${this.bot.client.user.tag}.`);
         this.bot.client.user.setActivity(`@${this.bot.name} help`, { 
             type: 'PLAYING',
         }); 
