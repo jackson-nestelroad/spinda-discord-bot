@@ -520,7 +520,7 @@ export class CustomCommandEngine {
                         src: this.params.src,
                         guild: this.params.guild,
                         content: args,
-                        args: args ? this.params.bot.splitIntoArgs(' ') : [],
+                        args: args ? this.params.bot.splitIntoArgs(args) : [],
                     });
                 }
             }
