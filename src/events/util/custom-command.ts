@@ -119,22 +119,8 @@ export class CustomCommandEngine {
     private options: CustomCommandEngineOptions;
 
     constructor(private params: CommandParameters, content?: string, args?: string[], options: CustomCommandEngineOptions = { }) {
-        if (params.src.isMessage) {
-            this.content = content || '';
-            this.args = args ? args : content ? params.bot.splitIntoArgs(content) : [];
-        }
-        else {
-            // Custom interactions have only a single parameter for all message content
-            const interaction = params.src.interaction;
-            if (interaction.options[0]) {
-                this.content = interaction.options[0].value.toString();
-                this.args = params.bot.splitIntoArgs(this.content);
-            }
-            else {
-                this.content = '';
-                this.args = [];
-            }
-        }
+        this.content = content || '';
+        this.args = args ? args : content ? params.bot.splitIntoArgs(content) : [];
 
         this.options = options;
         if (options.universal) {

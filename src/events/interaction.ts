@@ -1,6 +1,7 @@
 import { Interaction } from 'discord.js';
 import { DiscordBot } from '../bot';
 import { CommandParameters, SlashCommandParameters } from '../commands/lib/base';
+import { CustomCommandFlag } from '../data/model/custom-command';
 import { CommandSource } from '../util/command-source';
 import { BaseEvent } from './base';
 import { CustomCommandEngine } from './util/custom-command';
@@ -58,14 +59,19 @@ export class InteractionEvent extends BaseEvent<typeof event> {
         // Could be a custom (guild) command
         else {
             const customCommands = await this.bot.dataService.getCustomCommands(interaction.guild.id);
-            if (customCommands[interaction.commandName]) {
+            const customCommand = customCommands[interaction.commandName];
+            if (customCommand) {
                 const params: CommandParameters = {
                     bot: this.bot,
                     src: new CommandSource(interaction),
                     guild,
                 };
                 try {
-                    await new CustomCommandEngine(params).run(customCommands[interaction.commandName].message);
+                    const content = (customCommand.flags & CustomCommandFlag.NoContent)
+                    ? ''
+                    : interaction.options.get(customCommand.contentName).value as string;
+                    
+                    await new CustomCommandEngine(params, content).run(customCommand.message);
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
                 }
