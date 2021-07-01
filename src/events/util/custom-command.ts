@@ -1,4 +1,4 @@
-import { User, GuildMember, Guild, Channel } from 'discord.js';
+import { User, GuildMember, Guild, Channel, Snowflake, MessageAttachment } from 'discord.js';
 import { CommandParameters } from '../../commands/lib/base';
 import { Validation } from './validate';
 import { DataService } from '../../data/data-service';
@@ -1145,20 +1145,22 @@ export class CustomCommandEngine {
     public async run(response: string) {
         if (this.options.universal) {
             if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.universalCooldownSet)) {
+                const results: Dictionary<string> = { };
                 const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
                 let errorCount = 0;
-                for (const [key, member] of memberList) {
+                for (const [id, member] of memberList) {
                     this.memberContext = member;
                     try {
                         this.limitProgress = { };
-                        await this.parse(response);
+                        results[id] = await this.parse(response);
                     } catch (error) {
                         ++errorCount;
                     }
                 }
+                const attachment = new MessageAttachment(Buffer.from(JSON.stringify(results)), `spinda-universal-results.-${this.params.guild.id}-${new Date().valueOf()}.json`);
                 const embed = this.params.bot.createEmbed(EmbedTemplates.Success);
                 embed.setDescription(`Finished running universally with ${errorCount} error${errorCount === 1 ? '' : 's'}. You can run another universal command in five minutes.`);
-                await this.params.src.send({ embeds: [embed] });
+                await this.params.src.send({ embeds: [embed], files: [attachment] });
             }
         }
         else if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
