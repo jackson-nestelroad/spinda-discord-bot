@@ -1154,6 +1154,7 @@ export class CustomCommandEngine {
                         this.limitProgress = { };
                         results[id] = await this.parse(response);
                     } catch (error) {
+                        results[id] = error.toString() || 'ERROR';
                         ++errorCount;
                     }
                 }
