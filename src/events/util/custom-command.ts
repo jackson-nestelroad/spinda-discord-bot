@@ -1157,7 +1157,13 @@ export class CustomCommandEngine {
                         ++errorCount;
                     }
                 }
-                const attachment = new MessageAttachment(Buffer.from(JSON.stringify(results)), `spinda-universal-results.-${this.params.guild.id}-${new Date().valueOf()}.json`);
+                const json = {
+                    code: response,
+                    guild: this.params.guild.id,
+                    timestamp: new Date().valueOf(),
+                    results,
+                };
+                const attachment = new MessageAttachment(Buffer.from(JSON.stringify(json)), `spinda-universal-results.-${this.params.guild.id}-${json.timestamp}.json`);
                 const embed = this.params.bot.createEmbed(EmbedTemplates.Success);
                 embed.setDescription(`Finished running universally with ${errorCount} error${errorCount === 1 ? '' : 's'}. You can run another universal command in five minutes.`);
                 await this.params.src.send({ embeds: [embed], files: [attachment] });
