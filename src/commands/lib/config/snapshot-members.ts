@@ -66,8 +66,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
             invalidFormat: 0,
             nicknamesModified: 0,
             nicknameErrors: 0,
-            rolesAdded: 0,
-            rolesRemoved: 0,
+            rolesModified: 0,
             rolesErrors: 0,
         };
 
@@ -99,28 +98,34 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
                 }
             }
 
+            // Only set roles if at least one role has been added or removed
+            let shouldSetRoles = false;
+
             const seenRoleIds: Set<Snowflake> = new Set();
-            // Add back roles that have been removed
-            for (const roleId of snapshot.roles) {
-                seenRoleIds.add(roleId);
-                if (!member.roles.cache.has(roleId)) {
-                    try {
-                        await member.roles.add(roleId);
-                        ++stats.rolesAdded;
-                    } catch (error) {
-                        ++stats.rolesErrors;
+            // Check for roles that have been removed
+            for (let i = 0; i < snapshot.roles.length; ++i) {
+                seenRoleIds.add(snapshot.roles[i]);
+                if (!member.roles.cache.has(snapshot.roles[i])) {
+                    shouldSetRoles = true;
+                    break;
+                }
+            }
+            // Check for roles that have been added
+            if (!shouldSetRoles) {
+                for (const [id, role] of member.roles.cache) {
+                    if (!seenRoleIds.has(id)) {
+                        shouldSetRoles = true;
+                        break;
                     }
                 }
             }
-            // Remove roles that have been added
-            for (const [id, role] of member.roles.cache) {
-                if (!seenRoleIds.has(id)) {
-                    try {
-                        await member.roles.remove(id);
-                        ++stats.rolesRemoved;
-                    } catch (error) {
-                        ++stats.rolesErrors;
-                    }
+
+            if (shouldSetRoles) {
+                try {
+                    await member.roles.set(snapshot.roles);
+                    ++stats.rolesModified;
+                } catch (error) {
+                    ++stats.rolesErrors;
                 }
             }
         }
@@ -132,8 +137,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
             `Invalid Snapshots: ${stats.invalidFormat}`,
             `Nicknames Modified: ${stats.nicknamesModified}`,
             `Nickname Errors: ${stats.nicknameErrors}`,
-            `Roles Added: ${stats.rolesAdded}`,
-            `Roles Removed: ${stats.rolesRemoved}`,
+            `Roles Modified: ${stats.rolesModified}`,
             `Role Errors: ${stats.rolesErrors}`,
         ].join('\n'));
 
