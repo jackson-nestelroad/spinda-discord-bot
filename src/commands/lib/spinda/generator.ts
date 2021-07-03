@@ -185,7 +185,7 @@ export class SpindaGeneratorService extends BaseService {
             [SpindaColorChange.Pink]: 150,
             [SpindaColorChange.Gray]: 175,
             [SpindaColorChange.Custom]: 200,
-            [SpindaColorChange.Rainbow]: 50,
+            [SpindaColorChange.Rainbow]: 150,
         },
         features: {
             [SpindaFeatures.SmallSpots]: 25,
