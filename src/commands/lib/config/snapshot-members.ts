@@ -99,24 +99,14 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
             }
 
             // Only set roles if at least one role has been added or removed
-            let shouldSetRoles = false;
+            // If the sizes are different, then it's obvious something has changed
+            let shouldSetRoles = snapshot.roles.length !== member.roles.cache.size;
 
-            const seenRoleIds: Set<Snowflake> = new Set();
-            // Check for roles that have been removed
-            for (let i = 0; i < snapshot.roles.length; ++i) {
-                seenRoleIds.add(snapshot.roles[i]);
+            // If the sizes are different, check that every role in the snapshot
+            // still exists on the member
+            for (let i = 0; !shouldSetRoles && i < snapshot.roles.length; ++i) {
                 if (!member.roles.cache.has(snapshot.roles[i])) {
                     shouldSetRoles = true;
-                    break;
-                }
-            }
-            // Check for roles that have been added
-            if (!shouldSetRoles) {
-                for (const [id, role] of member.roles.cache) {
-                    if (!seenRoleIds.has(id)) {
-                        shouldSetRoles = true;
-                        break;
-                    }
                 }
             }
 
