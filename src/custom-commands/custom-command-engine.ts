@@ -1,15 +1,32 @@
-import { User, GuildMember, Guild, Channel, Snowflake, MessageAttachment } from 'discord.js';
-import { CommandParameters } from '../../commands/lib/base';
-import { Validation } from './validate';
-import { DataService } from '../../data/data-service';
+import { User, GuildMember, Guild, Channel, Snowflake } from 'discord.js';
+import { CommandParameters } from '../commands/lib/base';
+import { Validation } from '../events/util/validate';
+import { DataService } from '../data/data-service';
 import *  as mathjs from 'mathjs';
-import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
-import { CustomCommandData, CustomCommandFlag } from '../../data/model/custom-command';
-import { EmbedTemplates } from '../../util/embed';
+import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
+import { EmbedTemplates } from '../util/embed';
 
 export interface CustomCommandEngineOptions {
-    universal?: boolean;
     silent?: boolean;
+}
+
+export interface CustomCommandEngineExecutionContext {
+    params: CommandParameters;
+    content?: string;
+    args?: string[];
+    member?: GuildMember;
+    options?: CustomCommandEngineOptions;
+}
+
+export interface UniversalCustomCommandResults {
+    code: string;
+    guild: Snowflake;
+    initiator: Snowflake;
+    startedAt: Date;
+    finishedAt: Date;
+    errorCount: number;
+    results: Dictionary<string>;
+    errors: Dictionary<string>;
 }
 
 // Result from parsing a portion of custom command code
@@ -108,26 +125,18 @@ export class CustomCommandEngine {
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
 
-    public static readonly cooldownTime: ExpireAgeFormat = { seconds: 3 };
-    private static readonly cooldownSet: TimedCache<string, number> = new TimedCache(CustomCommandEngine.cooldownTime);
-
-    public static readonly universalCooldown: ExpireAge = { minutes: 5 };
-    private static readonly universalCooldownSet: TimedCache<string, number> = new TimedCache(CustomCommandEngine.universalCooldown);
-
-    private content: string;
-    private args: string[];
-    private options: CustomCommandEngineOptions;
-
-    constructor(private params: CommandParameters, content?: string, args?: string[], options: CustomCommandEngineOptions = { }) {
-        this.content = content || '';
-        this.args = args ? args : content ? params.bot.splitIntoArgs(content) : [];
-
-        this.options = options;
-        if (options.universal) {
-            this.limits = CustomCommandEngine.defaultLimits.universal;
-        }
-        else {
-            this.limits = CustomCommandEngine.defaultLimits.normal;
+    constructor(private readonly context: CustomCommandEngineExecutionContext) {
+        this.context.content = this.context.content || '';
+        this.context.args = this.context.args
+            ? this.context.args
+            : this.context.content
+                ? this.context.params.bot.splitIntoArgs(this.context.content)
+                : [];
+        this.context.member = this.context.member ?? this.context.params.src.member;
+        if (!this.context.options) {
+            this.context.options = {
+                silent: false,
+            };
         }
     }
 
@@ -263,8 +272,7 @@ export class CustomCommandEngine {
     private arguments: string[] = [];
     private stack: Array<string[]> = [];
     private depth: number = 0;
-    private memberContext: GuildMember = null;
-    private readonly limits: LimitsDictionary;
+    private limits: LimitsDictionary;
     private limitProgress: Partial<Writeable<LimitsDictionary>> = { };
     
     // Parses all metadata out of the custom command code
@@ -351,13 +359,13 @@ export class CustomCommandEngine {
     private handleVariableNative(name: string): string | undefined {
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
-            return !isNaN(argIndex) ? this.args[argIndex - 1] : undefined;
+            return !isNaN(argIndex) ? this.context.args[argIndex - 1] : undefined;
         }
         else if (name === CustomCommandEngine.specialVars.allArguments) {
-            return this.content;
+            return this.context.content;
         }
         else if (name === CustomCommandEngine.specialVars.argCount) {
-            return this.args.length.toString();
+            return this.context.args.length.toString();
         }
         else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
             const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
@@ -494,19 +502,19 @@ export class CustomCommandEngine {
         else if (name.startsWith(DataService.defaultPrefix)) {
             this.assertLimit(ExecutionLimit.Command, 1);
             const cmd = name.substr(1);
-            if (this.params.bot.commands.has(cmd)) {
-                const command = this.params.bot.commands.get(cmd);
-                if (!command.disableInCustomCommand && Validation.validate(this.params, command, this.memberContext)) {
+            if (this.context.params.bot.commands.has(cmd)) {
+                const command = this.context.params.bot.commands.get(cmd);
+                if (!command.disableInCustomCommand && Validation.validate(this.context.params, command, this.context.member)) {
                     args = args.trim();
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
                     }
                     await command.executeChat({
-                        bot: this.params.bot,
-                        src: this.params.src,
-                        guild: this.params.guild,
+                        bot: this.context.params.bot,
+                        src: this.context.params.src,
+                        guild: this.context.params.guild,
                         content: args,
-                        args: args ? this.params.bot.splitIntoArgs(args) : [],
+                        args: args ? this.context.params.bot.splitIntoArgs(args) : [],
                     });
                 }
             }
@@ -522,15 +530,15 @@ export class CustomCommandEngine {
                     return new Date().toLocaleDateString();
                 } break;
                 case 'prefix': {
-                    return this.params.guild.prefix;
+                    return this.context.params.guild.prefix;
                 } break;
                 case 'silent': {
-                    this.options.silent = true;
+                    this.context.options.silent = true;
                     return '';
                 } break;
                 case 'delete': {
-                    if (this.params.src.deletable) {
-                        await this.params.src.delete();
+                    if (this.context.params.src.deletable) {
+                        await this.context.params.src.delete();
                     }
                     return '';
                 } break;
@@ -559,19 +567,19 @@ export class CustomCommandEngine {
                         throw new Error('Invalid value for wait.');
                     }
                     this.assertLimit(ExecutionLimit.Wait, ms);
-                    await this.params.bot.wait(ms);
+                    await this.context.params.bot.wait(ms);
                     return '';
                 } break;
                 case 'message': {
                     this.assertLimit(ExecutionLimit.Message, 1);
-                    await this.params.src.send(args);
+                    await this.context.params.src.send(args);
                     return '';
                 } break;
                 case 'embed': {
                     this.assertLimit(ExecutionLimit.Message, 1);
-                    const embed = this.params.bot.createEmbed();
+                    const embed = this.context.params.bot.createEmbed(EmbedTemplates.Bare);
                     embed.setDescription(args);
-                    await this.params.src.send({ embeds: [embed] });
+                    await this.context.params.src.send({ embeds: [embed] });
                     return '';
                 } break;
                 case 'random':
@@ -600,7 +608,7 @@ export class CustomCommandEngine {
                     return Math.floor((Math.random() * (high - low + 1) + low)).toString();
                 } break;
                 case 'random-member': {
-                    const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
+                    const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(this.context.params.guild.id);
                     return memberList.random().user.username;
                 } break;
                 case 'math': {
@@ -657,66 +665,66 @@ export class CustomCommandEngine {
                 } break;
                 case 'nickname': {
                     this.assertLimit(ExecutionLimit.API, 1);
-                    this.memberContext = await this.memberContext.setNickname(args);
+                    this.context.member = await this.context.member.setNickname(args);
                     return '';
                 } break;
                 case 'role': {
-                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
+                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
-                    const memberRoles = this.memberContext.roles;
+                    const memberRoles = this.context.member.roles;
                     if (memberRoles.cache.has(role.id)) {
-                        this.memberContext = await memberRoles.remove(role);
+                        this.context.member = await memberRoles.remove(role);
                     }
                     else {
-                        this.memberContext = await memberRoles.add(role)
+                        this.context.member = await memberRoles.add(role)
                     }
                     return '';
                 } break;
                 case 'role?': {
-                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
+                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found.`);
                     }
 
-                    return this.memberContext.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                    return this.context.member.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
                 } break;
                 case '+role': {
-                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
+                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
-                    this.memberContext = await this.memberContext.roles.add(role);
+                    this.context.member = await this.context.member.roles.add(role);
                     return '';
                 } break;
                 case '-role': {
-                    const role = this.params.bot.getRoleFromString(args, this.params.guild.id);
+                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
                     if (!role) {
                         throw new Error(`Role "${args}" could not be found.`);
                     }
 
                     this.assertLimit(ExecutionLimit.API, 1);
-                    this.memberContext = await this.memberContext.roles.remove(role);
+                    this.context.member = await this.context.member.roles.remove(role);
                     return '';
                 } break;
                 case 'user': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.userParams[attr]) {
-                            return CustomCommandEngine.userParams[attr](this.memberContext.user);
+                            return CustomCommandEngine.userParams[attr](this.context.member.user);
                         }
                         else if (CustomCommandEngine.memberParams[attr]) {
-                            return CustomCommandEngine.memberParams[attr](this.memberContext);
+                            return CustomCommandEngine.memberParams[attr](this.context.member);
                         }
                         return null;
                     }
                     else {
-                        return this.memberContext.user.toString();
+                        return this.context.member.user.toString();
                     }
                 } break;
                 case 'guild':
@@ -724,24 +732,24 @@ export class CustomCommandEngine {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.guildParams[attr]) {
-                            return CustomCommandEngine.guildParams[attr](this.params.src.guild);
+                            return CustomCommandEngine.guildParams[attr](this.context.params.src.guild);
                         }
                         return null;
                     }
                     else {
-                        return this.params.src.guild.toString();
+                        return this.context.params.src.guild.toString();
                     }
                 } break;
                 case 'channel': {
                     if (args.startsWith(SpecialChars.AttributeSeparator)) {
                         const attr = args.substr(1);
                         if (CustomCommandEngine.channelParams[attr]) {
-                            return CustomCommandEngine.channelParams[attr](this.params.src.channel);
+                            return CustomCommandEngine.channelParams[attr](this.context.params.src.channel);
                         }
                         return null;
                     }
                     else {
-                        return this.params.src.channel.toString();
+                        return this.context.params.src.channel.toString();
                     }
                 } break;
                 // This is not a function
@@ -1142,45 +1150,47 @@ export class CustomCommandEngine {
         return response;
     }
 
-    public async run(response: string) {
-        if (this.options.universal) {
-            if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.universalCooldownSet)) {
-                const results: Dictionary<string> = { };
-                const memberList = await this.params.bot.memberListService.getMemberListForGuild(this.params.guild.id);
-                let errorCount = 0;
-                for (const [id, member] of memberList) {
-                    this.memberContext = member;
-                    try {
-                        this.limitProgress = { };
-                        results[id] = await this.parse(response);
-                    } catch (error) {
-                        results[id] = error.toString() || 'ERROR';
-                        ++errorCount;
-                    }
-                }
-                const json = {
-                    code: response,
-                    guild: this.params.guild.id,
-                    timestamp: new Date().valueOf(),
-                    results,
-                };
-                const attachment = new MessageAttachment(Buffer.from(JSON.stringify(json)), `spinda-universal-results.-${this.params.guild.id}-${json.timestamp}.json`);
-                const embed = this.params.bot.createEmbed(EmbedTemplates.Success);
-                embed.setDescription(`Finished running universally with ${errorCount} error${errorCount === 1 ? '' : 's'}. You can run another universal command in five minutes.`);
-                await this.params.src.send({ embeds: [embed], files: [attachment] });
+    public async run(code: string): Promise<void> {
+        this.limits = CustomCommandEngine.defaultLimits.normal;
+        this.context.member = this.context.params.src.member;
+        const response = (await this.parse(code)).trim();
+        if (!this.context.options.silent && response.length !== 0) {
+            this.assertLimit(ExecutionLimit.Message, 1);
+            await this.context.params.src.send(response);
+        }
+        else if (this.context.params.src.isInteraction && !this.context.params.src.interaction.replied) {
+            this.assertLimit(ExecutionLimit.Message, 1);
+            await this.context.params.src.reply({ content: '\u{2705}', ephemeral: true });
+        }
+    }
+
+    public async runUniversal(code: string): Promise<UniversalCustomCommandResults> {
+        this.limits = CustomCommandEngine.defaultLimits.universal;
+        
+        const results: UniversalCustomCommandResults = {
+            code,
+            guild: this.context.params.guild.id,
+            initiator: this.context.params.src.author.id,
+            startedAt: new Date(),
+            finishedAt: null,
+            errorCount: 0,
+            results: { },
+            errors: { },
+        };
+
+        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(this.context.params.guild.id);
+        for (const [id, member] of memberList) {
+            this.context.member = member;
+            try {
+                this.limitProgress = { };
+                results.results[id] = await this.parse(code);
+            } catch (error) {
+                results.errors[id] = error.toString() || 'ERROR';
+                ++results.errorCount;
             }
         }
-        else if (await this.params.bot.handleCooldown(this.params.src, CustomCommandEngine.cooldownSet)) {
-            this.memberContext = this.params.src.member;
-            response = (await this.parse(response)).trim();
-            if (!this.options.silent && response.length !== 0) {
-                this.assertLimit(ExecutionLimit.Message, 1);
-                await this.params.src.send(response);
-            }
-            else if (this.params.src.isInteraction && !this.params.src.interaction.replied) {
-                this.assertLimit(ExecutionLimit.Message, 1);
-                await this.params.src.reply({ content: '\u{2705}', ephemeral: true });
-            }
-        }
+        
+        results.finishedAt = new Date()
+        return results;
     }
 }

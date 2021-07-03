@@ -1,4 +1,4 @@
-import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents, CommandInteraction, GuildChannel, Role, Snowflake } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents, CommandInteraction, GuildChannel, Role, Snowflake, MessageAttachment } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
 import { MessageEvent } from './events/message';
@@ -19,11 +19,12 @@ import { MemberListService } from './services/member-list';
 import { MediaWikiService } from './services/media-wiki';
 import { ResourceService } from './services/resources';
 import { TimeoutService } from './services/timeout';
-import { TimedCache } from './util/timed-cache';
+import { ExpireAgeConversion, TimedCache } from './util/timed-cache';
 import { SpindaGeneratorService } from './commands/lib/spinda/generator';
 import { EmbedOptions, EmbedProps, EmbedTemplates } from './util/embed';
 import { CommandSource } from './util/command-source';
 import { InteractionEvent } from './events/interaction';
+import { CustomCommandService } from './custom-commands/custom-command-service';
 
 export class DiscordBot {
     public readonly name = 'Spinda';
@@ -46,6 +47,7 @@ export class DiscordBot {
     public readonly mediaWikiService = new MediaWikiService(this);
     public readonly timeoutService = new TimeoutService(this);
     public readonly spindaGeneratorService = new SpindaGeneratorService(this);
+    public readonly customCommandService = new CustomCommandService(this);
 
     private events: Array<BaseEvent<any>> = [];
     private slashCommandsEnabled: boolean = false;
@@ -66,6 +68,10 @@ export class DiscordBot {
             options = new EmbedOptions(options);
         }
         return (options as EmbedOptions).create(this);
+    }
+
+    public createJSONAttachment(data: object, name: string, src: CommandSource): MessageAttachment {
+        return new MessageAttachment(Buffer.from(JSON.stringify(data)), `${this.name.toLowerCase()}-${name}-${src.guild.id}-${new Date().valueOf()}.json`);
     }
 
     public async sendError(src: CommandSource, error: any) {
@@ -161,7 +167,7 @@ export class DiscordBot {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
     
-    public async handleCooldown(src: CommandSource, cooldownSet: TimedCache<string, number>): Promise<boolean> {
+    public async handleCooldown(src: CommandSource, cooldownSet: TimedCache<Snowflake, number>): Promise<boolean> {
         if (cooldownSet) {
             const author = src.author;
             const id = author.id;
@@ -172,7 +178,10 @@ export class DiscordBot {
             else {
                 if (offenses === 0) {
                     cooldownSet.update(id, 1);
-                    const reply = await src.reply({ content: 'Slow down!', ephemeral: true });
+                    const slowDownMessage = cooldownSet.expireAge > 60000
+                        ? `This command can only be run once every ${ExpireAgeConversion.toString(cooldownSet.expireAge)}.`
+                        : 'Slow down!';
+                    const reply = await src.reply({ content: slowDownMessage, ephemeral: true });
                     if (reply.isMessage) {
                         await this.wait(10000);
                         await reply.delete();

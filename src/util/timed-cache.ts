@@ -34,10 +34,30 @@ export namespace ExpireAgeConversion {
             return value;
         }
     }
+
+    export function toExpireAgeFormat(time: number): ExpireAgeFormat {
+        const format: ExpireAgeFormat = { };
+        if (time >= 3600000) {
+            format.hours = Math.floor(time / 3600000);
+            time %= 3600000;
+        }
+        if (time >= 60000) {
+            format.minutes = Math.floor(time / 60000);
+            time %= 60000;
+        }
+        if (time >= 1000) {
+            format.seconds = Math.floor(time / 1000);
+            time %= 1000;
+        }
+        if (time !== 0) {
+            format.milliseconds = time;
+        }
+        return format;
+    }
     
     export function toString(time: ExpireAge): string {
         if (typeof time === 'number') {
-            return `${time} millisecond${time !== 1 ? 's' : ''}`;
+            return toString(toExpireAgeFormat(time));
         }
         else {
             const values: string[] = [];

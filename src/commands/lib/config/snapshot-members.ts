@@ -27,7 +27,7 @@ class SaveSnapshotSubCommand extends SimpleCommand {
             };
         }
 
-        const attachment = new MessageAttachment(Buffer.from(JSON.stringify(snapshot)), `spinda-snapshot-${guild.id}-${new Date().valueOf()}.snapshot.json`);
+        const attachment = bot.createJSONAttachment(snapshot, 'snapshot', src);
         await src.send({ files: [attachment] });
     }
 }

@@ -4,7 +4,7 @@ import { CommandParameters, SlashCommandParameters } from '../commands/lib/base'
 import { CustomCommandFlag } from '../data/model/custom-command';
 import { CommandSource } from '../util/command-source';
 import { BaseEvent } from './base';
-import { CustomCommandEngine } from './util/custom-command';
+import { CustomCommandEngine } from '../custom-commands/custom-command-engine';
 import { Validation } from './util/validate';
 
 const event = 'interaction';
@@ -71,7 +71,10 @@ export class InteractionEvent extends BaseEvent<typeof event> {
                     ? ''
                     : interaction.options.get(customCommand.contentName).value as string;
                     
-                    await new CustomCommandEngine(params, content).run(customCommand.message);
+                    await this.bot.customCommandService.run(customCommand.message, {
+                        params,
+                        content,
+                    });
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
                 }

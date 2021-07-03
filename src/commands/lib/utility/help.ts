@@ -1,5 +1,5 @@
 import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
-import { CustomCommandEngine } from '../../../events/util/custom-command';
+import { CustomCommandEngine } from '../../../custom-commands/custom-command-engine';
 import { DiscordUtil } from '../../../util/discord';
 import { ExpireAgeConversion } from '../../../util/timed-cache';
 import { ArgumentsConfig, ArgumentType, CommandCategory, CommandMap, CommandParameters, CommandPermission, ComplexCommand, StandardCooldowns } from '../base';
@@ -137,7 +137,7 @@ export class HelpCommand extends ComplexCommand<HelpArgs> {
                         embed.addField('Description', customCommand.description);
                         embed.addField('Category', CommandCategory.Custom, true);
                         embed.addField('Permission', CommandPermission[CommandPermission.Everyone], true);
-                        embed.addField('Cooldown', ExpireAgeConversion.toString(CustomCommandEngine.cooldownTime), true);
+                        embed.addField('Cooldown', ExpireAgeConversion.toString(bot.customCommandService.cooldownTime), true);
                         if (!(customCommand.flags & CustomCommandFlag.NoContent)) {
                             embed.addField('Arguments', `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`, true);
                         }

@@ -3,7 +3,7 @@ import { BaseEvent } from './base';
 import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
 import { ChatCommandParameters } from '../commands/lib/base';
-import { CustomCommandEngine } from './util/custom-command';
+import { CustomCommandEngine } from '../custom-commands/custom-command-engine';
 import { GuildAttributes } from '../data/model/guild';
 import { CommandSource } from '../util/command-source';
 
@@ -46,7 +46,11 @@ export class MessageEvent extends BaseEvent<typeof event> {
             const customCommands = await this.bot.dataService.getCustomCommands(params.src.guild.id);
             if (customCommands[cmd]) {
                 try {
-                    await new CustomCommandEngine(params, content, args).run(customCommands[cmd].message);
+                    await this.bot.customCommandService.run(customCommands[cmd].message, {
+                        params,
+                        content,
+                        args,
+                    });
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
                 }

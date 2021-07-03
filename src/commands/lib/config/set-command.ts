@@ -1,5 +1,5 @@
 import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { CustomCommandEngine, CustomCommandMetadata } from '../../../events/util/custom-command';
+import { CustomCommandEngine, CustomCommandMetadata } from '../../../custom-commands/custom-command-engine';
 import { ApplicationCommandData, MessageEmbed } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 import { ApplicationCommandOptionType } from 'discord-api-types';

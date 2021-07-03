@@ -9,6 +9,7 @@ export class RefreshCommand extends SimpleCommand {
     public async run({ bot, src }: CommandParameters) {
         bot.refreshCommands();
         bot.dataService.clearCache();
+        bot.customCommandService.clearCooldowns();
         await src.reply('Refresh successful.');
     }
 }
