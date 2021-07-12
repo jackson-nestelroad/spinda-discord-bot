@@ -19,7 +19,7 @@ export class CertifiedCommand extends ComplexCommand<CertifiedArgs> {
 
     public args: ArgumentsConfig<CertifiedArgs> = {
         dex: {
-            description: 'Pok\u{00E9}ex name.',
+            description: 'Pok\u{00E9}dex name.',
             type: ArgumentType.String,
             required: false,
         },
