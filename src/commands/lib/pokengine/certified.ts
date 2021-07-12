@@ -108,7 +108,7 @@ export class CertifiedCommand extends ComplexCommand<CertifiedArgs> {
 
         // Get a random Fakemon with a front sprite
         if (!chosenMon) {
-            mons = mons.filter(mon => mon.imagePath && !mon.imagePath.endsWith('unknownmon.png'));
+            mons = mons.filter(mon => mon.imagePath && !mon.imagePath.endsWith('unknown2.png'));
             chosenMon = mons[Math.floor(Math.random() * mons.length)];
         }
 
