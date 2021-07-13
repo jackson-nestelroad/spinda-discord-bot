@@ -39,7 +39,7 @@ const CommandSourceTypeMap = {
 
 const StronglyTypedCommandSourceTypes: { [type in CommandSourceType]: CommandSourceTypeMetadata } = CommandSourceTypeMap;
 
-type ExposePropertyOnClass<Class extends object, Prop extends string, Type extends Function> = Class & { [field in Prop]: Type };
+type ExposePropertyOnClass<Class extends object, Prop extends string, Type extends object> = Class & { [field in Prop]: Type };
 type KnownCommandSource<T extends CommandSourceType> = ExposePropertyOnClass<
     CommandSource,
     typeof CommandSourceTypeMap[T]['field'],
