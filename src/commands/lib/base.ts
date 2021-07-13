@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord-api-types';
-import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionData, Collection, CommandInteractionOption, MessageEmbed, Snowflake } from 'discord.js';
+import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, Collection, CommandInteractionOption, MessageEmbed, Snowflake } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 import { DiscordUtil } from '../../util/discord';

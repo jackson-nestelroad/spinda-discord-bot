@@ -25,7 +25,7 @@ export class HordeCommand extends SimpleCommand {
         const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
 
         // Interaction reply must be a message, because we didn't choose ephemeral
-        if (!sent.isMessage) {
+        if (!sent.isMessage()) {
             throw new Error('Command reply did not produce a message.');
         }
 

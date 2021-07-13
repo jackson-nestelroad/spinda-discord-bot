@@ -32,19 +32,19 @@ export class SayCommand extends LegacyCommand<SayArgs> {
 
     public parseChatArgs({ bot, src, args, content }: ChatCommandParameters): SayArgs {
         const parsed: Partial<SayArgs> = { };
-        const msg = src.message;
 
+        parsed.channel = src.channel;
         // First argument may be a channel mention
-        if (msg.mentions.channels.size > 0 && args.length > 0 && args[0] === msg.mentions.channels.first().toString()) {
-            const channelMention = args.shift();
-            content = content.substr(channelMention.length).trimLeft();
-            parsed.channel = bot.getChannelFromString(channelMention, src.guild.id);
-            if (!parsed.channel) {
-                throw new Error(`Channel \`${channelMention}\` not found.`);
+        if (src.isMessage()) {
+            const msg = src.message;
+            if (msg.mentions.channels.size > 0 && args.length > 0 && args[0] === msg.mentions.channels.first().toString()) {
+                const channelMention = args.shift();
+                content = content.substr(channelMention.length).trimLeft();
+                parsed.channel = bot.getChannelFromString(channelMention, src.guild.id);
+                if (!parsed.channel) {
+                    throw new Error(`Channel \`${channelMention}\` not found.`);
+                }
             }
-        }
-        else {
-            parsed.channel = msg.channel;
         }
 
         if (!content) {

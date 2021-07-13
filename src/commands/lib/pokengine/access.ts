@@ -65,7 +65,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
 
             // Ignore members that already have access
             if (src.member.roles.cache.has(this.accessRole.id)) {
-                if (src.isInteraction) {
+                if (src.isInteraction()) {
                     const embed = bot.createEmbed(EmbedTemplates.Error);
                     embed.setDescription(`You already have access!`);
                     await src.reply({ embeds: [embed], ephemeral: true });
@@ -137,7 +137,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     if (nicknameFailed) {
                         await src.reply(this.nicknameFailMsg);
                     }
-                    else if (src.isMessage) {
+                    else if (src.isMessage()) {
                         await src.message.react(this.successReact);
                     }
                     else {
@@ -152,7 +152,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     try {
                         await src.sendDirect({ embeds: [embed] });
                     } catch (error) {
-                        if (src.isMessage) {
+                        if (src.isMessage()) {
                             await src.message.react('\u{1F614}');
                         }
                     }

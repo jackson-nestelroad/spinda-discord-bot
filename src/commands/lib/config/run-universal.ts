@@ -44,7 +44,7 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
                 components: [[button]],
             });
 
-            if (!response.isMessage) {
+            if (!response.isMessage()) {
                 throw new Error(`Response to universal command should have produced a message.`);
             }
 

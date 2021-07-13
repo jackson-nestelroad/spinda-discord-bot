@@ -182,7 +182,7 @@ export class DiscordBot {
                         ? `This command can only be run once every ${ExpireAgeConversion.toString(cooldownSet.expireAge)}.`
                         : 'Slow down!';
                     const reply = await src.reply({ content: slowDownMessage, ephemeral: true });
-                    if (reply.isMessage) {
+                    if (reply.isMessage()) {
                         await this.wait(10000);
                         await reply.delete();
                     }

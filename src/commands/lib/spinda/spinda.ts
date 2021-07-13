@@ -25,7 +25,7 @@ export class SpindaCommand extends SimpleCommand {
         // Send the image
         const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
 
-        if (!sent.isMessage) {
+        if (!sent.isMessage()) {
             throw new Error('Command reply did not produce a message.');
         }
 

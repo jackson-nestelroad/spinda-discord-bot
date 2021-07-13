@@ -1,4 +1,4 @@
-import { CommandInteraction, Guild, GuildMember, InteractionReplyOptions, Message, MessageEditOptions, MessageOptions, ReplyMessageOptions, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
+import { CommandInteraction, Guild, GuildMember, Interaction, InteractionReplyOptions, Message, MessageEditOptions, MessageOptions, ReplyMessageOptions, TextChannel, User, WebhookEditMessageOptions } from 'discord.js';
 
 export type Receivable = Message | CommandInteraction;
 
@@ -11,54 +11,106 @@ export type ReplyResponse = string | CommonReplyOptions;
 export type SendResponse = string | CommonSendOptions;
 export type EditResponse = string | CommonEditOptions;
 
+enum CommandSourceType {
+    Message,
+    Interaction,
+    Unsupported,
+};
+
+interface CommandSourceTypeMetadata {
+    type: { new(...args: any[]): any },
+    field: string,
+}
+
+const CommandSourceTypeMap = {
+    [CommandSourceType.Message]: {
+        type: Message,
+        field: 'message',
+    },
+    [CommandSourceType.Interaction]: {
+        type: CommandInteraction,
+        field: 'interaction',
+    },
+    [CommandSourceType.Unsupported]: {
+        type: null,
+        field: 'unsupported',
+    },
+} as const;
+
+const StronglyTypedCommandSourceTypes: { [type in CommandSourceType]: CommandSourceTypeMetadata } = CommandSourceTypeMap;
+
+type ExposePropertyOnClass<Class extends object, Prop extends string, Type extends Function> = Class & { [field in Prop]: Type };
+type KnownCommandSource<T extends CommandSourceType> = ExposePropertyOnClass<
+    CommandSource,
+    typeof CommandSourceTypeMap[T]['field'],
+    InstanceType<typeof CommandSourceTypeMap[T]['type']>
+>;
+ 
+type MessageCommandSource = KnownCommandSource<CommandSourceType.Message>;
+type InteractionCommandSource = KnownCommandSource<CommandSourceType.Interaction>;
+
 // A wrapper around a message or an interaction, whichever receives the command
 // This class provides a common interface for replying to a command
 // All replies or messages sent through this interface produce another interface
 // If an ephemeral reply is sent to an interaction, the same interaction is exposed
 // In any other case, the sent message is exposed, which is easier to work with
 export class CommandSource {
-    // A single flag records if the internal instance is a message so it is only checked once
-    private messageFlag: boolean;
-    private native: Receivable;
     private deferredEphemeral: boolean = false;
+    // A single flag records if the internal instance is a message so it is only checked once
+    private readonly type: CommandSourceType;
+    protected native: Receivable;
 
     public constructor(received: Receivable) {
-        this.messageFlag = received instanceof Message;
         this.native = received;
+        for (const type in CommandSourceTypeMap) {
+            const metadata = CommandSourceTypeMap[type] as CommandSourceTypeMetadata;
+            if (metadata.type === null || received instanceof metadata.type) {
+                this.type = parseInt(type);
+                Object.defineProperty(this, metadata.field, {
+                    configurable: false,
+                    enumerable: false,
+                    get: () => this.native,
+                });
+                break;
+            }
+        }
     }
 
-    public get isMessage(): boolean {
-        return this.messageFlag;
+    public isMessage(): this is MessageCommandSource {
+        return this.type === CommandSourceType.Message;
     }
 
-    public get isInteraction(): boolean {
-        return !this.messageFlag;
+    public isInteraction(): this is InteractionCommandSource {
+        return this.type === CommandSourceType.Interaction;
     }
 
-    // Get the internal instance as a message
-    public get message(): Message {
-        return this.native as Message;
+    public isUnsupported(): boolean {
+        return this.type === CommandSourceType.Unsupported;
     }
 
-    // Get the internal instance as an interaction
-    public get interaction(): CommandInteraction {
-        return this.native as CommandInteraction;
+    private throwUnsupported(): never {
+        throw new Error(`Unsupported command source: ${this.native.constructor.name}.`);
     }
     
     public get author(): User {
-        return this.isMessage
-            ? (this.native as Message).author
-            : (this.native as CommandInteraction).user;
+        if (this.isMessage()) {
+            return this.message.author;
+        }
+        else if (this.isInteraction()) {
+            return this.interaction.user;
+        }
+        this.throwUnsupported();
     }
 
     public async content(): Promise<string> {
-        if (this.isMessage) {
+        if (this.isMessage()) {
             return this.message.content;
         }
-        else {
+        else if (this.isInteraction()) {
             this.assertReplied();
             return (await this.interaction.fetchReply()).content;
         }
+        this.throwUnsupported();
     }
 
     public get member(): GuildMember {
@@ -76,28 +128,28 @@ export class CommandSource {
 
     // Only messages can be deleted
     public get deletable(): boolean {
-        return this.isMessage && (this.native as Message).deletable;
+        return this.isMessage() && this.message.deletable;
     }
     
     public setReplied() {
-        if (this.isInteraction) {
+        if (this.isInteraction()) {
             this.interaction.replied = true;
         }
     }
 
     // Only messages can be deleted
     public async delete(): Promise<void> {
-        if (this.isMessage) {
-            await (this.native as Message).delete();
+        if (this.isMessage()) {
+            await this.message.delete();
         }
-        else {
-            await (this.native as CommandInteraction).deleteReply();
+        else if (this.isInteraction()) {
+            await this.interaction.deleteReply();
         }
     }
 
     // Only interactions can be deferred
     public async defer(ephemeral: boolean = false): Promise<void> {
-        if (this.isInteraction && !this.interaction.deferred && !this.interaction.replied) {
+        if (this.isInteraction() && !this.interaction.deferred && !this.interaction.replied) {
             this.deferredEphemeral = ephemeral;
             this.interaction.defer({ ephemeral });
             this.interaction.deferred = true;
@@ -105,13 +157,17 @@ export class CommandSource {
     }
 
     private assertReplied(): void {
-        if (!this.interaction.replied) {
+        if (this.isInteraction() && !this.interaction.replied) {
             throw new Error(`No reply content available for this interaction. Make sure to reply first.`);
         }
     }
 
     private async respondInteraction(res: SendResponse & ReplyResponse & EditResponse): Promise<CommandSource> {
-        const interaction = this.interaction;
+        if (!this.isInteraction()) {
+            throw new Error(`Attempted to respond to a ${CommandSourceType[this.type]} command as an Interaction.`);
+        }
+
+        const interaction = (this as InteractionCommandSource).interaction;
         const ephemeral = typeof res !== 'string' && (res as any).ephemeral === true;
 
         // No initial reply sent
@@ -150,29 +206,40 @@ export class CommandSource {
 
     // Inline reply for message, reply/follow up for interaction
     public async reply(res: ReplyResponse): Promise<CommandSource> {
-        return this.isMessage
-            ? new CommandSource(await (this.native as Message).reply(res))
-            : await this.respondInteraction(res);
+        if (this.isMessage()) {
+            return new CommandSource(await this.message.reply(res));
+        }
+        else if (this.isInteraction()) {
+            return await this.respondInteraction(res);
+        }
+        this.throwUnsupported();
     }
 
     // Send to channel for message, reply/follow up for interaction
     public async send(res: SendResponse): Promise<CommandSource> {
-        return this.isMessage
-            ? new CommandSource(await (this.native as Message).channel.send(res))
-            : await this.respondInteraction(res);
+        if (this.isMessage()) {
+            return new CommandSource(await this.message.channel.send(res));
+        }
+        else if (this.isInteraction()) {
+            return await this.respondInteraction(res);
+        }
+        this.throwUnsupported();
     }
 
     // Edit message or interaction reply
     public async edit(res: EditResponse): Promise<CommandSource> {
         let edited: Message;
 
-        if (this.isMessage) {
+        if (this.isMessage()) {
             edited = await this.message.edit(res);
         }
-        else {
+        else if (this.isInteraction()) {
             // Having a replied interaction here means the reply must be ephemeral
             this.assertReplied();
             edited = await this.interaction.editReply(res) as Message;
+        }
+        else {
+            this.throwUnsupported();
         }
 
         return new CommandSource(edited);
@@ -180,14 +247,15 @@ export class CommandSource {
 
     // Append to message content or interaction reply
     public async append(res: string): Promise<CommandSource> {
-        if (this.isMessage) {
+        if (this.isMessage()) {
             return new CommandSource(await this.message.edit(this.message.content + res));
         }
-        else {
+        else if (this.isInteraction()) {
             this.assertReplied();
             const content = (await this.interaction.fetchReply()).content;
             await this.interaction.editReply(content + res);
         }
+        this.throwUnsupported();
     }
     
     // Direct message, ephemeral reply for interaction
@@ -195,8 +263,12 @@ export class CommandSource {
         if (typeof res !== 'string') {
             res.ephemeral = true;
         }
-        return this.isMessage
-            ? new CommandSource(await (this.native as Message).author.send(res))
-            : await this.respondInteraction(res);
+        if (this.isMessage()) {
+            return new CommandSource(await this.message.author.send(res));
+        }
+        else if (this.isInteraction()) {
+            return await this.respondInteraction(res);
+        }
+        this.throwUnsupported();
     }
 }

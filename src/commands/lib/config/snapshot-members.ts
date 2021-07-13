@@ -41,7 +41,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
     public cooldown = { minutes: 5 };
 
     public async run({ bot, src, guild }: CommandParameters) {
-        if (!src.isMessage) {
+        if (!src.isMessage()) {
             throw new Error(`This command must be run as a chat command.`);
         }
 

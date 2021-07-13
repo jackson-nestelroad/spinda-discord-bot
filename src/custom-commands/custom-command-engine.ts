@@ -1158,7 +1158,7 @@ export class CustomCommandEngine {
             this.assertLimit(ExecutionLimit.Message, 1);
             await this.context.params.src.send(response);
         }
-        else if (this.context.params.src.isInteraction && !this.context.params.src.interaction.replied) {
+        else if (this.context.params.src.isInteraction() && !this.context.params.src.interaction.replied) {
             this.assertLimit(ExecutionLimit.Message, 1);
             await this.context.params.src.reply({ content: '\u{2705}', ephemeral: true });
         }

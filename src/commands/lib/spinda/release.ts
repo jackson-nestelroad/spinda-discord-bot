@@ -58,7 +58,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
             components: [[yesButton, noButton]],
         });
 
-        if (!response.isMessage) {
+        if (!response.isMessage()) {
             throw new Error(`Release confirmation should have produced a message.`);
         }
 
