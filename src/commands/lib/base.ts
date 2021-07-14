@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord-api-types';
-import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, Collection, CommandInteractionOption, MessageEmbed, Snowflake } from 'discord.js';
+import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, Collection, CommandInteractionOption, GuildChannel, GuildMember, MessageEmbed, Role, Snowflake } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 import { DiscordUtil } from '../../util/discord';
@@ -33,7 +33,6 @@ export enum ArgumentType {
                                 // Slash commands will allow spaces
 
     Integer = 4,                // An integer
-                                // For floating point numbers, use String and parsing inside the command
 
     Boolean = 5,                // A boolean value
                                 // Slash commands give "True" or "False"
@@ -55,11 +54,182 @@ export enum ArgumentType {
                                 // Chat commands implement this trivially in parsing
                                 // Slash commands implement this as a string, since they can take spaces
 
+    FloatingPoint = 101,        // A floating point number that can be parsed with parseFloat()
+                                // Chat commands implement this trivially in parsing
+                                // Slash commands implement this as a string that is parsed later by the bot
+
                                 // Unsupported types:
                                 // SUB_COMMAND
                                 // SUB_COMMAND_GROUP
                                 // MENTIONABLE
 }
+
+interface ChatCommandArgumentParsingContext {
+    // The value given by the user
+    value: string;
+    // The name of the argument
+    name: string;
+    // The config data set up for the argument in the command
+    config: SingleArgumentConfig;
+    // The current index in the params.args array
+    i: number;
+    // Parameters for the chat command
+    params: ChatCommandParameters;
+}
+
+interface ArgumentParserResult {
+    // The parsed value to use as the argument
+    value?: any;
+    // Any error that occurred in parsing
+    // Empty for no error
+    error?: string;
+}
+
+interface ArgumentTypeConfigInterface {
+    asyncChatParser?: true,
+    parsers: {
+        chat: (context: ChatCommandArgumentParsingContext, out: ArgumentParserResult) => void | Promise<void>;
+        slash: (option: CommandInteractionOption, out: ArgumentParserResult) => void;
+    };
+}
+
+// Config data for each ArgumentType
+// Specifically used for parsing arguments of each type
+const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface } = {
+    [ArgumentType.String]: {
+        parsers: {
+            chat: (context, out) => {
+                if (context.config.choices) {
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    if (out.value === undefined) {
+                        out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
+                    }
+                }
+                else {
+                    out.value = context.value;
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.value;
+            },
+        },
+    },
+    [ArgumentType.Integer]: {
+        parsers: {
+            chat: (context, out) => {
+                if (context.config.choices) {
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    if (out.value === undefined) {
+                        out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
+                    }
+                }                    
+                else {
+                    out.value = parseInt(context.value);
+                    if (isNaN(out.value)) {
+                        out.error = `Invalid integer value \`${context.value}\` for argument \`${context.name}\`.`;
+                    }
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.value;
+            },
+        },
+    },
+    [ArgumentType.Boolean]: {
+        parsers: {
+            chat: (context, out) => {
+                if (DiscordUtil.accentStringEqual('true', context.value)) {
+                    out.value = true;
+                }
+                else if (DiscordUtil.accentStringEqual('false', context.value)) {
+                    out.value = false;
+                }
+                else {
+                    out.error = `Invalid boolean value \`${context.value}\` for argument \`${context.name}\`.`;
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.value;
+            },
+        },
+    },
+    [ArgumentType.User]: {
+        asyncChatParser: true,
+        parsers: {
+            chat: async (context, out) => {
+                out.value = await context.params.bot.getMemberFromString(context.value, context.params.guild.id);
+                if (!out.value) {
+                    out.error = `Invalid guild member \`${context.value}\` for argument \`${context.name}\`.`;
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.member;
+            },
+        },
+    },
+    [ArgumentType.Channel]: {
+        parsers: {
+            chat: (context, out) => {
+                out.value = context.params.bot.getChannelFromString(context.value, context.params.guild.id);
+                if (!out.value) {
+                    out.error = `Invalid channel \`${context.value}\` for argument \`${context.name}\`.`;
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.channel;
+            },
+        },
+    },
+    [ArgumentType.Role]: {
+        parsers: {
+            chat: (context, out) => {
+                out.value = context.params.bot.getRoleFromString(context.value, context.params.guild.id);
+                if (!out.value) {
+                    out.error = `Invalid role \`${context.value}\` for argument \`${context.name}\`.`;
+                }
+            },
+            slash: (option, out) => {
+                out.value = option.role;
+            },
+        },
+    },
+    [ArgumentType.RestOfContent]: {
+        parsers: {
+            chat: (context, out) => {
+                context.value = context.params.args.slice(context.i).join(' ');
+                context.i = context.params.args.length;
+                ArgumentTypeConfig[ArgumentType.String].parsers.chat(context, out);
+            },
+            slash: (option, out) => {
+                out.value = option.value;
+            },
+        },
+    },
+    [ArgumentType.FloatingPoint]: {
+        parsers: {
+            chat: (context, out) => {
+                if (context.config.choices) {
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    if (out.value === undefined) {
+                        out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
+                    }
+                }                    
+                else {
+                    out.value = parseFloat(context.value);
+                    if (isNaN(out.value)) {
+                        out.error = `Invalid floating point value \`${context.value}\` for argument \`${context.name}\`.`;
+                    }
+                }
+            },
+            slash: (option, out) => {
+                out.value = parseFloat(option.value as string);
+                if (isNaN(out.value)) {
+                    out.error = `Invalid floating point value \`${option.value}\` for argument \`${option.name}\`.`;
+                }
+            },
+        },
+    },
+} as const;
 
 // Configuration for a single argument
 // This is slightly different than what Discord offers since we handle sub-commands differently
@@ -68,6 +238,10 @@ export interface SingleArgumentConfig {
     type: ArgumentType;
     required: boolean;
     choices?: ApplicationCommandOptionChoice[];
+    transformers?: {
+        chat?: (value: any, result: ArgumentParserResult) => void;
+        slash?: (value: any, result: ArgumentParserResult) => void;
+    };
 }
 
 // Disable these types, as they are unneeded for this bot or handled differently
@@ -366,6 +540,12 @@ export abstract class SimpleCommand<Shared = never> extends BaseCommand<Shared> 
 // Object for configuring arguments accepted and used by the command
 export type ArgumentsConfig<Args> = { readonly [arg in keyof Args]-?: SingleArgumentConfig };
 
+interface ParameterizedCommand<Args extends object, Shared = never> {
+    // Suppresses arguments parsing errors, allowing the command to run anyway
+    // If true, input validation should be done in the command handler
+    readonly suppressArgumentsError?: boolean;
+}
+
 // A command that takes one or more arguments
 abstract class ParameterizedCommand<Args extends object, Shared = never> extends BaseCommand<Shared> {
     // Stronger typing for the args configuration
@@ -377,6 +557,7 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
     private static convertArgumentType(type: ArgumentType): ApplicationCommandOptionType {
         switch (type) {
             case ArgumentType.RestOfContent: return ApplicationCommandOptionType.STRING;
+            case ArgumentType.FloatingPoint: return ApplicationCommandOptionType.STRING;
             default: return type as number as ApplicationCommandOptionType;
         }
     }
@@ -430,23 +611,25 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
         // Discord has already done it for us!
         // Just pick the right part of the option object depending on the type
         const parsedOptions: Args = params.options.reduce((obj, option) => {
-            const next = { ...obj };
-            switch (DiscordUtil.ApplicationCommandOptionTypeConverter[option.type]) {
-                case ApplicationCommandOptionType.USER: next[option.name] = option.member; break;
-                case ApplicationCommandOptionType.CHANNEL: next[option.name] = option.channel; break;
-                case ApplicationCommandOptionType.ROLE: next[option.name] = option.role; break;
-                default: next[option.name] = option.value;
+            const argConfig = this.args[option.name as keyof ArgumentsConfig<Args>];
+            const typeConfig = ArgumentTypeConfig[argConfig.type];
+
+            const result: ArgumentParserResult = { };
+            typeConfig.parsers.slash(option, result);
+            if (result.error && !this.suppressArgumentsError) {
+                throw new Error(result.error);
             }
-            return next;
+
+            argConfig.transformers?.slash?.(result.value, result);
+            if (result.error && !this.suppressArgumentsError) {
+                throw new Error(result.error);
+            }
+
+            obj[option.name] = result.value;
+            return obj;
         }, { } as Args);
         return this.run(params, parsedOptions);
     }
-}
-
-export interface ComplexCommand<Args extends object, Shared = never> {
-    // Suppresses chat arguments parsing errors, allowing the command to run anyway
-    // If true, input validation should be done in the command handler
-    readonly suppressChatArgumentsError?: boolean;
 }
 
 // A command that automatically parses chat and slash arguments the same way
@@ -475,91 +658,52 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                 // Commands should consider this a possibility now
                 // Later optional commands cannot entirely depend on the presence of previous optional commands
         const parsed: Partial<Args> = { };
-        let i = 0;
+        const context: ChatCommandArgumentParsingContext = {
+            value: null,
+            name: null,
+            config: null,
+            i: 0,
+            params,
+        };
         for (const entry of Object.entries(this.args)) {
-            // arg is really of type "keyof T"
-            const [arg, data] = entry as [string, SingleArgumentConfig];
-            let nextArg = params.args[i];
+            // context.name is really of type "keyof T"
+            context.name = entry[0];
+            context.config = entry[1] as SingleArgumentConfig;
+            context.value = params.args[context.i];
             
-            if (i >= params.args.length) {
-                if (data.required) {
-                    if (!this.suppressChatArgumentsError) {
-                        throw new Error(`Missing required argument \`${arg}\`.`);
+            if (context.i >= params.args.length) {
+                if (context.config.required) {
+                    if (!this.suppressArgumentsError) {
+                        throw new Error(`Missing required argument \`${context.name}\`.`);
                     }
                 }
                 else {
-                    parsed[arg] = undefined;
+                    parsed[context.name] = undefined;
                     continue;
                 }
             }
+
+            const argConfig = this.args[context.name as keyof ArgumentsConfig<Args>];
+            const typeConfig = ArgumentTypeConfig[argConfig.type];
             
-            switch (data.type) {
-                case ArgumentType.RestOfContent: {
-                    nextArg = params.args.slice(i).join(' ');
-                    i = params.args.length;
-                } // follow through
-                case ArgumentType.String: {
-                    if (data.choices) {
-                        const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
-                        if (choice === undefined && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\`.`);
-                        }
-                        parsed[arg] = choice.value;
-                    }
-                    else {
-                        parsed[arg] = nextArg;
-                    }
-                } break;
-                case ArgumentType.Boolean: {
-                    if (DiscordUtil.accentStringEqual('true', nextArg)) {
-                        parsed[arg] = true;
-                    }
-                    else if (DiscordUtil.accentStringEqual('false', nextArg)) {
-                        parsed[arg] = false;
-                    }
-                    else if (!this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid boolean value \`${nextArg}\` for argument \`${arg}\`.`);
-                    }
-                } break;
-                case ArgumentType.Integer: {
-                    if (data.choices) {
-                        const choice = data.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, nextArg));
-                        if (choice === undefined && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid value \`${nextArg}\` for argument \`${arg}\`.`);
-                        }
-                        parsed[arg] = choice.value;
-                    }                    
-                    else {
-                        const num = parseInt(nextArg);
-                        if (isNaN(num) && !this.suppressChatArgumentsError) {
-                            throw new Error(`Invalid integer value \`${nextArg}\` for argument \`${arg}\`.`);
-                        }
-                        parsed[arg] = num;
-                    }
-                } break;
-                case ArgumentType.Channel: {
-                    const channel = params.bot.getChannelFromString(nextArg, params.guild.id);
-                    if (!channel && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid channel \`${nextArg}\` for argument \`${arg}\`.`);
-                    }
-                    parsed[arg] = channel;
-                } break;
-                case ArgumentType.Role: {
-                    const role = params.bot.getRoleFromString(nextArg, params.guild.id);
-                    if (!role && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid role \`${nextArg}\` for argument \`${arg}\`.`);
-                    }
-                    parsed[arg] = role;
-                } break;
-                case ArgumentType.User: {
-                    const member = await params.bot.getMemberFromString(nextArg, params.guild.id);
-                    if (!member && !this.suppressChatArgumentsError) {
-                        throw new Error(`Invalid guild member \`${nextArg}\` for argument \`${arg}\`.`);
-                    }
-                    parsed[arg] = member;
-                } break;
+            const result: ArgumentParserResult = { };
+            if (typeConfig.asyncChatParser) {
+                await typeConfig.parsers.chat(context, result);
             }
-            ++i;
+            else {
+                typeConfig.parsers.chat(context, result);
+            }
+            if (result.error && !this.suppressArgumentsError) {
+                throw new Error(result.error);
+            }
+
+            argConfig.transformers?.chat?.(result.value, result);
+            if (result.error && !this.suppressArgumentsError) {
+                throw new Error(result.error);
+            }
+
+            parsed[context.name] = result.value;
+            ++context.i;
         }
         return this.run(params, parsed as Args);
     }

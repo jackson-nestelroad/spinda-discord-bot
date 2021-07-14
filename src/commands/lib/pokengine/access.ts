@@ -26,7 +26,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
     public cooldown = StandardCooldowns.Low;
 
     public slashGuildId = Environment.Pokengine.getGuildId();
-    public suppressChatArgumentsError = true;
+    public suppressArgumentsError = true;
 
     public args: ArgumentsConfig<AccessArgs> = {
         username: {
