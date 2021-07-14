@@ -66,11 +66,7 @@ export class CommandSource {
             const metadata = CommandSourceTypeMap[type] as CommandSourceTypeMetadata;
             if (metadata.type === null || received instanceof metadata.type) {
                 this.type = parseInt(type);
-                Object.defineProperty(this, metadata.field, {
-                    configurable: false,
-                    enumerable: false,
-                    get: () => this.native,
-                });
+                this[metadata.field] = this.native;
                 break;
             }
         }
