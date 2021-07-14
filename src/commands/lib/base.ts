@@ -239,6 +239,7 @@ export interface SingleArgumentConfig {
     required: boolean;
     choices?: ApplicationCommandOptionChoice[];
     transformers?: {
+        any?: (value: any, result: ArgumentParserResult) => void;
         chat?: (value: any, result: ArgumentParserResult) => void;
         slash?: (value: any, result: ArgumentParserResult) => void;
     };
@@ -620,7 +621,15 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
                 throw new Error(result.error);
             }
 
-            argConfig.transformers?.slash?.(result.value, result);
+            if (argConfig.transformers) {
+                if (argConfig.transformers.any) {
+                    argConfig.transformers.any(result.value, result);
+                }
+                else if (argConfig.transformers.slash) {
+                    argConfig.transformers.slash(result.value, result);
+                }
+            }
+
             if (result.error && !this.suppressArgumentsError) {
                 throw new Error(result.error);
             }
@@ -697,7 +706,15 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                 throw new Error(result.error);
             }
 
-            argConfig.transformers?.chat?.(result.value, result);
+            if (argConfig.transformers) {
+                if (argConfig.transformers.any) {
+                    argConfig.transformers.any(result.value, result);
+                }
+                else if (argConfig.transformers.chat) {
+                    argConfig.transformers.chat(result.value, result);
+                }
+            }
+
             if (result.error && !this.suppressArgumentsError) {
                 throw new Error(result.error);
             }
