@@ -261,8 +261,6 @@ interface SingleArgumentTransformersOptionalConfig<T = DefaultT, P = T> {
 type SingleArgumentTransformersRequiredConfig<T = DefaultT, P = unknown> = 
     {
         any: SingleArgumentTransformer<T, P>;
-        chat?: SingleArgumentTransformer<T, P>;
-        slash?: SingleArgumentTransformer<T, P>; 
     } 
     | {
         chat: SingleArgumentTransformer<T, P>;
