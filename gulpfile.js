@@ -24,7 +24,7 @@ gulp.task('run', () => {
  
 gulp.task('compile', () => {
     return gulp.src(config.watch)
-        .pipe(tsProject())
+        .pipe(tsProject(ts.reporter.defaultReporter()))
         .pipe(gulp.dest('dist'));
 });
  

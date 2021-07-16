@@ -34,14 +34,14 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
 
         if (otherAdmins.size > 0) {
             const button = new MessageButton();
-            button.setCustomID('confirm');
+            button.setCustomId('confirm');
             button.setLabel('Run Universal Command');
             button.setEmoji(`\u{2755}`);
             button.setStyle('DANGER');
 
             let response = await src.reply({
                 content: 'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
-                components: [[button]],
+                components: [{ components: [button] }],
             });
 
             if (!response.isMessage()) {
@@ -50,14 +50,17 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
 
             const disableButton = async () => {
                 button.setDisabled(true);
-                return await response.edit({ components: [[button]] });
+                return await response.edit({ components: [{ components: [button] }] });
             };
 
             let interaction: MessageComponentInteraction;
             try {
-                interaction = await response.message.awaitMessageComponentInteraction(interaction => {
-                    return interaction.customID === 'confirm' && otherAdmins.has(interaction.member.user.id);
-                }, { time: 60 * 1000 });
+                interaction = await response.message.awaitMessageComponent({
+                    filter: interaction => {
+                        return interaction.customId === 'confirm' && otherAdmins.has(interaction.member.user.id);
+                    },
+                    time: 60 * 1000
+                });
             } catch (error) {
                 response = await disableButton();
                 const embed = bot.createEmbed(EmbedTemplates.Error);

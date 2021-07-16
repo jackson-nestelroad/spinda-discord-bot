@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord-api-types';
 import { ApplicationCommand, ApplicationCommandData } from 'discord.js';
+import type { ApplicationCommandOptionTypes } from 'discord.js/typings/enums';
 
 export namespace DiscordUtil {
     export const codeBlockRegex = /```(?:[^\s]*\n)?((?:.|\n)+)\n?```/s;
@@ -19,17 +20,20 @@ export namespace DiscordUtil {
         content?: string;
     }
 
-    export const ApplicationCommandOptionTypeConverter = {
-        ['SUB_COMMAND']: ApplicationCommandOptionType.SUB_COMMAND,
-        ['SUB_COMMAND_GROUP']: ApplicationCommandOptionType.SUB_COMMAND_GROUP,
-        ['STRING']: ApplicationCommandOptionType.STRING,
-        ['INTEGER']: ApplicationCommandOptionType.INTEGER,
-        ['BOOLEAN']: ApplicationCommandOptionType.BOOLEAN,
-        ['USER']: ApplicationCommandOptionType.USER,
-        ['CHANNEL']: ApplicationCommandOptionType.CHANNEL,
-        ['ROLE']: ApplicationCommandOptionType.ROLE,
-        ['MENTIONABLE']: ApplicationCommandOptionType.MENTIONABLE,
-    } as const;
+    // Neither Discord nor Discord.JS exports this enum, so we keep a copy of it here to use
+    export enum ActualApplicationCommandOptionTypeEnum {
+        SUB_COMMAND = ApplicationCommandOptionType.SUB_COMMAND,
+        SUB_COMMAND_GROUP = ApplicationCommandOptionType.SUB_COMMAND_GROUP,
+        STRING = ApplicationCommandOptionType.STRING,
+        INTEGER = ApplicationCommandOptionType.INTEGER,
+        BOOLEAN = ApplicationCommandOptionType.BOOLEAN,
+        USER = ApplicationCommandOptionType.USER,
+        CHANNEL = ApplicationCommandOptionType.CHANNEL,
+        ROLE = ApplicationCommandOptionType.ROLE,
+        MENTIONABLE = ApplicationCommandOptionType.MENTIONABLE,
+    }
+
+    export type ActualApplicationCommandOptionTypeNames = keyof ActualApplicationCommandOptionTypeEnum;
 
     export function getCodeBlock(content: string): RegexMatchResult {
         const result: RegexMatchResult = { match: false, index: 0 };
@@ -106,9 +110,9 @@ export namespace DiscordUtil {
                 || a.description !== b.description
                 || !!a.required !== !!b.required
 
-            // Old command stores a string, new data stores an integer
-            // This is a strange inconsistency
-                || ApplicationCommandOptionTypeConverter[a.type] !== b.type
+            // Old command stores a string, new data can store an integer or string
+            // Just make sure to store a string so this comparison works!
+                || a.type !== b.type
 
             // Compare the choices and nested options themselves
                 || !deepEqual(a.choices ?? [], b.choices ?? [])

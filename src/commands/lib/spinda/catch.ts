@@ -65,7 +65,8 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
             await src.reply({ embeds: [embed] });
 
             try {
-                const messages = await src.channel.awaitMessages((newMsg: Message) => newMsg.author.id === src.author.id, {
+                const messages = await src.channel.awaitMessages({
+                    filter: newMsg => newMsg.author.id === src.author.id,
                     max: 1,
                     time: 10000,
                     errors: ['time'],

@@ -120,7 +120,7 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
                         if (!channel) {
                             throw new Error(`Invalid channel: ${value} (\`${value}\`)`);
                         }
-                        if (channel.type !== 'text') {
+                        if (channel.type !== 'GUILD_TEXT') {
                             throw new Error('Log channel must be a text channel.');
                         }
                         if ((channel as TextChannel).guild.id !== src.guild.id) {

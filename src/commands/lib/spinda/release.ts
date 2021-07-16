@@ -35,12 +35,12 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         }
 
         const yesButton = new MessageButton();
-        yesButton.setCustomID('confirm');
+        yesButton.setCustomId('confirm');
         yesButton.setStyle('DANGER');
         yesButton.setLabel('Release');
 
         const noButton = new MessageButton();
-        noButton.setCustomID('cancel');
+        noButton.setCustomId('cancel');
         noButton.setStyle('PRIMARY');
         noButton.setLabel('Cancel');
 
@@ -55,7 +55,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         let response = await src.reply({
             embeds: [confirmationEmbed],
             files: [attachment],
-            components: [[yesButton, noButton]],
+            components: [{ components: [yesButton, noButton] }],
         });
 
         if (!response.isMessage()) {
@@ -65,14 +65,15 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         const disableButtons = async () => {
             yesButton.setDisabled(true);
             noButton.setDisabled(true);
-            return await response.edit({ components: [[yesButton, noButton]] });
+            return await response.edit({ components: [{ components: [yesButton, noButton] }] });
         };
 
         let interaction: MessageComponentInteraction;
         try {
-            interaction = await response.message.awaitMessageComponentInteraction(interaction => {
-                return interaction.user.id === src.author.id;
-            }, { time: 10000 });   
+            interaction = await response.message.awaitMessageComponent({
+                filter: interaction => interaction.user.id === src.author.id,
+                time: 10000
+            });   
         } catch (error) {
             throw new Error('You did not respond in time.');
         }
@@ -80,10 +81,10 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         response = await disableButtons();
         await interaction.deferUpdate();
 
-        if (interaction.customID === 'cancel') {
+        if (interaction.customId === 'cancel') {
             return;
         }
-        else if (interaction.customID === 'confirm') {
+        else if (interaction.customId === 'confirm') {
             await bot.dataService.releaseCaughtSpinda(src.author.id, args.position - 1);
 
             const confirmEmbed = bot.createEmbed(EmbedTemplates.Success);
@@ -91,7 +92,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
             await src.send({ embeds: [confirmEmbed] });
         }
         else {
-            throw new Error(`Unknown interaction custom ID: ${interaction.customID}.`);
+            throw new Error(`Unknown interaction custom ID: ${interaction.customId}.`);
         }
     }
 }

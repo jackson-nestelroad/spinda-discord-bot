@@ -6,7 +6,7 @@
             "ES2018",
             "ES2019",
             "DOM",
-            "ES2020.String",
+            "ES2020.String"
         ],
         "types": [],
         "isolatedModules": false,
@@ -28,5 +28,5 @@
     ],
     "exclude": [
         "node_modules"
-    ],
+    ]
 }

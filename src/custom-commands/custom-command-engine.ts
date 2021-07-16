@@ -145,13 +145,13 @@ export class CustomCommandEngine {
         id: user => user.id,
         tag: user => user.tag,
         discriminator: user => user.discriminator,
-        status: user => user.presence.status,
         avatar: user => user.avatar,
         mention: user => user.toString(),
         createdAt: user => user.createdAt.toLocaleDateString(),
     };
 
     private static readonly memberParams: ReadonlyDictionary<(member: GuildMember) => string> = {
+        status: member => member.presence.status,
         nickname: member => member.displayName,
         joinedAt: member => member.joinedAt.toLocaleDateString(),
     };
@@ -161,7 +161,7 @@ export class CustomCommandEngine {
         name: guild => guild.name,
         icon: guild => guild.iconURL() || CustomCommandEngine.undefinedVar,
         memberCount: guild => guild.memberCount.toString(),
-        ownerId: guild => guild.ownerID,
+        ownerId: guild => guild.ownerId,
         createdAt: guild => guild.createdAt.toLocaleDateString(),
         region: guild => guild.preferredLocale,
     };

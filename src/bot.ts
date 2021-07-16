@@ -1,7 +1,7 @@
-import { Client, MessageEmbed, User, Channel, Message, GuildMember, Intents, CommandInteraction, GuildChannel, Role, Snowflake, MessageAttachment } from 'discord.js';
+import { Client, MessageEmbed, User, Channel, GuildMember, Intents, GuildChannel, Role, Snowflake, MessageAttachment, ThreadChannel } from 'discord.js';
 import { BaseEvent } from './events/base';
 import { ReadyEvent } from './events/ready';
-import { MessageEvent } from './events/message';
+import { MessageCreateEvent } from './events/message-create';
 import { CommandMap } from './commands/lib/base';
 import { Commands } from './commands';
 import { DataService } from './data/data-service';
@@ -23,7 +23,7 @@ import { ExpireAgeConversion, TimedCache } from './util/timed-cache';
 import { SpindaGeneratorService } from './commands/lib/spinda/generator';
 import { EmbedOptions, EmbedProps, EmbedTemplates } from './util/embed';
 import { CommandSource } from './util/command-source';
-import { InteractionEvent } from './events/interaction';
+import { InteractionCreateEvent } from './events/interaction-create';
 import { CustomCommandService } from './custom-commands/custom-command-service';
 
 export class DiscordBot {
@@ -58,7 +58,7 @@ export class DiscordBot {
 
     public enableSlashCommands() {
         if (!this.slashCommandsEnabled) {
-            this.events.push(new InteractionEvent(this));
+            this.events.push(new InteractionCreateEvent(this));
             this.slashCommandsEnabled = true;
         }
     }
@@ -116,7 +116,7 @@ export class DiscordBot {
         return null;
     }
 
-    public getChannelFromString(str: string, guildId: Snowflake): GuildChannel | null {
+    public getChannelFromString(str: string, guildId: Snowflake): GuildChannel | ThreadChannel | null {
         // Try mention first
         const guild = this.client.guilds.cache.get(guildId);
         const match = DiscordUtil.channelMentionRegex.exec(str);
@@ -150,7 +150,7 @@ export class DiscordBot {
         await this.dataService.initialize();
 
         this.events.push(new ReadyEvent(this));
-        this.events.push(new MessageEvent(this));
+        this.events.push(new MessageCreateEvent(this));
         this.events.push(new GuildMemberAddEvent(this));
         this.events.push(new GuildMemberRemoveEvent(this));
         this.events.push(new GuildMemberUpdateEvent(this));

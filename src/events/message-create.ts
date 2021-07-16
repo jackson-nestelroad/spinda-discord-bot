@@ -3,13 +3,12 @@ import { BaseEvent } from './base';
 import { Validation } from './util/validate';
 import { DiscordBot } from '../bot';
 import { ChatCommandParameters } from '../commands/lib/base';
-import { CustomCommandEngine } from '../custom-commands/custom-command-engine';
 import { GuildAttributes } from '../data/model/guild';
 import { CommandSource } from '../util/command-source';
 
-const event = 'message';
+const event = 'messageCreate';
 
-export class MessageEvent extends BaseEvent<typeof event> {
+export class MessageCreateEvent extends BaseEvent<typeof event> {
     private forbiddenMentionRegex = /@(everyone|here)/g;
 
     constructor(bot: DiscordBot) {

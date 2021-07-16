@@ -2,7 +2,6 @@ import { CommandCategory, CommandPermission, CommandParameters, StandardCooldown
 import { CustomCommandEngine, CustomCommandMetadata } from '../../../custom-commands/custom-command-engine';
 import { ApplicationCommandData, MessageEmbed } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
-import { ApplicationCommandOptionType } from 'discord-api-types';
 import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 
 interface SetCommandArgs {
@@ -103,7 +102,7 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
                             { 
                                 name: data.contentName,
                                 description: data.contentDescription,
-                                type: ApplicationCommandOptionType.STRING,
+                                type: "STRING",
                                 required: (data.flags & CustomCommandFlag.ContentRequired) !== 0,
                             },
                         ]

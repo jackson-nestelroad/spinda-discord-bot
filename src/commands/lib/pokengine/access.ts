@@ -58,7 +58,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                 if (!this.accessChannel) {
                     throw new Error(`Channel id \`${id}\` does not exist in this server.`);
                 }
-                if (this.accessChannel.type !== 'text') {
+                if (this.accessChannel.type !== 'GUILD_TEXT') {
                     throw new Error(`Access channel must be a text channel.`);
                 }
             }

@@ -57,7 +57,7 @@ export class SayCommand extends LegacyCommand<SayArgs> {
     }
 
     public async run({ src }: CommandParameters, args: SayArgs) {
-        if (args.channel.type !== 'text') {
+        if (args.channel.type !== 'GUILD_TEXT') {
             throw new Error(`Cannot send a message to a ${args.channel.type} channel.`);
         }
 

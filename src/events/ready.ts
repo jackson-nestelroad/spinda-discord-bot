@@ -1,7 +1,7 @@
 import { BaseEvent } from './base';
 import { DiscordBot } from '../bot';
 import { DiscordUtil } from '../util/discord';
-import { ApplicationCommandManager } from 'discord.js';
+import { ApplicationCommandManager, GuildApplicationCommandManager } from 'discord.js';
 import { BaseCommand } from '../commands/lib/base';
 
 const event = 'ready';
@@ -12,7 +12,7 @@ export class ReadyEvent extends BaseEvent<typeof event> {
     }
 
     // Get the proper command manager this command would belong to
-    private async getCommandManager(cmd: BaseCommand): Promise<ApplicationCommandManager> {
+    private async getCommandManager(cmd: BaseCommand): Promise<GuildApplicationCommandManager | ApplicationCommandManager> {
         if (cmd.slashGuildId) {
             const cmdGuild = this.bot.client.guilds.cache.get(cmd.slashGuildId);
             if (cmdGuild.commands.cache.size === 0) {
@@ -44,11 +44,13 @@ export class ReadyEvent extends BaseEvent<typeof event> {
                 const old = cmdManager.cache.find(cmd => cmd.name === name);
                 if (old) {
                     if (DiscordUtil.slashCommandNeedsUpdate(old, newData)) {
-                        cmdManager.edit(old, newData);
+                        console.log(`Updating slash command "${name}"`);
+                        await cmdManager.edit(old, newData);
                     }
                 }
                 else {
-                    cmdManager.create(newData);
+                    console.log(`Creating slash command "${cmd}"`);
+                    await cmdManager.create(newData);
                 }
             }
             else {
@@ -56,6 +58,7 @@ export class ReadyEvent extends BaseEvent<typeof event> {
                 const cmdManager = await this.getCommandManager(cmd);
                 const old = cmdManager.cache.find(cmd => cmd.name === name);
                 if (old) {
+                    console.log(`Deleting slash command "${cmd}"`);
                     await cmdManager.delete(old);
                 }
             }

@@ -4,12 +4,11 @@ import { CommandParameters, SlashCommandParameters } from '../commands/lib/base'
 import { CustomCommandFlag } from '../data/model/custom-command';
 import { CommandSource } from '../util/command-source';
 import { BaseEvent } from './base';
-import { CustomCommandEngine } from '../custom-commands/custom-command-engine';
 import { Validation } from './util/validate';
 
-const event = 'interaction';
+const event = 'interactionCreate';
 
-export class InteractionEvent extends BaseEvent<typeof event> {
+export class InteractionCreateEvent extends BaseEvent<typeof event> {
     constructor(bot: DiscordBot) {
         super(bot, event);
     }

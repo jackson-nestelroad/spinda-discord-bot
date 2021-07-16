@@ -88,17 +88,17 @@ export class RGBAColor implements RGBAInterface {
         }
     }
 
-    public rgb(): string {
-        return `rgb(${this.red}, ${this.green}, ${this.blue})`;
+    public rgb(): `rgb(${number}, ${number}, ${number})` {
+        return `rgb(${this.red}, ${this.green}, ${this.blue})` as `rgb(${number}, ${number}, ${number})`;
     }
 
-    public rgba(): string {
-        return `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.alpha / 0xFF})`;
+    public rgba(): `rgba(${number}, ${number}, ${number}, ${number})` {
+        return `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.alpha / 0xFF})` as `rgba(${number}, ${number}, ${number}, ${number})`;
     }
 
-    public hexString(): string {
+    public hexString(): `#${string}` {
         const str = this.hex.toString(16).toUpperCase();
-        return '#' + (str.length < 6 ? '0'.repeat(6 - str.length) + str : str);
+        return '#' + (str.length < 6 ? '0'.repeat(6 - str.length) + str : str) as `#${string}`;
     }
 
     public blend(source: RGBAColor, options: Partial<Blender.Options> = { }): RGBAColor {
