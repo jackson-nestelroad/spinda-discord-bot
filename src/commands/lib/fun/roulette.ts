@@ -3,8 +3,8 @@ import { FunUtil } from './util';
 import { TimedCacheSet } from '../../../util/timed-cache';
 
 interface RouletteArgs {
-    bullets?: number;
-    chambers?: number;
+    bullets: number;
+    chambers: number;
 }
 
 export class RoutletteCommand extends ComplexCommand<RouletteArgs> {
@@ -20,16 +20,15 @@ export class RoutletteCommand extends ComplexCommand<RouletteArgs> {
             description: 'Number of bullets to load.',
             type: ArgumentType.Integer,
             required: false,
+            default: 1,
         },
         chambers: {
             description: 'Number of chambers in the gun.',
             type: ArgumentType.Integer,
             required: false,
+            default: 6,
         },
     };
-
-    public readonly defaultBullets = 1;
-    public readonly defaultChambers = 6;
 
     public readonly dead: TimedCacheSet<string> = new TimedCacheSet({ minutes: 1 });
 
@@ -39,29 +38,19 @@ export class RoutletteCommand extends ComplexCommand<RouletteArgs> {
             return;
         }
 
-        let bullets = args.bullets;
-        if (!bullets || bullets < 1) {
-            bullets = this.defaultBullets;
-        }
-
-        let chambers = args.chambers;
-        if (!chambers || chambers < 1) {
-            chambers = this.defaultChambers;
-        }
-
-        if (bullets > chambers) {
-            bullets = chambers;
+        if (args.bullets > args.chambers) {
+            args.bullets = args.chambers;
         }
 
         const nickname = src.guild.members.cache.get(src.author.id).nickname || src.author.username;
 
-        const responseText = `${nickname} places ${bullets} bullet${bullets === 1 ? '' : 's'} in ${chambers} chamber${chambers === 1 ? '' : 's'}. They spin the cylinder and place the nozzle to their head.`;
+        const responseText = `${nickname} places ${args.bullets} bullet${args.bullets === 1 ? '' : 's'} in ${args.chambers} chamber${args.chambers === 1 ? '' : 's'}. They spin the cylinder and place the nozzle to their head.`;
         let response = await src.send(responseText);
 
         response = await FunUtil.addSuspense(bot, response, responseText + '\n', 2);
 
         let result: string;
-        if (Math.random() < bullets / chambers) {
+        if (Math.random() < args.bullets / args.chambers) {
             result = ` :boom: ***BLAM!***  ${nickname} died. Luck was not on their side...`;
             this.dead.add(src.author.id);
         }

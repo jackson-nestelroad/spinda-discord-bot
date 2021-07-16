@@ -1,11 +1,11 @@
-import { ApplicationCommandOptionType } from 'discord-api-types';
-import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, Collection, CommandInteractionOption, GuildChannel, GuildMember, MessageEmbed, Role, Snowflake } from 'discord.js';
+import { ApplicationCommandData, ApplicationCommandOption, ApplicationCommandOptionChoice, ApplicationCommandOptionType, Collection, CommandInteractionOption, GuildChannel, GuildMember, MessageEmbed, Role, Snowflake } from 'discord.js';
 import { DiscordBot } from '../../bot';
 import { GuildAttributes } from '../../data/model/guild';
 import { DiscordUtil } from '../../util/discord';
 import { CommandSource } from '../../util/command-source';
 import { ExpireAge, ExpireAgeFormat, TimedCache } from '../../util/timed-cache';
 import { Validation } from '../../events/util/validate';
+import type { ApplicationCommandOptionTypes } from 'discord.js/typings/enums';
 
 // Every command category for this bot
 export enum CommandCategory {
@@ -64,6 +64,21 @@ export enum ArgumentType {
                                 // MENTIONABLE
 }
 
+// Conditional type explicitly uses for mapping an argument type to its parsed value type
+type ArgumentTypeResultMap<A extends ArgumentType> =
+    A extends ArgumentType.String ? string 
+    : A extends ArgumentType.Integer ? number
+    : A extends ArgumentType.Boolean ? boolean
+    : A extends ArgumentType.User ? GuildMember
+    : A extends ArgumentType.Channel ? GuildChannel
+    : A extends ArgumentType.Role ? Role
+    : A extends ArgumentType.RestOfContent ? string
+    : A extends ArgumentType.FloatingPoint ? number
+    : never;
+
+// The default value, which is a union of the above types
+type DefaultT = ArgumentTypeResultMap<ArgumentType>;
+
 interface ChatCommandArgumentParsingContext {
     // The value given by the user
     value: string;
@@ -77,30 +92,30 @@ interface ChatCommandArgumentParsingContext {
     params: ChatCommandParameters;
 }
 
-interface ArgumentParserResult {
+interface ArgumentParserResult<T = DefaultT> {
     // The parsed value to use as the argument
-    value?: any;
+    value?: T;
     // Any error that occurred in parsing
     // Empty for no error
     error?: string;
 }
 
-interface ArgumentTypeConfigInterface {
+interface ArgumentTypeMetadata<A extends ArgumentType = ArgumentType> {
     asyncChatParser?: true,
     parsers: {
-        chat: (context: ChatCommandArgumentParsingContext, out: ArgumentParserResult) => void | Promise<void>;
-        slash: (option: CommandInteractionOption, out: ArgumentParserResult) => void;
+        chat: (context: ChatCommandArgumentParsingContext, out: ArgumentParserResult<ArgumentTypeResultMap<A>>) => void | Promise<void>;
+        slash: (option: CommandInteractionOption, out: ArgumentParserResult<ArgumentTypeResultMap<A>>) => void;
     };
 }
 
 // Config data for each ArgumentType
 // Specifically used for parsing arguments of each type
-const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface } = {
+const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeMetadata<type> } = {
     [ArgumentType.String]: {
         parsers: {
             chat: (context, out) => {
                 if (context.config.choices) {
-                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value)).value as string;
                     if (out.value === undefined) {
                         out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
                     }
@@ -110,7 +125,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 }
             },
             slash: (option, out) => {
-                out.value = option.value;
+                out.value = option.value.toString();
             },
         },
     },
@@ -118,7 +133,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
         parsers: {
             chat: (context, out) => {
                 if (context.config.choices) {
-                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value)).value as number;
                     if (out.value === undefined) {
                         out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
                     }
@@ -131,7 +146,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 }
             },
             slash: (option, out) => {
-                out.value = option.value;
+                out.value = option.value as number;
             },
         },
     },
@@ -149,7 +164,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 }
             },
             slash: (option, out) => {
-                out.value = option.value;
+                out.value = option.value as boolean;
             },
         },
     },
@@ -163,20 +178,21 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 }
             },
             slash: (option, out) => {
-                out.value = option.member;
+                out.value = option.member as GuildMember;
             },
         },
     },
     [ArgumentType.Channel]: {
         parsers: {
             chat: (context, out) => {
-                out.value = context.params.bot.getChannelFromString(context.value, context.params.guild.id);
-                if (!out.value) {
+                const channel = context.params.bot.getChannelFromString(context.value, context.params.guild.id);
+                if (!channel || channel.type !== 'GUILD_TEXT') {
                     out.error = `Invalid channel \`${context.value}\` for argument \`${context.name}\`.`;
                 }
+                out.value = channel as GuildChannel;
             },
             slash: (option, out) => {
-                out.value = option.channel;
+                out.value = option.channel as GuildChannel;
             },
         },
     },
@@ -189,7 +205,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 }
             },
             slash: (option, out) => {
-                out.value = option.role;
+                out.value = option.role as Role;
             },
         },
     },
@@ -201,7 +217,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
                 ArgumentTypeConfig[ArgumentType.String].parsers.chat(context, out);
             },
             slash: (option, out) => {
-                out.value = option.value;
+                out.value = option.value as string;
             },
         },
     },
@@ -209,7 +225,7 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
         parsers: {
             chat: (context, out) => {
                 if (context.config.choices) {
-                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value));
+                    out.value = context.config.choices.find(choice => DiscordUtil.accentStringEqual(choice.name, context.value)).value as number;
                     if (out.value === undefined) {
                         out.error = `Invalid value \`${context.value}\` for argument \`${context.name}\`.`;
                     }
@@ -231,24 +247,73 @@ const ArgumentTypeConfig: { [type in ArgumentType]: ArgumentTypeConfigInterface 
     },
 } as const;
 
+// A transformer takes a parsed argument and converts it to a different value and possibly type
+export type SingleArgumentTransformer<T = DefaultT, P = unknown> = (value: T, result: ArgumentParserResult<P>) => void;
+
+// Types where transformers are completely optional
+interface SingleArgumentTransformersOptionalConfig<T = DefaultT, P = T> {
+    any?: SingleArgumentTransformer<T, P>;
+    chat?: SingleArgumentTransformer<T, P>;
+    slash?: SingleArgumentTransformer<T, P>;
+}
+
+// Types where transformers, at least one for each type, is required
+type SingleArgumentTransformersRequiredConfig<T = DefaultT, P = unknown> = 
+    {
+        any: SingleArgumentTransformer<T, P>;
+        chat?: SingleArgumentTransformer<T, P>;
+        slash?: SingleArgumentTransformer<T, P>; 
+    } 
+    | {
+        chat: SingleArgumentTransformer<T, P>;
+        slash: SingleArgumentTransformer<T, P>;
+    };
+
+// Parts of the argument config that depend on types
+type SingleTypedSingleArgumentConfig<A extends ArgumentType = ArgumentType, P = unknown> =
+    {
+        type: A;
+        default?: ArgumentTypeResultMap<A>;
+        choices?: ArgumentTypeResultMap<A> extends string | number ? ApplicationCommandOptionChoice[] : never;
+    }
+    // If we can assign the type we parse to P, then transformers are optional
+    // If not, then the user must define at least one transformer to make the conversion possible
+    & (ArgumentTypeResultMap<A> extends P 
+    ? {
+        transformers?: SingleArgumentTransformersOptionalConfig<ArgumentTypeResultMap<A>, P>;
+    }
+    : {
+        transformers: SingleArgumentTransformersRequiredConfig<ArgumentTypeResultMap<A>, P>;
+    });
+
+// Explicitly list out every option for strong typing
+type TypedSingleArgumentConfig<P = unknown> = 
+    SingleTypedSingleArgumentConfig<ArgumentType.String, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.Integer, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.Boolean, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.User, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.Channel, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.Role, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.RestOfContent, P>
+    | SingleTypedSingleArgumentConfig<ArgumentType.FloatingPoint, P>;
+
+    // Parts of the argument config that do not depend on types
+interface UntypedSingleArgumentConfig {
+    description: string;
+    required: boolean;
+}
+
 // Configuration for a single argument
 // This is slightly different than what Discord offers since we handle sub-commands differently
-export interface SingleArgumentConfig {
-    description: string;
-    type: ArgumentType;
-    required: boolean;
-    choices?: ApplicationCommandOptionChoice[];
-    transformers?: {
-        any?: (value: any, result: ArgumentParserResult) => void;
-        chat?: (value: any, result: ArgumentParserResult) => void;
-        slash?: (value: any, result: ArgumentParserResult) => void;
-    };
-}
+export type SingleArgumentConfig<P = unknown> = UntypedSingleArgumentConfig & TypedSingleArgumentConfig<P>;
+
+// Object for configuring arguments accepted and used by the command
+export type ArgumentsConfig<Args> = { readonly [arg in keyof Args]-?: SingleArgumentConfig<Args[arg]> };
 
 // Disable these types, as they are unneeded for this bot or handled differently
 export type RestrictedCommandOptionType = Exclude<
-    ApplicationCommandOptionType,
-    ApplicationCommandOptionType.SUB_COMMAND | ApplicationCommandOptionType.SUB_COMMAND_GROUP | ApplicationCommandOptionType.MENTIONABLE
+    ApplicationCommandOptionTypes,
+    ApplicationCommandOptionTypes.SUB_COMMAND | ApplicationCommandOptionTypes.SUB_COMMAND_GROUP | ApplicationCommandOptionTypes.MENTIONABLE
 >;
 
 // Parameters given to all commands, whether running as a chat command or slash command
@@ -538,9 +603,6 @@ export abstract class SimpleCommand<Shared = never> extends BaseCommand<Shared> 
     }
 }
 
-// Object for configuring arguments accepted and used by the command
-export type ArgumentsConfig<Args> = { readonly [arg in keyof Args]-?: SingleArgumentConfig };
-
 interface ParameterizedCommand<Args extends object, Shared = never> {
     // Suppresses arguments parsing errors, allowing the command to run anyway
     // If true, input validation should be done in the command handler
@@ -557,9 +619,9 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
 
     private static convertArgumentType(type: ArgumentType): ApplicationCommandOptionType {
         switch (type) {
-            case ArgumentType.RestOfContent: return ApplicationCommandOptionType.STRING;
-            case ArgumentType.FloatingPoint: return ApplicationCommandOptionType.STRING;
-            default: return type as number as ApplicationCommandOptionType;
+            case ArgumentType.RestOfContent: return "STRING";
+            case ArgumentType.FloatingPoint: return "STRING";
+            default: return DiscordUtil.ActualApplicationCommandOptionTypeEnum[type] as ApplicationCommandOptionType;
         }
     }
 
@@ -611,33 +673,39 @@ abstract class ParameterizedCommand<Args extends object, Shared = never> extends
         // No parsing needed for slash commands
         // Discord has already done it for us!
         // Just pick the right part of the option object depending on the type
-        const parsedOptions: Args = params.options.reduce((obj, option) => {
-            const argConfig = this.args[option.name as keyof ArgumentsConfig<Args>];
-            const typeConfig = ArgumentTypeConfig[argConfig.type];
+        const parsedOptions: Partial<Args> = { };
+        for (const arg in this.args) {
+            const option = params.options.get(arg);
+            const argConfig: SingleArgumentConfig = this.args[arg as keyof ArgumentsConfig<Args>];
+            const typeConfig: ArgumentTypeMetadata = ArgumentTypeConfig[argConfig.type];
 
-            const result: ArgumentParserResult = { };
-            typeConfig.parsers.slash(option, result);
-            if (result.error && !this.suppressArgumentsError) {
-                throw new Error(result.error);
+            if (option === undefined) {
+                parsedOptions[arg as string] = argConfig.default;
             }
-
-            if (argConfig.transformers) {
-                if (argConfig.transformers.any) {
-                    argConfig.transformers.any(result.value, result);
+            else {
+                const result: ArgumentParserResult = { };
+                typeConfig.parsers.slash(option, result);
+                if (result.error && !this.suppressArgumentsError) {
+                    throw new Error(result.error);
                 }
-                else if (argConfig.transformers.slash) {
-                    argConfig.transformers.slash(result.value, result);
+    
+                if (argConfig.transformers) {
+                    if (argConfig.transformers.any) {
+                        (argConfig.transformers.any as SingleArgumentTransformer)(result.value, result);
+                    }
+                    else if (argConfig.transformers.slash) {
+                        (argConfig.transformers.slash as SingleArgumentTransformer)(result.value, result);
+                    }
                 }
+    
+                if (result.error && !this.suppressArgumentsError) {
+                    throw new Error(result.error);
+                }
+    
+                parsedOptions[option.name] = result.value;
             }
-
-            if (result.error && !this.suppressArgumentsError) {
-                throw new Error(result.error);
-            }
-
-            obj[option.name] = result.value;
-            return obj;
-        }, { } as Args);
-        return this.run(params, parsedOptions);
+        }
+        return this.run(params, parsedOptions as Args);
     }
 }
 
@@ -679,7 +747,10 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
             context.name = entry[0];
             context.config = entry[1] as SingleArgumentConfig;
             context.value = params.args[context.i];
-            
+
+            const argConfig: SingleArgumentConfig = this.args[context.name as keyof ArgumentsConfig<Args>];
+            const typeConfig: ArgumentTypeMetadata = ArgumentTypeConfig[argConfig.type];
+
             if (context.i >= params.args.length) {
                 if (context.config.required) {
                     if (!this.suppressArgumentsError) {
@@ -687,13 +758,10 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
                     }
                 }
                 else {
-                    parsed[context.name] = undefined;
+                    parsed[context.name] = argConfig.default;
                     continue;
                 }
             }
-
-            const argConfig = this.args[context.name as keyof ArgumentsConfig<Args>];
-            const typeConfig = ArgumentTypeConfig[argConfig.type];
             
             const result: ArgumentParserResult = { };
             if (typeConfig.asyncChatParser) {
@@ -708,10 +776,10 @@ export abstract class ComplexCommand<Args extends object, Shared = never> extend
 
             if (argConfig.transformers) {
                 if (argConfig.transformers.any) {
-                    argConfig.transformers.any(result.value, result);
+                    (argConfig.transformers.any as SingleArgumentTransformer)(result.value, result);
                 }
                 else if (argConfig.transformers.chat) {
-                    argConfig.transformers.chat(result.value, result);
+                    (argConfig.transformers.chat as SingleArgumentTransformer)(result.value, result);
                 }
             }
 
@@ -800,7 +868,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
             data.options.push({
                 name: cmd.name,
                 description: cmd.description,
-                type: ApplicationCommandOptionType.SUB_COMMAND,
+                type: "SUB_COMMAND",
                 options: subData.options as ApplicationCommandOption[],
             });
         }
@@ -839,10 +907,7 @@ export abstract class NestedCommand<Shared = void> extends BaseCommand<Shared> {
 
     // Delegates a slash command to a sub-command
     public async runSlash(params: SlashCommandParameters) {
-        const subCommandOption = params.options.find(option => 
-            DiscordUtil.ApplicationCommandOptionTypeConverter[option.type]
-            === ApplicationCommandOptionType.SUB_COMMAND
-        );
+        const subCommandOption = params.options.find(option => option.type === 'SUB_COMMAND');
         if (!subCommandOption) {
             throw new Error(`Missing sub-command for command \`${this.name}\`.`);
         }
