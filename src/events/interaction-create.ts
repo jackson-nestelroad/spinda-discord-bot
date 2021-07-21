@@ -68,7 +68,7 @@ export class InteractionCreateEvent extends BaseEvent<typeof event> {
                 try {
                     const content = (customCommand.flags & CustomCommandFlag.NoContent)
                     ? ''
-                    : interaction.options.get(customCommand.contentName).value as string;
+                    : interaction.options.get(customCommand.contentName)?.value as string;
                     
                     await this.bot.customCommandService.run(customCommand.message, {
                         params,
