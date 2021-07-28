@@ -2,7 +2,7 @@ import { CommandCategory, CommandPermission, CommandParameters, StandardCooldown
 import { SpindaCommandNames } from './command-names';
 import { EmbedTemplates } from '../../../util/embed';
 import { SpindaGeneratorService } from './generator';
-import { MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
+import { MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
 
 interface ReleaseArgs {
     position: number;
@@ -55,7 +55,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         let response = await src.reply({
             embeds: [confirmationEmbed],
             files: [attachment],
-            components: [{ components: [yesButton, noButton] }],
+            components: [new MessageActionRow().addComponents(yesButton, noButton)],
         });
 
         if (!response.isMessage()) {
@@ -65,7 +65,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         const disableButtons = async () => {
             yesButton.setDisabled(true);
             noButton.setDisabled(true);
-            return await response.edit({ components: [{ components: [yesButton, noButton] }] });
+            return await response.edit({ components: [new MessageActionRow().addComponents(yesButton, noButton)] });
         };
 
         let interaction: MessageComponentInteraction;

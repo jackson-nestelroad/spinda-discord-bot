@@ -1,4 +1,4 @@
-import { MessageButton, MessageComponentInteraction } from 'discord.js';
+import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import { EmbedTemplates } from '../../../util/embed';
 import { ArgumentsConfig, ArgumentType, CommandCategory, CommandParameters, CommandPermission, ComplexCommand } from '../base';
 
@@ -41,7 +41,7 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
 
             let response = await src.reply({
                 content: 'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
-                components: [{ components: [button] }],
+                components: [new MessageActionRow().addComponents(button)],
             });
 
             if (!response.isMessage()) {
@@ -50,7 +50,7 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
 
             const disableButton = async () => {
                 button.setDisabled(true);
-                return await response.edit({ components: [{ components: [button] }] });
+                return await response.edit({ components: [new MessageActionRow().addComponents(button)] });
             };
 
             let interaction: MessageComponentInteraction;
