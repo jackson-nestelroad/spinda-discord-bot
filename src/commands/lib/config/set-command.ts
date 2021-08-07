@@ -57,6 +57,9 @@ export class SetCommandCommand extends ComplexCommand<SpindaDiscordBot, SetComma
         }
 
         const command = args.command.toLowerCase();
+        if (!/^[\w-]{1,32}$/.test(command)) {
+            throw new Error(`Invalid command name: \`${command}\`.`);
+        }
         if (bot.commands.has(command)) {
             throw new Error(`Cannot overwrite \`${command}\` command.`);
         }
