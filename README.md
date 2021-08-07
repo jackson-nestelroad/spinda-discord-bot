@@ -2,7 +2,7 @@
 **Spinda** is a Discord bot that can be used in any server. Primarily, this bot is able to generate a random pattern of the Pokémon Spinda 
 from 4,294,967,295 possibilities, matching the behavior of the mainline Pokémon games. However, it comes packaged with several more useful features.
 
-It is implemented using **TypeScript** and the **[Discord.JS](https://discord.js.org/)** library.
+It is implemented using **TypeScript**, the **[discord.js](https://discord.js.org/)** library, and the **[Panda](https://github.com/jackson-nestelroad/panda-discord)** command framework.
 
 ## Features
 - Fun Commands
