@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "format": "prettier --write \"src/**/*.ts\"",
-    "build": "npm run format && tsc --project tsconfig.json",
-    "postinstall": "npm run build",
+    "build": "tsc --project tsconfig.json",
     "gulp": "gulp"
   },
   "author": "",
