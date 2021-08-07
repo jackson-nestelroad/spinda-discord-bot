@@ -18,8 +18,8 @@ interface ToggleMemberOnBlocklistArgs {
 class AddMemberOnBlocklistSubCommand extends ComplexCommand<SpindaDiscordBot, ToggleMemberOnBlocklistArgs> {
     public name = 'add';
     public description = "Adds a member to the guild's blocklist, preventing them from using commands.";
-    public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public category = CommandCategory.Inherit;
+    public permission = CommandPermission.Inherit;
 
     public args: ArgumentsConfig<ToggleMemberOnBlocklistArgs> = {
         member: {
@@ -46,8 +46,8 @@ class AddMemberOnBlocklistSubCommand extends ComplexCommand<SpindaDiscordBot, To
 class RemoveMemberFromBlocklistSubCommand extends ComplexCommand<SpindaDiscordBot, ToggleMemberOnBlocklistArgs> {
     public name = 'remove';
     public description = "Removes a member from the guild's blocklist.";
-    public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public category = CommandCategory.Inherit;
+    public permission = CommandPermission.Inherit;
 
     public args: ArgumentsConfig<ToggleMemberOnBlocklistArgs> = {
         member: {
@@ -76,8 +76,8 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<SpindaDiscordBot, ViewB
 
     public name = 'view';
     public description = `Views the guild's blocklist in pages of ${this.pageSize} members.`;
-    public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public category = CommandCategory.Inherit;
+    public permission = CommandPermission.Inherit;
 
     public args: ArgumentsConfig<ViewBlocklistPageArgs> = {
         page: {

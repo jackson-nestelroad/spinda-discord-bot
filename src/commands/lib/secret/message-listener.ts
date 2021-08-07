@@ -35,7 +35,7 @@ class AddMessageListenerSubCommand extends ComplexCommand<
 > {
     public name = 'add';
     public description = 'Adds a new message listener to the bot.';
-    public category = CommandCategory.Secret;
+    public category = CommandCategory.Inherit;
     public permission = CommandPermission.Owner;
 
     public args: ArgumentsConfig<AddMessageListenerArgs> = {
@@ -93,7 +93,7 @@ class RemoveMessageListenerSubCommand extends ComplexCommand<
 > {
     public name = 'remove';
     public description = 'Removes one of the message listeners added to the bot.';
-    public category = CommandCategory.Secret;
+    public category = CommandCategory.Inherit;
     public permission = CommandPermission.Administrator;
 
     public args: ArgumentsConfig<RemoveMessageListenerArgs> = {

@@ -14,8 +14,8 @@ type GuildMembersSnapshot = Dictionary<GuildMemberSnapshot>;
 class SaveSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'save';
     public description = 'Saves a new snapshot of the roles and nicknames of all guild members.';
-    public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public category = CommandCategory.Inherit;
+    public permission = CommandPermission.Inherit;
     public cooldown = StandardCooldowns.High;
 
     public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>) {
@@ -37,8 +37,8 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'restore';
     public description = 'Restores all guild members to the state described by an attached snapshot file.';
     public moreDescription = 'Attach the snapshot to the command message.';
-    public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public category = CommandCategory.Inherit;
+    public permission = CommandPermission.Inherit;
     public cooldown = { minutes: 5 };
 
     public async run({ bot, src, guildId }: CommandParameters) {
