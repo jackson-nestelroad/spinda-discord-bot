@@ -1,12 +1,20 @@
 import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
-import { ArgumentsConfig, ArgumentType, CommandCategory, CommandParameters, CommandPermission, ComplexCommand } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    SplitArgumentArray,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RunUniversalArgs {
     code: string;
 }
 
-export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
+export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUniversalArgs> {
     public name = 'run-universal';
     public description = 'Runs custom command code for every member in the guild.';
     public moreDescription = [
@@ -27,8 +35,8 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: RunUniversalArgs) {
-        const members = await bot.memberListService.getMemberListForGuild(guild.id);
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: RunUniversalArgs) {
+        const members = await bot.memberListService.getMemberListForGuild(guildId);
         const otherAdmins = members.filter(member => member.permissions.has('ADMINISTRATOR') && !member.user.bot);
         otherAdmins.delete(src.author.id);
 
@@ -40,7 +48,8 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
             button.setStyle('DANGER');
 
             let response = await src.reply({
-                content: 'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
+                content:
+                    'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
                 components: [new MessageActionRow().addComponents(button)],
             });
 
@@ -59,7 +68,7 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
                     filter: interaction => {
                         return interaction.customId === 'confirm' && otherAdmins.has(interaction.member.user.id);
                     },
-                    time: 60 * 1000
+                    time: 60 * 1000,
                 });
             } catch (error) {
                 response = await disableButton();
@@ -74,9 +83,9 @@ export class RunUniversalCommand extends ComplexCommand<RunUniversalArgs> {
         }
 
         await bot.customCommandService.runUniversal(args.code, {
-            params: { bot, src, guild, },
+            params: { bot, src, guildId },
             content: 'content',
-            args: [],
+            args: SplitArgumentArray.Empty(),
         });
     }
 }

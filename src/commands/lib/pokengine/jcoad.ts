@@ -1,11 +1,19 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import axios from 'axios';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface JcoadArgs {
     query?: string;
 }
 
-export class JcoadCommand extends ComplexCommand<JcoadArgs> {
+export class JcoadCommand extends ComplexCommand<SpindaDiscordBot, JcoadArgs> {
     public readonly docUrl: string = 'https://pokengine-jcoad.readthedocs.io';
 
     public name = 'jcoad';
@@ -35,14 +43,13 @@ export class JcoadCommand extends ComplexCommand<JcoadArgs> {
         'jcoad:pokeoption': ':regional_indicator_o: ',
     } as const;
 
-    public async run({ bot, src }: CommandParameters, args: JcoadArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: JcoadArgs) {
         if (!args.query) {
             await src.send(this.docUrl);
-        }
-        else {
-            await src.defer();
+        } else {
+            await src.deferReply();
 
-            const query = args.query.replace(this.accentRegex, '$1\u00E9$2')
+            const query = args.query.replace(this.accentRegex, '$1\u00E9$2');
             const url = this.docUrl + this.apiPath + encodeURIComponent(query);
             const response = await axios.get(url, { responseType: 'json' });
             if (response.status !== 200) {
@@ -61,8 +68,7 @@ export class JcoadCommand extends ComplexCommand<JcoadArgs> {
 
             if (results.length === 0) {
                 embed.setDescription('No results found!');
-            }
-            else {
+            } else {
                 const codeResults: string[] = [];
                 const nonCodeResults: string[] = [];
                 for (const result of results) {
@@ -81,7 +87,7 @@ export class JcoadCommand extends ComplexCommand<JcoadArgs> {
                         // Found a code result
                         if (block.role && this.roles[block.role]) {
                             const text = this.roles[block.role] + block.name.substr(block.name.indexOf('-') + 1);
-                            codeResults.push(`[${text}](${blockUrl})`)
+                            codeResults.push(`[${text}](${blockUrl})`);
                         }
                         // Other result, only add it if we will use it
                         else if (nonCodeResults.length < this.resultsLength - codeResults.length && block.title) {

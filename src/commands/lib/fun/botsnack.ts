@@ -1,13 +1,15 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
+import { CommandParameters, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
-export class BotsnackCommand extends SimpleCommand {
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+export class BotsnackCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'botsnack';
-    public description = 'Rewards the bot for good behavior.'
+    public description = 'Rewards the bot for good behavior.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
-    public async run({ src }: CommandParameters) {
+    public async run({ src }: CommandParameters<SpindaDiscordBot>) {
         await src.send('botsnack, mmmmmm...');
     }
 }

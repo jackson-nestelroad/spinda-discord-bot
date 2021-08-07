@@ -3,7 +3,7 @@ import { RGBAColor } from './rgb';
 
 export { HSVAColor } from './hsv';
 export { RGBAInterface, RGBAColor } from './rgb';
-export*  from './blend';
+export * from './blend';
 
 export namespace Color {
     export function Hex(hex: number) {

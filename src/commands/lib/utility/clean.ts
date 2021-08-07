@@ -1,11 +1,19 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { DiscordUtil } from '../../../util/discord';
+import { DiscordAPIError } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface CleanArgs {
     count?: number;
 }
 
-export class CleanCommand extends ComplexCommand<CleanArgs> {
+export class CleanCommand extends ComplexCommand<SpindaDiscordBot, CleanArgs> {
     public name = 'clean';
     public description = 'Cleans up the bot responses for the current channel.';
     public category = CommandCategory.Utility;
@@ -13,7 +21,6 @@ export class CleanCommand extends ComplexCommand<CleanArgs> {
     public cooldown = StandardCooldowns.Low;
 
     public readonly defaultNumberToDelete: number = 100;
-    public readonly ageLimit: number = 14 * 24 * 60 * 60 * 1000;
 
     public args: ArgumentsConfig<CleanArgs> = {
         count: {
@@ -23,7 +30,7 @@ export class CleanCommand extends ComplexCommand<CleanArgs> {
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: CleanArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: CleanArgs) {
         const numberToDelete = args.count ?? this.defaultNumberToDelete;
 
         if (numberToDelete <= 0) {
@@ -31,16 +38,12 @@ export class CleanCommand extends ComplexCommand<CleanArgs> {
         }
 
         const channelHistory = await src.channel.messages.fetch({ limit: 100 });
-        const now = new Date();
-        const toDelete = channelHistory
-            .filter(msg => msg.author.id === bot.client.user.id && now.valueOf() - msg.createdAt.valueOf() < this.ageLimit)
-            .array().slice(0, numberToDelete);
-        
+        const toDelete = channelHistory.filter(msg => msg.author.id === bot.client.user.id).first(numberToDelete);
 
         try {
-            await src.channel.bulkDelete(toDelete);
+            await src.channel.bulkDelete(toDelete, true);
         } catch (error) {
-            if (error.message === DiscordUtil.APIErrorMessages.Permissions) {
+            if (error.message === 'Missing Permissions') {
                 error.message = 'Missing "Manage Messages" Permission';
             }
             throw error;

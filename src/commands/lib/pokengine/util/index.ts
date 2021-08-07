@@ -114,8 +114,7 @@ export namespace PokengineUtil {
     export function embedDexBlock(embed: MessageEmbed, block: WebScrapedDexBlock) {
         if (block.num || block.num === 0) {
             embed.setTitle(`#${formatNum(block.num)} ${block.name}`);
-        }
-        else {
+        } else {
             embed.setTitle(block.name);
         }
         embed.setURL(decodeURI(baseUrl + block.pagePath));

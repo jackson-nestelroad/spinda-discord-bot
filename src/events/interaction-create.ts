@@ -1,16 +1,12 @@
 import { Interaction } from 'discord.js';
-import { DiscordBot } from '../bot';
-import { CommandParameters, SlashCommandParameters } from '../commands/lib/base';
+import { BaseEvent, CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { CustomCommandFlag } from '../data/model/custom-command';
-import { CommandSource } from '../util/command-source';
-import { BaseEvent } from './base';
-import { Validation } from './util/validate';
 
-const event = 'interactionCreate';
-
-export class InteractionCreateEvent extends BaseEvent<typeof event> {
-    constructor(bot: DiscordBot) {
-        super(bot, event);
+export class InteractionCreateEvent extends BaseEvent<'interactionCreate', SpindaDiscordBot> {
+    constructor(bot: SpindaDiscordBot) {
+        super(bot, 'interactionCreate');
     }
 
     public async run(interaction: Interaction) {
@@ -39,16 +35,16 @@ export class InteractionCreateEvent extends BaseEvent<typeof event> {
 
         // Global command
         if (this.bot.commands.has(interaction.commandName)) {
-            const params: SlashCommandParameters = {
+            const params: SlashCommandParameters<SpindaDiscordBot> = {
                 bot: this.bot,
                 src: new CommandSource(interaction),
                 options: interaction.options,
-                guild,
+                guildId: guild.id,
             };
 
             try {
                 const command = this.bot.commands.get(interaction.commandName);
-                if (Validation.validate(params, command, params.src.member)) {
+                if (this.bot.validate(params, command)) {
                     await command.executeSlash(params);
                 }
             } catch (error) {
@@ -60,16 +56,17 @@ export class InteractionCreateEvent extends BaseEvent<typeof event> {
             const customCommands = await this.bot.dataService.getCustomCommands(interaction.guild.id);
             const customCommand = customCommands[interaction.commandName];
             if (customCommand) {
-                const params: CommandParameters = {
+                const params: CommandParameters<SpindaDiscordBot> = {
                     bot: this.bot,
                     src: new CommandSource(interaction),
-                    guild,
+                    guildId: guild.id,
                 };
                 try {
-                    const content = (customCommand.flags & CustomCommandFlag.NoContent)
-                    ? ''
-                    : interaction.options.get(customCommand.contentName)?.value as string;
-                    
+                    const content =
+                        customCommand.flags & CustomCommandFlag.NoContent
+                            ? ''
+                            : (interaction.options.get(customCommand.contentName)?.value as string);
+
                     await this.bot.customCommandService.run(customCommand.message, {
                         params,
                         content,

@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "build": "tsc --project tsconfig.json",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "build": "npm run format && tsc --project tsconfig.json",
     "postinstall": "npm run build",
     "gulp": "gulp"
   },
@@ -15,21 +16,21 @@
     "axios": "^0.21.1",
     "canvas": "^2.6.1",
     "cheerio": "^1.0.0-rc.5",
-    "discord.js": "^13.0.0-dev.2d12db000f2a0a22a8919d7a63989a6e762ae335",
     "dotenv": "^8.2.0",
     "mathjs": "^9.2.0",
     "moment": "^2.29.1",
+    "panda-discord": "^1.0.0",
     "pg": "^8.5.1",
     "sequelize": "^6.5.0"
   },
   "devDependencies": {
-    "@discordjs/voice": "^0.5.0",
+    "@trivago/prettier-plugin-sort-imports": "^2.0.2",
     "@types/cheerio": "^0.22.24",
     "@types/mathjs": "^6.0.11",
     "@types/node": "^15.12.4",
-    "discord-api-types": "^0.18.1",
     "gulp": "^4.0.2",
     "gulp-typescript": "^5.0.1",
+    "prettier": "^2.3.2",
     "sequelize-cli": "^6.2.0",
     "typescript": "^4.2.4"
   }

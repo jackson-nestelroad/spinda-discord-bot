@@ -1,15 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { Environment } from '../../../data/environment';
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
 import { Role, TextChannel } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { Environment } from '../../../data/environment';
 
 interface AccessArgs {
     username?: string;
 }
 
-export class AccessCommand extends ComplexCommand<AccessArgs> {
+export class AccessCommand extends ComplexCommand<SpindaDiscordBot, AccessArgs> {
     private readonly serverName = 'Official Pok\u{00E9}ngine Discord Server';
     private readonly site = 'http://pokengine.org';
     private readonly playerPath = '/players/';
@@ -20,7 +28,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
     private accessChannel: TextChannel = null;
 
     public name = 'access';
-    public description = `Requests access to the ${this.serverName}.`
+    public description = `Requests access to the ${this.serverName}.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
@@ -34,15 +42,16 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
             type: ArgumentType.RestOfContent,
             required: true,
         },
-    }
+    };
 
-    public async run({ bot, src }: CommandParameters, args: AccessArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: AccessArgs) {
         if (src.guild.id !== Environment.Pokengine.getGuildId()) {
             const embed = bot.createEmbed();
-            embed.setDescription(`Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`);
+            embed.setDescription(
+                `Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`,
+            );
             await src.send({ embeds: [embed] });
-        }
-        else {
+        } else {
             // Make sure the role we are granting exists
             if (!this.accessRole) {
                 const id = Environment.Pokengine.getAccessRoleId();
@@ -69,20 +78,16 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                     const embed = bot.createEmbed(EmbedTemplates.Error);
                     embed.setDescription(`You already have access!`);
                     await src.reply({ embeds: [embed], ephemeral: true });
-                }
-                else {
+                } else {
                     return;
                 }
-            }
-            else {
+            } else {
                 if (src.channel.id !== this.accessChannel.id) {
                     await src.reply({ content: `Please go to ${this.accessChannel.toString()}.`, ephemeral: true });
-                }
-                else if (!args.username) {
+                } else if (!args.username) {
                     await src.reply({ content: 'Please provide your Pok\u00E9ngine username.', ephemeral: true });
-                }
-                else {
-                    await src.defer();
+                } else {
+                    await src.deferReply();
 
                     const username = args.username;
                     const url = this.site + this.playerPath + username;
@@ -92,18 +97,22 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                             url: url,
                             method: 'get',
                             headers: {
-                                'Cookie': Environment.Pokengine.getCookie(),
+                                Cookie: Environment.Pokengine.getCookie(),
                             },
                         });
                     } catch (error) {
-                        throw new Error(`Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`);
+                        throw new Error(
+                            `Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`,
+                        );
                     }
 
                     const profile = cheerio.load(response.data)('.content-inner.profile');
                     const siteName = profile.find('.scroll').eq(0).find('b').text();
                     const betaNode = profile.find('.flavor.other').eq(1).find('a').eq(0);
                     if (betaNode.text() === 'take it') {
-                        throw new Error(`${siteName} already has access. If you already have MMO access or are rejoining the server, please contact a staff member for access.`);
+                        throw new Error(
+                            `${siteName} already has access. If you already have MMO access or are rejoining the server, please contact a staff member for access.`,
+                        );
                     }
 
                     // Update guild member
@@ -123,7 +132,7 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
                             url: url + betaNode.attr('href'),
                             method: 'get',
                             headers: {
-                                'Cookie': Environment.Pokengine.getCookie(),
+                                Cookie: Environment.Pokengine.getCookie(),
                             },
                         });
                     } catch (error) {
@@ -132,15 +141,15 @@ export class AccessCommand extends ComplexCommand<AccessArgs> {
 
                     const embed = bot.createEmbed();
                     embed.setTitle(this.serverName);
-                    embed.setDescription(`You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`);
+                    embed.setDescription(
+                        `You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`,
+                    );
 
                     if (nicknameFailed) {
                         await src.reply(this.nicknameFailMsg);
-                    }
-                    else if (src.isMessage()) {
+                    } else if (src.isMessage()) {
                         await src.message.react(this.successReact);
-                    }
-                    else {
+                    } else {
                         await src.reply(this.successReact);
                     }
 

@@ -1,8 +1,14 @@
-import { DiscordBot } from '../../../../bot';
-import { CommandSource } from '../../../../util/command-source';
+import { CommandSource } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../../../../bot';
 
 export namespace FunUtil {
-    export async function addSuspense(bot: DiscordBot, src: CommandSource, content: string, iterations: number): Promise<CommandSource> {
+    export async function addSuspense(
+        bot: SpindaDiscordBot,
+        src: CommandSource,
+        content: string,
+        iterations: number,
+    ): Promise<CommandSource> {
         let ellipses = '...';
         for (let i = 0; i < iterations; ++i) {
             await bot.wait(1000);

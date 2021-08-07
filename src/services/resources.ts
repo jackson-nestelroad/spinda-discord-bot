@@ -1,5 +1,5 @@
+import { BaseService } from 'panda-discord';
 import { resolve } from 'path';
-import { BaseService } from './base';
 
 export class ResourceService extends BaseService {
     private readonly root: string = resolve(resolve(process.cwd(), 'resources'));

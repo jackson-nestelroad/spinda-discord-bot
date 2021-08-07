@@ -1,12 +1,21 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, LegacyCommand, ArgumentsConfig, ArgumentType, ChatCommandParameters } from '../base';
 import { Channel, TextChannel } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    ChatCommandParameters,
+    CommandParameters,
+    LegacyCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface SayArgs {
     channel: Channel;
     message: string;
 }
 
-export class SayCommand extends LegacyCommand<SayArgs> {
+export class SayCommand extends LegacyCommand<SpindaDiscordBot, SayArgs> {
     public name = 'say';
     public description = 'Repeats your message.';
     public category = CommandCategory.Secret;
@@ -30,14 +39,18 @@ export class SayCommand extends LegacyCommand<SayArgs> {
         return '(channel) message';
     }
 
-    public parseChatArgs({ bot, src, args, content }: ChatCommandParameters): SayArgs {
-        const parsed: Partial<SayArgs> = { };
+    public parseChatArgs({ bot, src, args, content }: ChatCommandParameters<SpindaDiscordBot>): SayArgs {
+        const parsed: Partial<SayArgs> = {};
 
         parsed.channel = src.channel;
         // First argument may be a channel mention
         if (src.isMessage()) {
             const msg = src.message;
-            if (msg.mentions.channels.size > 0 && args.length > 0 && args[0] === msg.mentions.channels.first().toString()) {
+            if (
+                msg.mentions.channels.size > 0 &&
+                args.length > 0 &&
+                args[0] === msg.mentions.channels.first().toString()
+            ) {
                 const channelMention = args.shift();
                 content = content.substr(channelMention.length).trimLeft();
                 parsed.channel = bot.getChannelFromString(channelMention, src.guild.id);
@@ -50,13 +63,13 @@ export class SayCommand extends LegacyCommand<SayArgs> {
         if (!content) {
             throw new Error(`Message content required.`);
         }
-        
+
         parsed.message = content;
 
         return parsed as SayArgs;
     }
 
-    public async run({ src }: CommandParameters, args: SayArgs) {
+    public async run({ src }: CommandParameters<SpindaDiscordBot>, args: SayArgs) {
         if (args.channel.type !== 'GUILD_TEXT') {
             throw new Error(`Cannot send a message to a ${args.channel.type} channel.`);
         }

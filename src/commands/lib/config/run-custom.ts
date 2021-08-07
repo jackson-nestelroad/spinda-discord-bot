@@ -1,15 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, ArgumentsConfig, ArgumentType, ComplexCommand } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    SplitArgumentArray,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RunCustomArgs {
     code: string;
 }
 
-export class RunCustomCommand extends ComplexCommand<RunCustomArgs> {
+export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustomArgs> {
     public name = 'run-custom';
     public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
-    
+
     public disableInCustomCommand = true;
 
     public args: ArgumentsConfig<RunCustomArgs> = {
@@ -20,11 +28,11 @@ export class RunCustomCommand extends ComplexCommand<RunCustomArgs> {
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: RunCustomArgs) {
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: RunCustomArgs) {
         await bot.customCommandService.run(args.code, {
-            params: { bot, src, guild, },
+            params: { bot, src, guildId },
             content: 'content',
-            args: [],
+            args: SplitArgumentArray.Empty(),
         });
     }
 }

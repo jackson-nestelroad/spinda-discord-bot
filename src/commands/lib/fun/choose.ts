@@ -1,10 +1,18 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface ChooseArgs {
     choices: string;
 }
 
-export class ChooseCommand extends ComplexCommand<ChooseArgs> {
+export class ChooseCommand extends ComplexCommand<SpindaDiscordBot, ChooseArgs> {
     public readonly separator: string = ';';
 
     public name = 'choose';
@@ -23,7 +31,7 @@ export class ChooseCommand extends ComplexCommand<ChooseArgs> {
 
     public readonly header = 'I choose... ';
 
-    public async run({ src }: CommandParameters, args: ChooseArgs) {
+    public async run({ src }: CommandParameters<SpindaDiscordBot>, args: ChooseArgs) {
         const choices = args.choices.trim().split(this.separator);
         let choice = 'nothing!';
         if (choices.length > 1 || choices[0]) {

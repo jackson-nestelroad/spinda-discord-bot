@@ -1,15 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { DiscordUtil } from '../../../util/discord';
-import { EmbedTemplates } from '../../../util/embed';
 import { MessageEmbed } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    DiscordUtil,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface PrefixArgs {
     prefix?: string;
 }
 
-export class PrefixCommand extends ComplexCommand<PrefixArgs> {
+export class PrefixCommand extends ComplexCommand<SpindaDiscordBot, PrefixArgs> {
     public name = 'prefix';
-    public description = 'Sets the guild\'s prefix.';
+    public description = "Sets the guild's prefix.";
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
@@ -22,20 +30,20 @@ export class PrefixCommand extends ComplexCommand<PrefixArgs> {
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: PrefixArgs) {        
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: PrefixArgs) {
         let newPrefix = args.prefix;
-        
+
         const codeLine = DiscordUtil.getCodeLine(newPrefix);
         if (codeLine.match) {
-            newPrefix = codeLine.content;
+            newPrefix = codeLine.result.content;
         }
 
+        const guild = bot.dataService.getCachedGuild(guildId);
         let embed: MessageEmbed;
         if (!newPrefix) {
             embed = bot.createEmbed(EmbedTemplates.Bare);
             embed.setDescription(`The prefix for this guild is \`${guild.prefix}\``);
-        }
-        else {
+        } else {
             embed = bot.createEmbed(EmbedTemplates.Success);
             guild.prefix = newPrefix;
             await bot.dataService.updateGuild(guild);

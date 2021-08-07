@@ -1,16 +1,15 @@
 import { PartialGuildMember, GuildMember, TextChannel } from 'discord.js';
-import { BaseLogEvent } from './base';
-import { DiscordBot } from '../bot';
+import { EmbedTemplates } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
-import { EmbedTemplates } from '../util/embed';
+import { BaseLogEvent } from './log';
 
-const event = 'guildMemberAdd';
-
-export class GuildMemberAddEvent extends BaseLogEvent<typeof event> {
-    constructor(bot: DiscordBot) {
-        super(bot, event, LogOptionBit.MemberJoined);
+export class GuildMemberAddEvent extends BaseLogEvent<'guildMemberAdd'> {
+    constructor(bot: SpindaDiscordBot) {
+        super(bot, 'guildMemberAdd', LogOptionBit.MemberJoined);
     }
-    
+
     public async run(member: GuildMember | PartialGuildMember) {
         const channel = await this.getDestination(member.guild.id);
         if (channel) {

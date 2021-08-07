@@ -1,14 +1,16 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, SimpleCommand } from '../base';
-import * as moment from 'moment';
+import moment from 'moment';
+import { CommandParameters, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
-export class UptimeCommand extends SimpleCommand {
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+export class UptimeCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'uptime';
     public description = 'Gives how long the bot has been continually running.';
     public category = CommandCategory.Utility;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
-    public async run({ bot, src }: CommandParameters) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>) {
         const now = new Date();
         const diff = now.valueOf() - bot.startedAt.valueOf();
         const duration = moment.duration(diff);

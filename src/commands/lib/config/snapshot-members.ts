@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { MessageAttachment, Snowflake } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
-import { CommandCategory, CommandPermission, CommandParameters, NestedCommand, SimpleCommand, StandardCooldowns } from '../base';
+import { Snowflake } from 'discord.js';
+import { CommandParameters, EmbedTemplates, NestedCommand, SimpleCommand, StandardCooldowns } from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface GuildMemberSnapshot {
     nickname: string;
@@ -10,16 +11,16 @@ interface GuildMemberSnapshot {
 
 type GuildMembersSnapshot = Dictionary<GuildMemberSnapshot>;
 
-class SaveSnapshotSubCommand extends SimpleCommand {
+class SaveSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'save';
     public description = 'Saves a new snapshot of the roles and nicknames of all guild members.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.High;
 
-    public async run({ bot, src, guild }: CommandParameters) {
-        const snapshot: GuildMembersSnapshot = { };
-        const members = await bot.memberListService.getMemberListForGuild(guild.id);
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>) {
+        const snapshot: GuildMembersSnapshot = {};
+        const members = await bot.memberListService.getMemberListForGuild(guildId);
         for (const [id, member] of members) {
             snapshot[id] = {
                 nickname: member.nickname,
@@ -32,7 +33,7 @@ class SaveSnapshotSubCommand extends SimpleCommand {
     }
 }
 
-class RestoreFromSnapshotSubCommand extends SimpleCommand {
+class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'restore';
     public description = 'Restores all guild members to the state described by an attached snapshot file.';
     public moreDescription = 'Attach the snapshot to the command message.';
@@ -40,7 +41,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
     public permission = CommandPermission.Administrator;
     public cooldown = { minutes: 5 };
 
-    public async run({ bot, src, guild }: CommandParameters) {
+    public async run({ bot, src, guildId }: CommandParameters) {
         if (!src.isMessage()) {
             throw new Error(`This command must be run as a chat command.`);
         }
@@ -53,7 +54,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
         const snapshotAttachment = msg.attachments.first();
 
         const response = await axios.get(snapshotAttachment.url, { transformResponse: null });
-        
+
         let guildSnapshot: any;
         try {
             guildSnapshot = JSON.parse(response.data);
@@ -70,7 +71,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
             rolesErrors: 0,
         };
 
-        const members = await bot.memberListService.getMemberListForGuild(guild.id);
+        const members = await bot.memberListService.getMemberListForGuild(guildId);
         for (const userId in guildSnapshot) {
             if (!members.has(userId as Snowflake)) {
                 ++stats.memberNotFound;
@@ -79,11 +80,9 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
 
             const member = members.get(userId as Snowflake);
             const snapshot = guildSnapshot[userId] as GuildMemberSnapshot;
-            
-            const isValidSnapshot = 
-                snapshot.nickname !== undefined
-                && Array.isArray(snapshot.roles);
-            
+
+            const isValidSnapshot = snapshot.nickname !== undefined && Array.isArray(snapshot.roles);
+
             if (!isValidSnapshot) {
                 ++stats.invalidFormat;
                 continue;
@@ -122,20 +121,23 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription('Restored guild member snapshot.');
-        embed.addField('Stats', [
-            `Members Not Found: ${stats.memberNotFound}`,
-            `Invalid Snapshots: ${stats.invalidFormat}`,
-            `Nicknames Modified: ${stats.nicknamesModified}`,
-            `Nickname Errors: ${stats.nicknameErrors}`,
-            `Roles Modified: ${stats.rolesModified}`,
-            `Role Errors: ${stats.rolesErrors}`,
-        ].join('\n'));
+        embed.addField(
+            'Stats',
+            [
+                `Members Not Found: ${stats.memberNotFound}`,
+                `Invalid Snapshots: ${stats.invalidFormat}`,
+                `Nicknames Modified: ${stats.nicknamesModified}`,
+                `Nickname Errors: ${stats.nicknameErrors}`,
+                `Roles Modified: ${stats.rolesModified}`,
+                `Role Errors: ${stats.rolesErrors}`,
+            ].join('\n'),
+        );
 
         await src.send({ embeds: [embed] });
     }
 }
 
-export class SnapshotMembersCommand extends NestedCommand {
+export class SnapshotMembersCommand extends NestedCommand<SpindaDiscordBot> {
     public name = 'snapshot-members';
     public description = 'Creates or restores a snaphot of the roles and nicknames of all guild members.';
     public category = CommandCategory.Config;
@@ -143,10 +145,7 @@ export class SnapshotMembersCommand extends NestedCommand {
 
     public disableSlash = true;
 
-    public initializeShared() { }
+    public initializeShared() {}
 
-    public subCommands = [
-        SaveSnapshotSubCommand,
-        RestoreFromSnapshotSubCommand,
-    ];
+    public subcommands = [SaveSnapshotSubCommand, RestoreFromSnapshotSubCommand];
 }

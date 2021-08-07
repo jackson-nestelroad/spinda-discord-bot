@@ -1,12 +1,20 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../../bot';
 
 interface WikipediaArgs {
     query: string;
 }
 
-export class WikipediaCommand extends ComplexCommand<WikipediaArgs> {
+export class WikipediaCommand extends ComplexCommand<SpindaDiscordBot, WikipediaArgs> {
     public name = 'wikipedia';
-    public description = 'Searches Wikipedia for a page matching the given query.'
+    public description = 'Searches Wikipedia for a page matching the given query.';
     public category = CommandCategory.External;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
@@ -19,7 +27,7 @@ export class WikipediaCommand extends ComplexCommand<WikipediaArgs> {
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: WikipediaArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: WikipediaArgs) {
         await bot.mediaWikiService.searchSite(src, 'https://wikipedia.org/w', args.query);
     }
 }

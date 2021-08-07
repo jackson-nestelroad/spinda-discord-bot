@@ -1,19 +1,19 @@
 import { User, GuildMember, Guild, Channel, Snowflake } from 'discord.js';
-import { CommandParameters } from '../commands/lib/base';
-import { Validation } from '../events/util/validate';
+import * as mathjs from 'mathjs';
+import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { DataService } from '../data/data-service';
-import *  as mathjs from 'mathjs';
 import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
-import { EmbedTemplates } from '../util/embed';
 
 export interface CustomCommandEngineOptions {
     silent?: boolean;
 }
 
 export interface CustomCommandEngineExecutionContext {
-    params: CommandParameters;
+    params: CommandParameters<SpindaDiscordBot>;
     content?: string;
-    args?: string[];
+    args?: SplitArgumentArray;
     member?: GuildMember;
     options?: CustomCommandEngineOptions;
 }
@@ -120,18 +120,14 @@ export class CustomCommandEngine {
             command: 0,
             api: 1,
         },
-    }
+    };
 
     private static readonly comparisonOperators = /\s*(==|!?~?=|[<>]=?)\s*/g;
     private static readonly regexRegex = /^\/([^\/\\]*(?:\\.[^\/\\]*)*)\/([gimsuy]*)(?: ((?:.|\n)*))?$/;
 
     constructor(private readonly context: CustomCommandEngineExecutionContext) {
-        this.context.content = this.context.content || '';
-        this.context.args = this.context.args
-            ? this.context.args
-            : this.context.content
-                ? this.context.params.bot.splitIntoArgs(this.context.content)
-                : [];
+        this.context.content = this.context.content ?? '';
+        this.context.args = this.context.args ?? this.context.params.bot.splitIntoArgs(this.context.content);
         this.context.member = this.context.member ?? this.context.params.src.member;
         if (!this.context.options) {
             this.context.options = {
@@ -173,18 +169,10 @@ export class CustomCommandEngine {
     };
 
     // Functions that use lazy evaluation
-    private static readonly lazyEvalFunctions: Set<string> = new Set([
-        'quote',
-        'function',
-    ]);
+    private static readonly lazyEvalFunctions: Set<string> = new Set(['quote', 'function']);
 
     // Functions that use lazy evaluation to select one option from many
-    private static readonly selectorFunctions: Set<string> = new Set([
-        'choose',
-        'if',
-        'repeat',
-        'call',
-    ]);
+    private static readonly selectorFunctions: Set<string> = new Set(['choose', 'if', 'repeat', 'call']);
 
     public static readonly AllOptions: ReadonlyDictionary<ReadonlyArray<string>> = {
         'Runtime Arguments': [
@@ -197,18 +185,13 @@ export class CustomCommandEngine {
             `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
             `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
         ],
-        'Metadata': [
-            ...Object.keys(CustomCommandMetadata).map(key => `{%${CustomCommandMetadata[key]} value}`),
-        ],
+        Metadata: [...Object.keys(CustomCommandMetadata).map(key => `{%${CustomCommandMetadata[key]} value}`)],
         'User Variables': [
             '{user}',
             ...Object.keys(CustomCommandEngine.userParams).map(key => `{user.${key}}`),
             ...Object.keys(CustomCommandEngine.memberParams).map(key => `{user.${key}}`),
         ],
-        'Server Variables': [
-            '{server}',
-            ...Object.keys(CustomCommandEngine.guildParams).map(key => `{server.${key}}`),
-        ],
+        'Server Variables': ['{server}', ...Object.keys(CustomCommandEngine.guildParams).map(key => `{server.${key}}`)],
         'Channel Variables': [
             '{channel}',
             ...Object.keys(CustomCommandEngine.channelParams).map(key => `{channel.${key}}`),
@@ -223,7 +206,7 @@ export class CustomCommandEngine {
             `{date}`,
             `{prefix}`,
         ],
-        'Functions': [
+        Functions: [
             `{>command arg1 arg2 ...}`,
             `{message msg}`,
             `{embed msg}`,
@@ -248,17 +231,13 @@ export class CustomCommandEngine {
             `{silent}`,
             `{delete}`,
         ],
-        'Selectors': [
+        Selectors: [
             `{choose item1;item2;...}`,
             `{if val1 [=|!=|<|>|<=|>=|~=|!~=] val2 [and|or] val3 [op] val4;then;else}`,
             `{if val1 [op] val2 [op] val3 ...;then;else}`,
             `{repeat n;code1;code2;...}`,
         ],
-        'Indexing': [
-            `$var[0]`,
-            `$var[0-5]`,
-            `{$var[2-4] = value}`,
-        ],
+        Indexing: [`$var[0]`, `$var[0-5]`, `{$var[2-4] = value}`],
         'Programming:': [
             `{quote text}`,
             `{$function-name := {function code}}`,
@@ -273,8 +252,8 @@ export class CustomCommandEngine {
     private stack: Array<string[]> = [];
     private depth: number = 0;
     private limits: LimitsDictionary;
-    private limitProgress: Partial<Writeable<LimitsDictionary>> = { };
-    
+    private limitProgress: Partial<Writeable<LimitsDictionary>> = {};
+
     // Parses all metadata out of the custom command code
     public static parseMetadata(code: string): ParseMetadataResult {
         const result: Partial<ParseMetadataResult> = { values: new Map() };
@@ -315,23 +294,26 @@ export class CustomCommandEngine {
     }
 
     public static addMetadata(data: CustomCommandData): string {
-        const code = [
-            CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description),
-        ];
+        const code = [CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description)];
 
         if (data.flags & CustomCommandFlag.DisableSlash) {
             code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoSlash));
-        }
-        else {
+        } else {
             if (data.flags & CustomCommandFlag.NoContent) {
                 code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
-            }
-            else {
+            } else {
                 if (data.flags & CustomCommandFlag.ContentRequired) {
                     code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentRequired));
                 }
-                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName));
-                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentDescription, data.contentDescription));
+                code.push(
+                    CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName),
+                );
+                code.push(
+                    CustomCommandEngine.makeMetadataFunction(
+                        CustomCommandMetadata.ContentDescription,
+                        data.contentDescription,
+                    ),
+                );
             }
         }
 
@@ -359,15 +341,12 @@ export class CustomCommandEngine {
     private handleVariableNative(name: string): string | undefined {
         if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
-            return !isNaN(argIndex) ? this.context.args[argIndex - 1] : undefined;
-        }
-        else if (name === CustomCommandEngine.specialVars.allArguments) {
+            return !isNaN(argIndex) ? this.context.args.get(argIndex - 1) : undefined;
+        } else if (name === CustomCommandEngine.specialVars.allArguments) {
             return this.context.content;
-        }
-        else if (name === CustomCommandEngine.specialVars.argCount) {
+        } else if (name === CustomCommandEngine.specialVars.argCount) {
             return this.context.args.length.toString();
-        }
-        else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
+        } else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
             const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
             if (isNaN(argNum) || argNum < 1 || argNum > this.arguments.length) {
                 return CustomCommandEngine.undefinedVar;
@@ -397,20 +376,20 @@ export class CustomCommandEngine {
                     result.begin = parseInt(indices[0]);
                     result.end = result.begin + 1;
                     invalid = isNaN(result.begin);
-                }
-                else if (indices.length === 2) {
+                } else if (indices.length === 2) {
                     result.begin = parseInt(indices[0]);
                     result.end = parseInt(indices[1]);
                     invalid = isNaN(result.begin) || isNaN(result.end);
-                }
-                else {
+                } else {
                     invalid = true;
                 }
 
                 if (invalid) {
-                    throw new Error(`Invalid subscript notation \`${SpecialChars.SubscriptBegin}${fullSubscriptRange}${SpecialChars.SubscriptEnd}\` attached to variable \`${SpecialChars.VarBegin}${name}\`.`);
+                    throw new Error(
+                        `Invalid subscript notation \`${SpecialChars.SubscriptBegin}${fullSubscriptRange}${SpecialChars.SubscriptEnd}\` attached to variable \`${SpecialChars.VarBegin}${name}\`.`,
+                    );
                 }
-                
+
                 result.isSubscripted = true;
             }
         }
@@ -424,11 +403,9 @@ export class CustomCommandEngine {
         const value = this.handleVariableNative(varData.name);
         if (value === undefined || value === null) {
             return CustomCommandEngine.undefinedVar;
-        }
-        else if (varData.isSubscripted) {
+        } else if (varData.isSubscripted) {
             return value.slice(varData.begin, varData.end) ?? CustomCommandEngine.undefinedVar;
-        }
-        else {
+        } else {
             return value;
         }
     }
@@ -440,12 +417,9 @@ export class CustomCommandEngine {
         if (varData.isSubscripted) {
             const oldValue = this.handleVariableNative(varData.name);
             if (oldValue) {
-                newValue = oldValue.slice(0, varData.begin) 
-                    + value
-                    + oldValue.slice(varData.end);
+                newValue = oldValue.slice(0, varData.begin) + value + oldValue.slice(varData.end);
             }
-        }
-        else {
+        } else {
             newValue = value;
         }
 
@@ -465,7 +439,7 @@ export class CustomCommandEngine {
                 const potentialValues = rightSide.split(/\s+or\s+/).map(val => val.trim());
                 if (potentialValues.length > 1) {
                     // Pick first non-undefined value
-                    let i = 0; 
+                    let i = 0;
                     for (i; i < potentialValues.length - 1; ++i) {
                         const potential = potentialValues[i];
                         if (potential.length !== 0 && potential !== CustomCommandEngine.undefinedVar) {
@@ -473,8 +447,7 @@ export class CustomCommandEngine {
                         }
                     }
                     this.setVariable(varName, potentialValues[i]);
-                }
-                else {
+                } else {
                     this.setVariable(varName, rightSide.trimLeft());
                 }
                 return '';
@@ -504,7 +477,7 @@ export class CustomCommandEngine {
             const cmd = name.substr(1);
             if (this.context.params.bot.commands.has(cmd)) {
                 const command = this.context.params.bot.commands.get(cmd);
-                if (!command.disableInCustomCommand && Validation.validate(this.context.params, command, this.context.member)) {
+                if (!command.disableInCustomCommand && this.context.params.bot.validate(this.context.params, command)) {
                     args = args.trim();
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
@@ -512,9 +485,9 @@ export class CustomCommandEngine {
                     await command.executeChat({
                         bot: this.context.params.bot,
                         src: this.context.params.src,
-                        guild: this.context.params.guild,
+                        guildId: this.context.params.guildId,
                         content: args,
-                        args: args ? this.context.params.bot.splitIntoArgs(args) : [],
+                        args: this.context.params.bot.splitIntoArgs(args),
                     });
                 }
             }
@@ -523,239 +496,313 @@ export class CustomCommandEngine {
         // Some other built-in function
         else {
             switch (name) {
-                case 'time': {
-                    return new Date().toLocaleTimeString();
-                } break;
-                case 'date': {
-                    return new Date().toLocaleDateString();
-                } break;
-                case 'prefix': {
-                    return this.context.params.guild.prefix;
-                } break;
-                case 'silent': {
-                    this.context.options.silent = true;
-                    return '';
-                } break;
-                case 'delete': {
-                    if (this.context.params.src.deletable) {
-                        await this.context.params.src.delete();
+                case 'time':
+                    {
+                        return new Date().toLocaleTimeString();
                     }
-                    return '';
-                } break;
+                    break;
+                case 'date':
+                    {
+                        return new Date().toLocaleDateString();
+                    }
+                    break;
+                case 'prefix':
+                    {
+                        return this.context.params.bot.dataService.getCachedGuild(this.context.params.guildId).prefix;
+                    }
+                    break;
+                case 'silent':
+                    {
+                        this.context.options.silent = true;
+                        return '';
+                    }
+                    break;
+                case 'delete':
+                    {
+                        if (this.context.params.src.deletable) {
+                            await this.context.params.src.delete();
+                        }
+                        return '';
+                    }
+                    break;
                 case 'quote':
-                case 'function': {
-                    return args;
-                } break;
-                case 'eval': {
-                    return this.parse(args);
-                } break;
-                case 'not': {
-                    if (!args || args === CustomCommandEngine.falseVar || args === CustomCommandEngine.undefinedVar) {
-                        return CustomCommandEngine.trueVar;
+                case 'function':
+                    {
+                        return args;
                     }
-                    return CustomCommandEngine.falseVar;
-                } break;
-                case 'undefined?': {
-                    return args === CustomCommandEngine.undefinedVar ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
-                } break;
-                case 'empty?': {
-                    return args.length === 0 ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
-                } break;
-                case 'wait': {
-                    const ms = parseInt(args);
-                    if (isNaN(ms) || ms < 0) {
-                        throw new Error('Invalid value for wait.');
+                    break;
+                case 'eval':
+                    {
+                        return this.parse(args);
                     }
-                    this.assertLimit(ExecutionLimit.Wait, ms);
-                    await this.context.params.bot.wait(ms);
-                    return '';
-                } break;
-                case 'message': {
-                    this.assertLimit(ExecutionLimit.Message, 1);
-                    await this.context.params.src.send(args);
-                    return '';
-                } break;
-                case 'embed': {
-                    this.assertLimit(ExecutionLimit.Message, 1);
-                    const embed = this.context.params.bot.createEmbed(EmbedTemplates.Bare);
-                    embed.setDescription(args);
-                    await this.context.params.src.send({ embeds: [embed] });
-                    return '';
-                } break;
-                case 'random':
-                case 'rand': {
-                    const nums = args.split(/\s+/);
-                    let low = 0;
-                    let high = 10;
-                    if (nums.length === 1) {
-                        high = parseInt(nums[0]);
-                    }
-                    else if (nums.length > 1) {
-                        low = parseInt(nums[0]);
-                        high = parseInt(nums[1]);
-                    }
-
-                    if (low > high) {
-                        let temp = low;
-                        low = high;
-                        high = temp;
-                    }
-
-                    // Error
-                    if (isNaN(high) || isNaN(low)) {
-                        return CustomCommandEngine.undefinedVar;
-                    }
-                    return Math.floor((Math.random() * (high - low + 1) + low)).toString();
-                } break;
-                case 'random-member': {
-                    const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(this.context.params.guild.id);
-                    return memberList.random().user.username;
-                } break;
-                case 'math': {
-                    return mathjs.evaluate(args);
-                } break;
-                case 'capitalize': {
-                    return args[0].toUpperCase() + args.substr(1);
-                } break;
-                case 'lowercase': {
-                    return args.toLowerCase();
-                } break;
-                case 'uppercase': {
-                    return args.toUpperCase();
-                } break;
-                case 'substring': {
-                    const whitespace = args.match(/\s+/);
-                    let startIndex = parseInt(args.substr(0, whitespace.index));
-                    const str = args.substr(whitespace.index + whitespace.length);
-                    if (isNaN(startIndex)) {
-                        throw new Error('Invalid value for substring.');
-                    }
-                    if (startIndex < 0) {
-                        startIndex += str.length;
-                    }
-                    return str.substr(startIndex);
-                } break;
-                case 'length': {
-                    return args.length.toString();
-                } break;
-                case 'regex': {
-                    const match = args.match(CustomCommandEngine.regexRegex);
-                    if (match) {
-                        const regex = new RegExp(match[1], match[2]);
-                        if (!match[3]) {
-                            return CustomCommandEngine.falseVar;
-                        }
-                        const results = regex.exec(match[3]);
-                        if (!results) {
-                            return CustomCommandEngine.falseVar;
-                        }
-                        else {
-                            // Set special regex variables
-                            this.vars.set(CustomCommandEngine.specialVars.regexMatchBegin, results.index.toString());
-                            this.vars.set(CustomCommandEngine.specialVars.regexMatchEnd, (results.index + results[0].length).toString());
-                            for (let i = 0; i < results.length; ++i) {
-                                if (results[i]) {
-                                    this.vars.set(CustomCommandEngine.specialVars.regexMatchGroup + i.toString(), results[i]);
-                                }
-                            }
+                    break;
+                case 'not':
+                    {
+                        if (
+                            !args ||
+                            args === CustomCommandEngine.falseVar ||
+                            args === CustomCommandEngine.undefinedVar
+                        ) {
                             return CustomCommandEngine.trueVar;
                         }
+                        return CustomCommandEngine.falseVar;
                     }
-                    return null;
-                } break;
-                case 'nickname': {
-                    this.assertLimit(ExecutionLimit.API, 1);
-                    this.context.member = await this.context.member.setNickname(args);
-                    return '';
-                } break;
-                case 'role': {
-                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
-                    if (!role) {
-                        throw new Error(`Role "${args}" could not be found.`);
+                    break;
+                case 'undefined?':
+                    {
+                        return args === CustomCommandEngine.undefinedVar
+                            ? CustomCommandEngine.trueVar
+                            : CustomCommandEngine.falseVar;
                     }
-
-                    this.assertLimit(ExecutionLimit.API, 1);
-                    const memberRoles = this.context.member.roles;
-                    if (memberRoles.cache.has(role.id)) {
-                        this.context.member = await memberRoles.remove(role);
+                    break;
+                case 'empty?':
+                    {
+                        return args.length === 0 ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
                     }
-                    else {
-                        this.context.member = await memberRoles.add(role)
-                    }
-                    return '';
-                } break;
-                case 'role?': {
-                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
-                    if (!role) {
-                        throw new Error(`Role "${args}" could not be found.`);
-                    }
-
-                    return this.context.member.roles.cache.has(role.id) ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
-                } break;
-                case '+role': {
-                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
-                    if (!role) {
-                        throw new Error(`Role "${args}" could not be found.`);
-                    }
-
-                    this.assertLimit(ExecutionLimit.API, 1);
-                    this.context.member = await this.context.member.roles.add(role);
-                    return '';
-                } break;
-                case '-role': {
-                    const role = this.context.params.bot.getRoleFromString(args, this.context.params.guild.id);
-                    if (!role) {
-                        throw new Error(`Role "${args}" could not be found.`);
-                    }
-
-                    this.assertLimit(ExecutionLimit.API, 1);
-                    this.context.member = await this.context.member.roles.remove(role);
-                    return '';
-                } break;
-                case 'user': {
-                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                        const attr = args.substr(1);
-                        if (CustomCommandEngine.userParams[attr]) {
-                            return CustomCommandEngine.userParams[attr](this.context.member.user);
+                    break;
+                case 'wait':
+                    {
+                        const ms = parseInt(args);
+                        if (isNaN(ms) || ms < 0) {
+                            throw new Error('Invalid value for wait.');
                         }
-                        else if (CustomCommandEngine.memberParams[attr]) {
-                            return CustomCommandEngine.memberParams[attr](this.context.member);
+                        this.assertLimit(ExecutionLimit.Wait, ms);
+                        await this.context.params.bot.wait(ms);
+                        return '';
+                    }
+                    break;
+                case 'message':
+                    {
+                        this.assertLimit(ExecutionLimit.Message, 1);
+                        await this.context.params.src.send(args);
+                        return '';
+                    }
+                    break;
+                case 'embed':
+                    {
+                        this.assertLimit(ExecutionLimit.Message, 1);
+                        const embed = this.context.params.bot.createEmbed(EmbedTemplates.Bare);
+                        embed.setDescription(args);
+                        await this.context.params.src.send({ embeds: [embed] });
+                        return '';
+                    }
+                    break;
+                case 'random':
+                case 'rand':
+                    {
+                        const nums = args.split(/\s+/);
+                        let low = 0;
+                        let high = 10;
+                        if (nums.length === 1) {
+                            high = parseInt(nums[0]);
+                        } else if (nums.length > 1) {
+                            low = parseInt(nums[0]);
+                            high = parseInt(nums[1]);
+                        }
+
+                        if (low > high) {
+                            let temp = low;
+                            low = high;
+                            high = temp;
+                        }
+
+                        // Error
+                        if (isNaN(high) || isNaN(low)) {
+                            return CustomCommandEngine.undefinedVar;
+                        }
+                        return Math.floor(Math.random() * (high - low + 1) + low).toString();
+                    }
+                    break;
+                case 'random-member':
+                    {
+                        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
+                            this.context.params.guildId,
+                        );
+                        return memberList.random().user.username;
+                    }
+                    break;
+                case 'math':
+                    {
+                        return mathjs.evaluate(args);
+                    }
+                    break;
+                case 'capitalize':
+                    {
+                        return args[0].toUpperCase() + args.substr(1);
+                    }
+                    break;
+                case 'lowercase':
+                    {
+                        return args.toLowerCase();
+                    }
+                    break;
+                case 'uppercase':
+                    {
+                        return args.toUpperCase();
+                    }
+                    break;
+                case 'substring':
+                    {
+                        const whitespace = args.match(/\s+/);
+                        let startIndex = parseInt(args.substr(0, whitespace.index));
+                        const str = args.substr(whitespace.index + whitespace.length);
+                        if (isNaN(startIndex)) {
+                            throw new Error('Invalid value for substring.');
+                        }
+                        if (startIndex < 0) {
+                            startIndex += str.length;
+                        }
+                        return str.substr(startIndex);
+                    }
+                    break;
+                case 'length':
+                    {
+                        return args.length.toString();
+                    }
+                    break;
+                case 'regex':
+                    {
+                        const match = args.match(CustomCommandEngine.regexRegex);
+                        if (match) {
+                            const regex = new RegExp(match[1], match[2]);
+                            if (!match[3]) {
+                                return CustomCommandEngine.falseVar;
+                            }
+                            const results = regex.exec(match[3]);
+                            if (!results) {
+                                return CustomCommandEngine.falseVar;
+                            } else {
+                                // Set special regex variables
+                                this.vars.set(
+                                    CustomCommandEngine.specialVars.regexMatchBegin,
+                                    results.index.toString(),
+                                );
+                                this.vars.set(
+                                    CustomCommandEngine.specialVars.regexMatchEnd,
+                                    (results.index + results[0].length).toString(),
+                                );
+                                for (let i = 0; i < results.length; ++i) {
+                                    if (results[i]) {
+                                        this.vars.set(
+                                            CustomCommandEngine.specialVars.regexMatchGroup + i.toString(),
+                                            results[i],
+                                        );
+                                    }
+                                }
+                                return CustomCommandEngine.trueVar;
+                            }
                         }
                         return null;
                     }
-                    else {
-                        return this.context.member.user.toString();
+                    break;
+                case 'nickname':
+                    {
+                        this.assertLimit(ExecutionLimit.API, 1);
+                        this.context.member = await this.context.member.setNickname(args);
+                        return '';
                     }
-                } break;
+                    break;
+                case 'role':
+                    {
+                        const role = this.context.params.bot.getRoleFromString(args, this.context.params.guildId);
+                        if (!role) {
+                            throw new Error(`Role "${args}" could not be found.`);
+                        }
+
+                        this.assertLimit(ExecutionLimit.API, 1);
+                        const memberRoles = this.context.member.roles;
+                        if (memberRoles.cache.has(role.id)) {
+                            this.context.member = await memberRoles.remove(role);
+                        } else {
+                            this.context.member = await memberRoles.add(role);
+                        }
+                        return '';
+                    }
+                    break;
+                case 'role?':
+                    {
+                        const role = this.context.params.bot.getRoleFromString(args, this.context.params.guildId);
+                        if (!role) {
+                            throw new Error(`Role "${args}" could not be found.`);
+                        }
+
+                        return this.context.member.roles.cache.has(role.id)
+                            ? CustomCommandEngine.trueVar
+                            : CustomCommandEngine.falseVar;
+                    }
+                    break;
+                case '+role':
+                    {
+                        const role = this.context.params.bot.getRoleFromString(args, this.context.params.guildId);
+                        if (!role) {
+                            throw new Error(`Role "${args}" could not be found.`);
+                        }
+
+                        this.assertLimit(ExecutionLimit.API, 1);
+                        this.context.member = await this.context.member.roles.add(role);
+                        return '';
+                    }
+                    break;
+                case '-role':
+                    {
+                        const role = this.context.params.bot.getRoleFromString(args, this.context.params.guildId);
+                        if (!role) {
+                            throw new Error(`Role "${args}" could not be found.`);
+                        }
+
+                        this.assertLimit(ExecutionLimit.API, 1);
+                        this.context.member = await this.context.member.roles.remove(role);
+                        return '';
+                    }
+                    break;
+                case 'user':
+                    {
+                        if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                            const attr = args.substr(1);
+                            if (CustomCommandEngine.userParams[attr]) {
+                                return CustomCommandEngine.userParams[attr](this.context.member.user);
+                            } else if (CustomCommandEngine.memberParams[attr]) {
+                                return CustomCommandEngine.memberParams[attr](this.context.member);
+                            }
+                            return null;
+                        } else {
+                            return this.context.member.user.toString();
+                        }
+                    }
+                    break;
                 case 'guild':
-                case 'server': {
-                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                        const attr = args.substr(1);
-                        if (CustomCommandEngine.guildParams[attr]) {
-                            return CustomCommandEngine.guildParams[attr](this.context.params.src.guild);
+                case 'server':
+                    {
+                        if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                            const attr = args.substr(1);
+                            if (CustomCommandEngine.guildParams[attr]) {
+                                return CustomCommandEngine.guildParams[attr](this.context.params.src.guild);
+                            }
+                            return null;
+                        } else {
+                            return this.context.params.src.guild.toString();
                         }
-                        return null;
                     }
-                    else {
-                        return this.context.params.src.guild.toString();
-                    }
-                } break;
-                case 'channel': {
-                    if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                        const attr = args.substr(1);
-                        if (CustomCommandEngine.channelParams[attr]) {
-                            return CustomCommandEngine.channelParams[attr](this.context.params.src.channel);
+                    break;
+                case 'channel':
+                    {
+                        if (args.startsWith(SpecialChars.AttributeSeparator)) {
+                            const attr = args.substr(1);
+                            if (CustomCommandEngine.channelParams[attr]) {
+                                return CustomCommandEngine.channelParams[attr](this.context.params.src.channel);
+                            }
+                            return null;
+                        } else {
+                            return this.context.params.src.channel.toString();
                         }
-                        return null;
                     }
-                    else {
-                        return this.context.params.src.channel.toString();
-                    }
-                } break;
+                    break;
                 // This is not a function
-                default: {
-                    return null;
-                } break;
+                default:
+                    {
+                        return null;
+                    }
+                    break;
             }
         }
     }
@@ -763,168 +810,194 @@ export class CustomCommandEngine {
     // Selector functions select an option, then evaluate it using another parse
     private async handleSelectorFunction(name: string, args: string[]): Promise<string | null> {
         switch (name) {
-            case 'choose': {
-                if (args.length === 0) {
-                    return '';
-                }
-                // Evaluate the choice
-                return this.parse(args[Math.floor(Math.random() * args.length)]);
-            } break;
-            case 'if': {
-                let [wholeCondition, then, other] = args;
-                if (wholeCondition === undefined || then === undefined) {
-                    return null;
-                }
-
-                // Evaluate condition
-                wholeCondition = await this.parse(wholeCondition);
-
-                // Parse condition by logical separators
-                let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
-               
-                // The global result of the function
-                let globalResult = true;
-
-                // Start at -1, because separators are not required
-                for (let i = -1; i < separators.length; ++i) {
-                    // Get the current separator and condition
-                    const separator: string | undefined = separators[i]?.[1];
-                    const condition = wholeCondition.substring(
-                        separators[i] ? separators[i].index + separators[i][0].length : 0,
-                        separators[i + 1] ? separators[i + 1].index : undefined
-                    );
-
-                    // Number of operators to evaluate
-                    const conditions = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
-                    
-                    // Result of the nested condition
-                    let localResult = true;
-
-                    // No operators, just a single value
-                    if (conditions.length == 0) {
-                        localResult = condition === CustomCommandEngine.trueVar;
+            case 'choose':
+                {
+                    if (args.length === 0) {
+                        return '';
                     }
-                    // Perform operations
-                    else {
-                        for (let j = 0; j < conditions.length; ++j) {
-                            // A single condition may be chained, such as 0 < $val < 10
-                            const operator = conditions[j][1];
-                            const nested = condition.substring(
-                                conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0, 
-                                conditions[j + 1] ? conditions[j + 1].index : undefined
-                            );
-                            const values = nested.split(conditions[j][0]);
+                    // Evaluate the choice
+                    return this.parse(args[Math.floor(Math.random() * args.length)]);
+                }
+                break;
+            case 'if':
+                {
+                    let [wholeCondition, then, other] = args;
+                    if (wholeCondition === undefined || then === undefined) {
+                        return null;
+                    }
 
-                            // Use number comparison if both strings can be parsed as integers
-                            // If not, use string comparison
-                            let a: number | string, b: number | string;
-                            [a, b] = values;
-                            const num1 = parseInt(a);
-                            const num2 = parseInt(b);
-                            if (!isNaN(num1) && !isNaN(num2)) {
-                                a = num1;
-                                b = num2;
+                    // Evaluate condition
+                    wholeCondition = await this.parse(wholeCondition);
+
+                    // Parse condition by logical separators
+                    let separators = [...wholeCondition.matchAll(/\s+(and|or)\s+/g)];
+
+                    // The global result of the function
+                    let globalResult = true;
+
+                    // Start at -1, because separators are not required
+                    for (let i = -1; i < separators.length; ++i) {
+                        // Get the current separator and condition
+                        const separator: string | undefined = separators[i]?.[1];
+                        const condition = wholeCondition.substring(
+                            separators[i] ? separators[i].index + separators[i][0].length : 0,
+                            separators[i + 1] ? separators[i + 1].index : undefined,
+                        );
+
+                        // Number of operators to evaluate
+                        const conditions = [...condition.matchAll(CustomCommandEngine.comparisonOperators)];
+
+                        // Result of the nested condition
+                        let localResult = true;
+
+                        // No operators, just a single value
+                        if (conditions.length == 0) {
+                            localResult = condition === CustomCommandEngine.trueVar;
+                        }
+                        // Perform operations
+                        else {
+                            for (let j = 0; j < conditions.length; ++j) {
+                                // A single condition may be chained, such as 0 < $val < 10
+                                const operator = conditions[j][1];
+                                const nested = condition.substring(
+                                    conditions[j - 1] ? conditions[j - 1].index + conditions[j - 1][0].length : 0,
+                                    conditions[j + 1] ? conditions[j + 1].index : undefined,
+                                );
+                                const values = nested.split(conditions[j][0]);
+
+                                // Use number comparison if both strings can be parsed as integers
+                                // If not, use string comparison
+                                let a: number | string, b: number | string;
+                                [a, b] = values;
+                                const num1 = parseInt(a);
+                                const num2 = parseInt(b);
+                                if (!isNaN(num1) && !isNaN(num2)) {
+                                    a = num1;
+                                    b = num2;
+                                }
+                                switch (operator) {
+                                    case '=':
+                                    case '==':
+                                        localResult = localResult && a === b;
+                                        break;
+                                    case '!=':
+                                        localResult = localResult && a != b;
+                                        break;
+                                    case '<':
+                                        localResult = localResult && a < b;
+                                        break;
+                                    case '>':
+                                        localResult = localResult && a > b;
+                                        break;
+                                    case '<=':
+                                        localResult = localResult && a <= b;
+                                        break;
+                                    case '>=':
+                                        localResult = localResult && a >= b;
+                                        break;
+                                    case '~=':
+                                        localResult =
+                                            localResult &&
+                                            a
+                                                .toString()
+                                                .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) ===
+                                                0;
+                                        break;
+                                    case '!~=':
+                                        localResult =
+                                            localResult &&
+                                            a
+                                                .toString()
+                                                .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !==
+                                                0;
+                                        break;
+                                    default:
+                                        localResult = false;
+                                        break;
+                                }
                             }
-                            switch (operator) {
-                                case '=':
-                                case '==':
-                                    localResult = localResult && a === b;
-                                    break;
-                                case '!=':
-                                    localResult = localResult && a != b;
-                                    break;
-                                case '<':
-                                    localResult = localResult && a < b;
-                                    break;
-                                case '>':
-                                    localResult = localResult && a > b;
-                                    break;
-                                case '<=':
-                                    localResult = localResult && a <= b;
-                                    break;
-                                case '>=':
-                                    localResult = localResult && a >= b;
-                                    break;
-                                case '~=':
-                                    localResult = localResult 
-                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) === 0);
-                                    break;
-                                case '!~=':
-                                    localResult = localResult 
-                                        && (a.toString().localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !== 0);
-                                    break;
-                                default:
-                                    localResult = false;
-                                    break;
-                            }
+                        }
+
+                        if (separator === 'or') {
+                            globalResult = globalResult || localResult;
+                        } else {
+                            globalResult = globalResult && localResult;
                         }
                     }
 
-                    if (separator === 'or') {
-                        globalResult = globalResult || localResult;
+                    return globalResult
+                        ? then
+                            ? this.parse(then)
+                            : CustomCommandEngine.trueVar
+                        : other
+                        ? this.parse(other)
+                        : '';
+                }
+                break;
+            case 'repeat':
+                {
+                    if (args.length < 2) {
+                        throw new Error('Not enough parameters for repeat.');
                     }
-                    else {
-                        globalResult = globalResult && localResult;
+
+                    const n = parseInt(await this.parse(args.shift()));
+                    if (isNaN(n) || n < 0) {
+                        throw new Error('Invalid repeat number.');
                     }
+                    this.assertLimit(ExecutionLimit.Repeat, n);
+
+                    let result = '';
+                    for (let i = 0; i < n; ++i) {
+                        this.vars.set(CustomCommandEngine.specialVars.loopCounter, i.toString());
+                        result += await this.parse(args[i % args.length]);
+                    }
+                    this.vars.delete(CustomCommandEngine.specialVars.loopCounter);
+                    return result.trim();
                 }
+                break;
+            case 'call':
+                {
+                    if (args.length < 1) {
+                        throw new Error('Missing function call.');
+                    }
 
-                return globalResult ? (then ? this.parse(then) : CustomCommandEngine.trueVar) : (other ? this.parse(other) : '');
-            } break;
-            case 'repeat': {
-                if (args.length < 2) {
-                    throw new Error('Not enough parameters for repeat.');
+                    // The code to run
+                    const code = args.shift();
+
+                    // Parse new arguments, since this function was lazy evaluated
+                    const newArguments = [];
+                    for (let i = 0; i < args.length; ++i) {
+                        newArguments.push(await this.parse(args[i]));
+                    }
+
+                    // Push existing arguments onto the stack
+                    this.stack.push([...this.arguments]);
+
+                    // Set new argument context
+                    this.arguments = newArguments;
+
+                    // Double parse, because this function was lazy evaluated
+                    // For example {call $function} needs to evaluate the $function variable
+                    // to get the code, and then evaluate that stored code
+                    const result = await this.parse(await this.parse(code));
+
+                    // Pop old arguments back
+                    this.arguments = this.stack.pop();
+
+                    return result;
                 }
+                break;
 
-                const n = parseInt(await this.parse(args.shift()));
-                if (isNaN(n) || n < 0) {
-                    throw new Error('Invalid repeat number.');
-                }
-                this.assertLimit(ExecutionLimit.Repeat, n);
-
-                let result = '';
-                for (let i = 0; i < n; ++i) {
-                    this.vars.set(CustomCommandEngine.specialVars.loopCounter, i.toString());
-                    result += await this.parse(args[i % args.length]);
-                }
-                this.vars.delete(CustomCommandEngine.specialVars.loopCounter);
-                return result.trim();
-            } break;  
-            case 'call': {
-                if (args.length < 1) {
-                    throw new Error('Missing function call.');
-                }
-
-                // The code to run
-                const code = args.shift();
-
-                // Parse new arguments, since this function was lazy evaluated
-                const newArguments = [];
-                for (let i = 0; i < args.length; ++i) {
-                    newArguments.push(await this.parse(args[i]));
-                }
-
-                // Push existing arguments onto the stack
-                this.stack.push([...this.arguments]);
-
-                // Set new argument context
-                this.arguments = newArguments;
-
-                // Double parse, because this function was lazy evaluated
-                // For example {call $function} needs to evaluate the $function variable
-                // to get the code, and then evaluate that stored code
-                const result = await this.parse(await this.parse(code));
-
-                // Pop old arguments back
-                this.arguments = this.stack.pop();
-
-                return result;
-            } break;
-            
-            default: return null;
+            default:
+                return null;
         }
     }
 
-    private async parseSelectorFunction(code: string, index: number, functionName: string): Promise<ResponseParseResult> {
+    private async parseSelectorFunction(
+        code: string,
+        index: number,
+        functionName: string,
+    ): Promise<ResponseParseResult> {
         let nextOption: string = '';
         let options: string[] = [];
         let nestedDepth = 0;
@@ -939,8 +1012,7 @@ export class CustomCommandEngine {
                 options.push(nextOption);
                 nextOption = '';
                 ++index;
-            }
-            else {
+            } else {
                 // Nested function, ignore it for now
                 if (char === SpecialChars.FunctionBegin) {
                     ++nestedDepth;
@@ -968,8 +1040,7 @@ export class CustomCommandEngine {
         let response: string;
         if (!paired) {
             response = code.slice(startIndex - 1, index);
-        }
-        else {
+        } else {
             response = await this.handleSelectorFunction(functionName, options);
         }
         return { response, index };
@@ -1061,8 +1132,7 @@ export class CustomCommandEngine {
 
                     if (CustomCommandEngine.selectorFunctions.has(functionName)) {
                         return this.parseSelectorFunction(code, index, functionName);
-                    }
-                    else if (CustomCommandEngine.lazyEvalFunctions.has(functionName)) {
+                    } else if (CustomCommandEngine.lazyEvalFunctions.has(functionName)) {
                         const lazyEval = CustomCommandEngine.parseLazyEvalCode(code, index);
 
                         // null means the parse was unsuccessful
@@ -1074,8 +1144,7 @@ export class CustomCommandEngine {
 
                         break;
                     }
-                }
-                else {
+                } else {
                     functionCall += char;
                     ++index;
                 }
@@ -1084,9 +1153,10 @@ export class CustomCommandEngine {
         let response: string;
         if (!paired) {
             response = code.slice(startIndex - 1, index);
-        }
-        else {
-            response = await this.handleFunction(functionName.trimLeft(), functionCall.trim()) ?? code.slice(startIndex - 1, index);
+        } else {
+            response =
+                (await this.handleFunction(functionName.trimLeft(), functionCall.trim())) ??
+                code.slice(startIndex - 1, index);
         }
         return { response, index };
     }
@@ -1106,8 +1176,7 @@ export class CustomCommandEngine {
             // End of variable
             else if (CustomCommandEngine.nonVarChar.test(char)) {
                 break;
-            }
-            else {
+            } else {
                 name += char;
                 ++index;
             }
@@ -1157,8 +1226,7 @@ export class CustomCommandEngine {
         if (!this.context.options.silent && response.length !== 0) {
             this.assertLimit(ExecutionLimit.Message, 1);
             await this.context.params.src.send(response);
-        }
-        else if (this.context.params.src.isInteraction() && !this.context.params.src.interaction.replied) {
+        } else if (this.context.params.src.isInteraction() && !this.context.params.src.interaction.replied) {
             this.assertLimit(ExecutionLimit.Message, 1);
             await this.context.params.src.reply({ content: '\u{2705}', ephemeral: true });
         }
@@ -1166,31 +1234,33 @@ export class CustomCommandEngine {
 
     public async runUniversal(code: string): Promise<UniversalCustomCommandResults> {
         this.limits = CustomCommandEngine.defaultLimits.universal;
-        
+
         const results: UniversalCustomCommandResults = {
             code,
-            guild: this.context.params.guild.id,
+            guild: this.context.params.guildId,
             initiator: this.context.params.src.author.id,
             startedAt: new Date(),
             finishedAt: null,
             errorCount: 0,
-            results: { },
-            errors: { },
+            results: {},
+            errors: {},
         };
 
-        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(this.context.params.guild.id);
+        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
+            this.context.params.guildId,
+        );
         for (const [id, member] of memberList) {
             this.context.member = member;
             try {
-                this.limitProgress = { };
+                this.limitProgress = {};
                 results.results[id] = await this.parse(code);
             } catch (error) {
                 results.errors[id] = error.toString() || 'ERROR';
                 ++results.errorCount;
             }
         }
-        
-        results.finishedAt = new Date()
+
+        results.finishedAt = new Date();
         return results;
     }
 }

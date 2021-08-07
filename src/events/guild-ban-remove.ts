@@ -1,16 +1,15 @@
 import { TextChannel, GuildBan } from 'discord.js';
-import { BaseLogEvent } from './base';
-import { DiscordBot } from '../bot';
+import { EmbedTemplates } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
-import { EmbedTemplates } from '../util/embed';
+import { BaseLogEvent } from './log';
 
-const event = 'guildBanRemove';
-
-export class GuildBanRemoveEvent extends BaseLogEvent<typeof event> {
-    constructor(bot: DiscordBot) {
-        super(bot, event, LogOptionBit.MemberUpdated);
+export class GuildBanRemoveEvent extends BaseLogEvent<'guildBanRemove'> {
+    constructor(bot: SpindaDiscordBot) {
+        super(bot, 'guildBanRemove', LogOptionBit.MemberUpdated);
     }
-    
+
     public async run(ban: GuildBan) {
         const channel = await this.getDestination(ban.guild.id);
         if (channel) {

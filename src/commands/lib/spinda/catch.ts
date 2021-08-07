@@ -1,16 +1,23 @@
-import { Message } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
-export class GotAwayError extends Error { };
+export class GotAwayError extends Error {}
 
 interface CatchArgs {
     position?: number;
 }
 
-export class CatchCommand extends ComplexCommand<CatchArgs> {
+export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
     public name = SpindaCommandNames.Catch;
     public description = `Catches one of the last ${SpindaGeneratorService.historySize} Spinda generated in the channel.`;
     public moreDescription = [
@@ -29,7 +36,7 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: CatchArgs) {
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: CatchArgs) {
         const wantedPosition = args.position ?? 0;
         if (wantedPosition < 0) {
             throw new Error('Position must be a positive integer.');
@@ -41,11 +48,11 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
         let wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(src.channel.id, wantedPosition);
 
         if (!wantedSpinda) {
-            const generateMessage = `Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
+            const prefix = bot.dataService.getCachedGuild(guildId);
+            const generateMessage = `Use \`${prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
             if (wantedPosition === 0) {
                 throw new Error('No new Spinda found in this channel. ' + generateMessage);
-            }
-            else {
+            } else {
                 throw new Error(`Spinda at position ${wantedPosition} could not be found. ` + generateMessage);
             }
         }
@@ -61,7 +68,9 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
             const generatedAt = wantedSpinda.generatedAt.valueOf();
 
             const embed = bot.createEmbed(EmbedTemplates.Error);
-            embed.setDescription(`You have too many Spinda in your party. Respond with a number 1 through ${SpindaGeneratorService.partySize} to replace one of your party slots with this new Spinda. Send anything else to cancel.`);
+            embed.setDescription(
+                `You have too many Spinda in your party. Respond with a number 1 through ${SpindaGeneratorService.partySize} to replace one of your party slots with this new Spinda. Send anything else to cancel.`,
+            );
             await src.reply({ embeds: [embed] });
 
             try {
@@ -76,7 +85,7 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
                 if (isNaN(num) || num < 1 || num > SpindaGeneratorService.partySize) {
                     return;
                 }
-                
+
                 pos = num - 1;
 
                 // Fetch Spinda again, to make sure it wasn't caught before responding
@@ -85,7 +94,6 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
                 if (!wantedSpinda || wantedSpinda.generatedAt.valueOf() !== generatedAt) {
                     throw new GotAwayError(`It got away...`);
                 }
-
             } catch (error) {
                 if (error instanceof GotAwayError) {
                     throw error;
@@ -101,11 +109,16 @@ export class CatchCommand extends ComplexCommand<CatchArgs> {
 
         await bot.dataService.catchSpinda(src.author.id, wantedSpinda, pos);
         bot.spindaGeneratorService.clearChannelHistory(src.channel.id);
-        
+
         const remaining = SpindaGeneratorService.partySize - caughtSpinda.length;
 
+        const prefix = bot.dataService.getCachedGuild(guildId).prefix;
         const embed = bot.createEmbed(EmbedTemplates.Success);
-        embed.setDescription(`Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${guild.prefix}${SpindaCommandNames.View} ${pos + 1}\`. You have ${remaining} party slot${remaining === 1 ? '' : 's'} remaining.`);
+        embed.setDescription(
+            `Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${prefix}${
+                SpindaCommandNames.View
+            } ${pos + 1}\`. You have ${remaining} party slot${remaining === 1 ? '' : 's'} remaining.`,
+        );
         await src.send({ embeds: [embed] });
     }
 }

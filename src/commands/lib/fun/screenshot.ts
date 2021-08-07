@@ -1,7 +1,16 @@
-import { CommandCategory, CommandPermission, StandardCooldowns, LegacyCommand, ArgumentsConfig, ArgumentType, CommandParameters, ChatCommandParameters } from '../base';
 import { createCanvas, registerFont, loadImage, CanvasRenderingContext2D, Canvas } from 'canvas';
 import { MessageAttachment } from 'discord.js';
-import { DiscordUtil } from '../../../util/discord';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    ChatCommandParameters,
+    CommandParameters,
+    DiscordUtil,
+    LegacyCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface ScreenshotArgs {
     user: string;
@@ -9,7 +18,7 @@ interface ScreenshotArgs {
     message: string;
 }
 
-export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
+export class ScreenshotCommand extends LegacyCommand<SpindaDiscordBot, ScreenshotArgs> {
     public name = 'screenshot';
     public description = 'Creates a fake Discord message screenshot.';
     public category = CommandCategory.Fun;
@@ -69,7 +78,7 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
     private readonly contentProperties = {
         height: 44,
         size: 32,
-    }
+    };
 
     private readonly imageProperties = {
         left: 32,
@@ -101,13 +110,15 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
     private splitLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
         const paragraphs = text.split('\n');
         if (paragraphs.length > 1) {
-            const result = paragraphs.map(para => this.splitLines(ctx, para, maxWidth)).map(arr => arr.length === 0 ? [''] : arr).flat();
+            const result = paragraphs
+                .map(para => this.splitLines(ctx, para, maxWidth))
+                .map(arr => (arr.length === 0 ? [''] : arr))
+                .flat();
             if (result[result.length - 1].length === 0) {
                 result.pop();
             }
             return result;
-        }
-        else {
+        } else {
             const lines: string[] = [];
             const words = paragraphs[0].split(' ');
             let currentLine = '';
@@ -132,17 +143,15 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
 
                     // Current line is the current word, which surely does not exceed the width now
                     currentLine = words[i];
-                }
-                else {
+                } else {
                     let lineWithNextWord = currentLine + ' ' + words[i];
                     if (ctx.measureText(lineWithNextWord).width >= maxWidth) {
                         lines.push(currentLine);
-                        
+
                         // Reconsider this word on a new line
                         currentLine = '';
                         --i;
-                    }
-                    else {
+                    } else {
                         currentLine = lineWithNextWord;
                     }
                 }
@@ -155,17 +164,20 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         }
     }
 
-    protected parseChatArgs({ content }: ChatCommandParameters): ScreenshotArgs {
-        const args: Partial<ScreenshotArgs> = { };
+    protected parseChatArgs({ content }: ChatCommandParameters<SpindaDiscordBot>): ScreenshotArgs {
+        const args: Partial<ScreenshotArgs> = {};
 
         // Message content is given in a code block at the end of the message
         const codeBlockMatch = DiscordUtil.getCodeBlock(content);
         if (!codeBlockMatch.match) {
             throw new Error(`No code block found with message content.`);
         }
-        args.message = codeBlockMatch.content;
+        args.message = codeBlockMatch.result.content;
 
-        const split = content.substring(0, codeBlockMatch.index).split(/(?<!<)@/g).map(str => str.trim());
+        const split = content
+            .substring(0, codeBlockMatch.index)
+            .split(/(?<!<)@/g)
+            .map(str => str.trim());
         if (split.length === 0 || split.length > 2) {
             throw new Error(`Incorrect number of arguments before code block.`);
         }
@@ -174,10 +186,10 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         args.timestamp = split[1];
 
         return args as ScreenshotArgs;
-    } 
+    }
 
-    public async run({ bot, src }: CommandParameters, args: ScreenshotArgs) {
-        await src.defer();
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ScreenshotArgs) {
+        await src.deferReply();
 
         if (!this.initialized) {
             [300, 400, 500, 600, 700].forEach(weight => {
@@ -222,18 +234,16 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
 
         // Create the timestamp string
         let timestamp: string;
-        if (!args.timestamp || DiscordUtil.accentStringEqual('today', args.timestamp)) {
-            timestamp = 'Today at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute:'2-digit' });
-        }
-        else if (DiscordUtil.accentStringEqual('yesterday', args.timestamp)) {
-            timestamp = 'Yesterday at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute:'2-digit' });
-        }
-        else {
+        if (!args.timestamp || 'today'.localeCompare(args.timestamp, undefined, { sensitivity: 'accent' }) === 0) {
+            timestamp = 'Today at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        } else if ('yesterday'.localeCompare(args.timestamp, undefined, { sensitivity: 'accent' }) === 0) {
+            timestamp = 'Yesterday at ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        } else {
             const date = new Date(args.timestamp);
             if (isNaN(date.valueOf())) {
                 throw new Error(`Invalid timestamp.`);
             }
-            timestamp = date.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: 'numeric' })
+            timestamp = date.toLocaleDateString([], { month: '2-digit', day: '2-digit', year: 'numeric' });
         }
 
         // Lay the background
@@ -249,7 +259,7 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
             imageY + this.imageProperties.height / 2,
             this.imageProperties.width / 2,
             0,
-            2 * Math.PI
+            2 * Math.PI,
         );
         this.ctx.closePath();
         this.ctx.clip();
@@ -259,7 +269,7 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
             this.imageProperties.left,
             imageY,
             this.imageProperties.width,
-            this.imageProperties.height
+            this.imageProperties.height,
         );
         this.ctx.restore();
 
@@ -270,7 +280,7 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         this.ctx.fillText(
             username,
             this.textAreaProperties.padding.left,
-            this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.baseline
+            this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.baseline,
         );
 
         // Write timestamp
@@ -278,8 +288,11 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         this.ctx.font = `${this.titleProperties.timestamp.size}px 'Whitney Medium'`;
         this.ctx.fillText(
             timestamp,
-            this.textAreaProperties.padding.left + usernameTextMetrics.width + this.titleProperties.username.margin.right + this.titleProperties.timestamp.margin.left,
-            this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.baseline
+            this.textAreaProperties.padding.left +
+                usernameTextMetrics.width +
+                this.titleProperties.username.margin.right +
+                this.titleProperties.timestamp.margin.left,
+            this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.baseline,
         );
 
         // Write message content, wrapping as necessary
@@ -287,18 +300,18 @@ export class ScreenshotCommand extends LegacyCommand<ScreenshotArgs> {
         this.ctx.font = `${this.contentProperties.size}px 'Whitney Book'`;
 
         const contentLeft = this.textAreaProperties.padding.left;
-        const contentTop = this.textAreaProperties.margin.top + this.textAreaProperties.padding.top + this.titleProperties.height - this.contentProperties.size / 2;
+        const contentTop =
+            this.textAreaProperties.margin.top +
+            this.textAreaProperties.padding.top +
+            this.titleProperties.height -
+            this.contentProperties.size / 2;
         const maxLineWidthPixels = this.canvas.width - contentLeft - this.textAreaProperties.padding.right;
 
         const lines = this.splitLines(this.ctx, args.message, maxLineWidthPixels);
         let currentLineTop = contentTop;
         for (const line of lines) {
             currentLineTop += this.contentProperties.height;
-            this.ctx.fillText(
-                line,
-                contentLeft,
-                currentLineTop
-            );
+            this.ctx.fillText(line, contentLeft, currentLineTop);
         }
 
         // Crop image

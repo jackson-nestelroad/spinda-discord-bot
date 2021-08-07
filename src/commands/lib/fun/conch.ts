@@ -1,14 +1,22 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { FunUtil } from './util';
 
 interface ConchArgs {
     question?: string;
 }
 
-export class ConchCommand extends ComplexCommand<ConchArgs> {
+export class ConchCommand extends ComplexCommand<SpindaDiscordBot, ConchArgs> {
     public prefix = ':shell: - ';
     public name = 'conch';
-    public description = 'Pulls the Magic Conch Shell\u{2122}\'s string for words of wisdom.';
+    public description = "Pulls the Magic Conch Shell\u{2122}'s string for words of wisdom.";
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
@@ -21,12 +29,12 @@ export class ConchCommand extends ComplexCommand<ConchArgs> {
         },
     };
 
-    public readonly options = ['Maybe someday.', 'I don\'t think so.', 'No.', 'Yes.', 'Try asking again.'];
+    public readonly options = ['Maybe someday.', "I don't think so.", 'No.', 'Yes.', 'Try asking again.'];
     public readonly header = `You rapidly pulled the Magic Conch Shell\u{2122}\'s string. It slowly slithers back towards the shell.`;
     public readonly secondLine = `\n${this.prefix}`;
     public readonly editedHeader = this.header + this.secondLine;
 
-    public async run({ bot, src }: CommandParameters, args: ConchArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ConchArgs) {
         let response = await src.send(this.header);
         response = await FunUtil.addSuspense(bot, response, this.editedHeader, 2);
 
@@ -34,21 +42,16 @@ export class ConchCommand extends ComplexCommand<ConchArgs> {
         if (args.question) {
             if (args.question.startsWith('which')) {
                 res = 'Neither.';
-            }
-            else if (args.question.startsWith('what')) {
+            } else if (args.question.startsWith('what')) {
                 res = 'Nothing.';
-            }
-            else if (args.question.startsWith('where')) {
+            } else if (args.question.startsWith('where')) {
                 res = 'Nowhere.';
-            }
-            else if (args.question.startsWith('who')) {
+            } else if (args.question.startsWith('who')) {
                 res = 'No one.';
-            }
-            else {
+            } else {
                 res = this.options[Math.floor(Math.random() * this.options.length)];
             }
-        }
-        else {
+        } else {
             res = this.options[Math.floor(Math.random() * this.options.length)];
         }
 

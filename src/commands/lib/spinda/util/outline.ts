@@ -1,4 +1,5 @@
-import { ImageData, Canvas } from 'canvas';
+import { ImageData } from 'canvas';
+
 import { Point } from './point';
 
 // Adapted from https://github.com/d3/d3-plugins/blob/master/geom/contour/contour.js
@@ -25,12 +26,10 @@ export class OutlineDrawer {
         while (true) {
             if (this.pointIsTransparentBorderingOpaque(x, y)) {
                 return new Point(x, y);
-            }
-            else if (x === 0) {
+            } else if (x === 0) {
                 x = y + 1;
                 y = 0;
-            }
-            else {
+            } else {
                 --x;
                 ++y;
             }
@@ -67,12 +66,10 @@ export class OutlineDrawer {
             if (i === 6) {
                 dx = pdy === -1 ? -1 : 1;
                 dy = 0;
-            }
-            else if (i === 9) {
+            } else if (i === 9) {
                 dx = 0;
                 dy = pdx === 1 ? -1 : 1;
-            }
-            else {
+            } else {
                 dx = OutlineDrawer.dxLookup[i];
                 dy = OutlineDrawer.dyLookup[i];
             }

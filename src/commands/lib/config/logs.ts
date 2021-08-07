@@ -1,7 +1,15 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
 import { TextChannel } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { LogOptionBit } from '../../../data/model/guild';
-import { EmbedTemplates } from '../../../util/embed';
 
 enum LogCommandOption {
     Channel = 'channel',
@@ -14,7 +22,7 @@ enum LogOptionType {
     Channel = 'channel',
     Boolean = 'boolean',
     Events = 'event1, event2, ...',
-    None = 'none'
+    None = 'none',
 }
 
 const LogEvents: { [name: string]: LogOptionBit } = {
@@ -34,7 +42,7 @@ interface LogsArgs {
     options?: string;
 }
 
-export class LogsCommand extends ComplexCommand<LogsArgs> {
+export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
     private readonly options: LogOptionMap = {
         [LogCommandOption.Channel]: [LogOptionType.Channel],
         [LogCommandOption.Enable]: [LogOptionType.None, LogOptionType.Events],
@@ -43,7 +51,7 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
     };
 
     public name = 'logs';
-    public description = 'Manages the guild\'s logging configuration.'
+    public description = "Manages the guild's logging configuration.";
     public moreDescription = [
         `Available options: ${this.formatOptions()}`,
         `Available events: ${this.formatBitOptions()}`,
@@ -67,33 +75,41 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
                 for (const type of val) {
                     if (type === LogOptionType.None) {
                         ways.push(`\`${key};\``);
-                    }
-                    else {
+                    } else {
                         ways.push(`\`${key} = [${type}];\``);
                     }
                 }
                 return ways.join('\n');
-            }).join('\n');
+            })
+            .join('\n');
     }
 
     private formatBitOptions(): string {
-        return Object.keys(LogEvents).map(key => `\`${key}\``).join(', ');
+        return Object.keys(LogEvents)
+            .map(key => `\`${key}\``)
+            .join(', ');
     }
 
-    public async run({ bot, src, guild }: CommandParameters, args: LogsArgs) {
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: LogsArgs) {
+        const guild = bot.dataService.getCachedGuild(guildId);
         if (!args.options) {
             const embed = bot.createEmbed();
             embed.setTitle(`Log Configuration for ${src.guild.name}`);
             let fields = [];
-            fields.push(`${LogCommandOption.Channel} = ${guild.logChannelId ? bot.client.channels.cache.get(guild.logChannelId)?.toString() ?? 'None' : 'None'}`);
+            fields.push(
+                `${LogCommandOption.Channel} = ${
+                    guild.logChannelId
+                        ? bot.client.channels.cache.get(guild.logChannelId)?.toString() ?? 'None'
+                        : 'None'
+                }`,
+            );
             fields.push(`enabled = ${guild.logOptions & LogOptionBit.Enabled ? 'on' : 'off'}`);
             for (const [event, bit] of Object.entries(LogEvents)) {
                 fields.push(`${event} = ${guild.logOptions & bit ? 'on' : 'off'}`);
             }
             embed.setDescription(fields.join('\n'));
             await src.send({ embeds: [embed] });
-        }
-        else {
+        } else {
             const changes = args.options.split(';').map(val => val.trim());
             for (const change of changes) {
                 const split = change.split('=').map(val => val.trim());
@@ -101,74 +117,93 @@ export class LogsCommand extends ComplexCommand<LogsArgs> {
                 if (split.length > 2 || split.length === 0) {
                     throw new Error(`Invalid format: \`${change}\``);
                 }
-                
+
                 const option = split[0];
                 const value = split.length === 2 ? split[1] : null;
                 if (!option) {
                     break;
                 }
                 if (!this.options[option]) {
-                    throw new Error(`Invalid option \`${option}\`. Use \`${guild.prefix}help logs\` to see list of options.`);
+                    throw new Error(
+                        `Invalid option \`${option}\`. Use \`${guild.prefix}help logs\` to see list of options.`,
+                    );
                 }
                 if (!value && !this.options[option].includes(LogOptionType.None)) {
                     throw new Error(`Invalid format: \`${change}\``);
                 }
 
                 switch (option as LogCommandOption) {
-                    case LogCommandOption.Channel: {
-                        const channel = bot.getChannelFromMention(value);
-                        if (!channel) {
-                            throw new Error(`Invalid channel: ${value} (\`${value}\`)`);
-                        }
-                        if (channel.type !== 'GUILD_TEXT') {
-                            throw new Error('Log channel must be a text channel.');
-                        }
-                        if ((channel as TextChannel).guild.id !== src.guild.id) {
-                            throw new Error('Log channel must be in this guild.');
-                        }
-                        if (!((channel as TextChannel).viewable && (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES']))) {
-                            throw new Error(`Bot is missing permissions for ${value}.`);
-                        }
+                    case LogCommandOption.Channel:
+                        {
+                            const channel = bot.getChannelFromMention(value);
+                            if (!channel) {
+                                throw new Error(`Invalid channel: ${value} (\`${value}\`)`);
+                            }
+                            if (channel.type !== 'GUILD_TEXT') {
+                                throw new Error('Log channel must be a text channel.');
+                            }
+                            if ((channel as TextChannel).guild.id !== src.guild.id) {
+                                throw new Error('Log channel must be in this guild.');
+                            }
+                            if (
+                                !(
+                                    (channel as TextChannel).viewable &&
+                                    (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES'])
+                                )
+                            ) {
+                                throw new Error(`Bot is missing permissions for ${value}.`);
+                            }
 
-                        guild.logChannelId = channel.id;
-                    } break;
-
-                    case LogCommandOption.Enable: {
-                        if (!value) {
-                            guild.logOptions |= LogOptionBit.Enabled;
+                            guild.logChannelId = channel.id;
                         }
-                        // Given a list of options to enable
-                        else {
-                            const events = value.split(',').map(event => event.trim());
-                            for (const event of events) {
-                                if (!LogEvents[event]) {
-                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`);
+                        break;
+
+                    case LogCommandOption.Enable:
+                        {
+                            if (!value) {
+                                guild.logOptions |= LogOptionBit.Enabled;
+                            }
+                            // Given a list of options to enable
+                            else {
+                                const events = value.split(',').map(event => event.trim());
+                                for (const event of events) {
+                                    if (!LogEvents[event]) {
+                                        throw new Error(
+                                            `Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`,
+                                        );
+                                    }
+                                    guild.logOptions |= LogEvents[event];
                                 }
-                                guild.logOptions |= LogEvents[event];
                             }
                         }
-                    } break;
+                        break;
 
-                    case LogCommandOption.Disable: {
-                        if (!value) {
-                            guild.logOptions &= ~LogOptionBit.Enabled;
-                        }
-                        // Given a list of options to enable
-                        else {
-                            const events = value.split(',').map(event => event.trim());
-                            for (const event of events) {
-                                if (!LogEvents[event]) {
-                                    throw new Error(`Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`);
+                    case LogCommandOption.Disable:
+                        {
+                            if (!value) {
+                                guild.logOptions &= ~LogOptionBit.Enabled;
+                            }
+                            // Given a list of options to enable
+                            else {
+                                const events = value.split(',').map(event => event.trim());
+                                for (const event of events) {
+                                    if (!LogEvents[event]) {
+                                        throw new Error(
+                                            `Invalid event \`${event}\` in \`${option}\`. Use \`${guild.prefix}help logs\` to see list of events.`,
+                                        );
+                                    }
+                                    guild.logOptions &= ~LogEvents[event];
                                 }
-                                guild.logOptions &= ~LogEvents[event];
                             }
                         }
-                    } break;
+                        break;
 
-                    case LogCommandOption.Reset: {
-                        guild.logChannelId = null;
-                        guild.logOptions = 0;
-                    } break;
+                    case LogCommandOption.Reset:
+                        {
+                            guild.logChannelId = null;
+                            guild.logOptions = 0;
+                        }
+                        break;
                 }
             }
 

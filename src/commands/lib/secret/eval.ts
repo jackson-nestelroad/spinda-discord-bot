@@ -1,8 +1,16 @@
-import { CommandCategory, CommandPermission, CommandParameters, ComplexCommand, ArgumentsConfig, ArgumentType, LegacyCommand, ChatCommandParameters } from '../base';
+import * as DiscordJS from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    ChatCommandParameters,
+    CommandParameters,
+    DiscordUtil,
+    EvalUtil,
+    LegacyCommand,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { Environment } from '../../../data/environment';
-import { DiscordUtil } from '../../../util/discord';
-import * as DiscordJS from 'discord.js'
-import { EvalUtil } from '../../../util/eval';
 
 interface EvalArgs {
     code: string;
@@ -10,7 +18,7 @@ interface EvalArgs {
 }
 
 // This command is heavily unsafe, use at your own risk
-export class EvalCommand extends LegacyCommand<EvalArgs> {
+export class EvalCommand extends LegacyCommand<SpindaDiscordBot, EvalArgs> {
     public name = 'eval';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;
@@ -48,14 +56,13 @@ export class EvalCommand extends LegacyCommand<EvalArgs> {
         this.sensitivePattern = new RegExp(`${Environment.getDiscordToken()}`, 'g');
     }
 
-    public parseChatArgs({ args, content }: ChatCommandParameters): EvalArgs {
-        const parsed: Partial<EvalArgs> = { };
+    public parseChatArgs({ args, content }: ChatCommandParameters<SpindaDiscordBot>): EvalArgs {
+        const parsed: Partial<EvalArgs> = {};
 
         if (args[0] === this.silentArg) {
             parsed.silent = true;
             parsed.code = content.substr(this.silentArg.length).trimLeft();
-        }
-        else {
+        } else {
             parsed.silent = false;
             parsed.code = content;
         }
@@ -63,11 +70,12 @@ export class EvalCommand extends LegacyCommand<EvalArgs> {
         return parsed as EvalArgs;
     }
 
-    public async run(params: CommandParameters, args: EvalArgs) {
+    public async run(params: CommandParameters<SpindaDiscordBot>, args: EvalArgs) {
         let { bot, src } = params;
 
         // Parse code from code blocks/lines
-        const code = DiscordUtil.getCodeBlockOrLine(args.code) ?? args.code;
+        const match = DiscordUtil.getCodeBlockOrLine(args.code);
+        const code = match.match ? match.result.content : args.code;
 
         let res = await EvalUtil.runCodeToString(code, {
             params,

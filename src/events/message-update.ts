@@ -1,24 +1,23 @@
-import { Message, TextChannel, Channel } from 'discord.js';
-import { BaseLogEvent } from './base';
-import { DiscordBot } from '../bot';
+import { Message, TextChannel } from 'discord.js';
+import { EmbedTemplates } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
-import { EmbedTemplates } from '../util/embed';
+import { BaseLogEvent } from './log';
 
-const event = 'messageUpdate';
-
-export class MessageUpdateEvent extends BaseLogEvent<typeof event> {
+export class MessageUpdateEvent extends BaseLogEvent<'messageUpdate'> {
     private readonly noneText = 'None';
-    
-    constructor(bot: DiscordBot) {
-        super(bot, event, LogOptionBit.MessageEdited);
+
+    constructor(bot: SpindaDiscordBot) {
+        super(bot, 'messageUpdate', LogOptionBit.MessageEdited);
     }
-    
+
     public async run(oldMsg: Message, newMsg: Message) {
         const channel = await this.getDestination(newMsg.guild?.id ?? null);
         if (channel && !newMsg.author.bot) {
             const embed = this.bot.createEmbed(EmbedTemplates.Log);
             embed.setTimestamp(newMsg.editedTimestamp);
-            
+
             this.setAuthor(embed, newMsg.author);
             embed.setTitle('Updated Message');
             embed.addField('Before', oldMsg.content || this.noneText);

@@ -1,4 +1,5 @@
-import { CommandTypeArray } from '../base';
+import { CommandTypeArray } from 'panda-discord';
+
 import { CatchCommand } from './catch';
 import { HordeCommand } from './horde';
 import { MySpindaCommand } from './my-spinda';

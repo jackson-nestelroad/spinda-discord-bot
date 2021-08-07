@@ -1,14 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ArgumentsConfig, ComplexCommand, ArgumentType, NestedCommand } from '../base';
 import { GuildMember } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    NestedCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface ToggleMemberOnBlocklistArgs {
     member: GuildMember;
 }
 
-class AddMemberOnBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlocklistArgs> {
+class AddMemberOnBlocklistSubCommand extends ComplexCommand<SpindaDiscordBot, ToggleMemberOnBlocklistArgs> {
     public name = 'add';
-    public description = 'Adds a member to the guild\'s blocklist, preventing them from using commands.';
+    public description = "Adds a member to the guild's blocklist, preventing them from using commands.";
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
 
@@ -20,13 +29,13 @@ class AddMemberOnBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlockl
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: ToggleMemberOnBlocklistArgs) {
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: ToggleMemberOnBlocklistArgs) {
         if (args.member.id === src.author.id) {
             throw new Error(`You cannot add yourself to the blocklist.`);
         }
 
-        await bot.dataService.addToBlocklist(guild.id, args.member.id);
-        
+        await bot.dataService.addToBlocklist(guildId, args.member.id);
+
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Added ${args.member.user.username} to the blocklist.`);
 
@@ -34,9 +43,9 @@ class AddMemberOnBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlockl
     }
 }
 
-class RemoveMemberFromBlocklistSubCommand extends ComplexCommand<ToggleMemberOnBlocklistArgs> {
+class RemoveMemberFromBlocklistSubCommand extends ComplexCommand<SpindaDiscordBot, ToggleMemberOnBlocklistArgs> {
     public name = 'remove';
-    public description = 'Removes a member from the guild\'s blocklist.';
+    public description = "Removes a member from the guild's blocklist.";
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
 
@@ -48,9 +57,9 @@ class RemoveMemberFromBlocklistSubCommand extends ComplexCommand<ToggleMemberOnB
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: ToggleMemberOnBlocklistArgs) {
-        await bot.dataService.removeFromBlocklist(guild.id, args.member.id);
-        
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: ToggleMemberOnBlocklistArgs) {
+        await bot.dataService.removeFromBlocklist(guildId, args.member.id);
+
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Removed ${args.member.user.username} from the blocklist.`);
 
@@ -62,7 +71,7 @@ interface ViewBlocklistPageArgs {
     page?: number;
 }
 
-class ViewBlocklistPageSubCommand extends ComplexCommand<ViewBlocklistPageArgs> {
+class ViewBlocklistPageSubCommand extends ComplexCommand<SpindaDiscordBot, ViewBlocklistPageArgs> {
     private readonly pageSize = 10;
 
     public name = 'view';
@@ -78,28 +87,25 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<ViewBlocklistPageArgs> 
         },
     };
 
-    public async run({ bot, src, guild }: CommandParameters, args: ViewBlocklistPageArgs) {
+    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: ViewBlocklistPageArgs) {
         let pageNumber = args.page - 1 ?? 0;
 
-        const blocklist = await bot.dataService.getBlocklist(guild.id);
+        const blocklist = await bot.dataService.getBlocklist(guildId);
 
         // Display blocklist
         const embed = bot.createEmbed(EmbedTemplates.Bare);
         embed.setTitle(`Blocklist for ${src.guild.name}`);
         const blocklistArray = [...blocklist.values()];
-        
+
         const lastPageNumber = Math.ceil(blocklistArray.length / 10) - 1;
         pageNumber = Math.min(pageNumber, lastPageNumber);
 
         if (blocklistArray.length === 0) {
             embed.setDescription('No one!');
-        }
-        else {
+        } else {
             const index = pageNumber * this.pageSize;
             const description = [`**Page ${pageNumber + 1}**`]
-                .concat(blocklistArray
-                    .slice(index, index + this.pageSize)
-                    .map(id => `<@${id}>`))
+                .concat(blocklistArray.slice(index, index + this.pageSize).map(id => `<@${id}>`))
                 .join('\n');
             embed.setDescription(description);
         }
@@ -108,17 +114,17 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<ViewBlocklistPageArgs> 
     }
 }
 
-export class BlocklistCommand extends NestedCommand {
+export class BlocklistCommand extends NestedCommand<SpindaDiscordBot> {
     public name = 'blocklist';
-    public description = 'Adds or removes a member from the guild\'s blocklist.';
+    public description = "Adds or removes a member from the guild's blocklist.";
     public moreDescription = 'Blocklisted members will be unable to use bot commands in the guild.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
-    
-    public initializeShared() { }
 
-    public subCommands = [
+    public initializeShared() {}
+
+    public subcommands = [
         AddMemberOnBlocklistSubCommand,
         RemoveMemberFromBlocklistSubCommand,
         ViewBlocklistPageSubCommand,

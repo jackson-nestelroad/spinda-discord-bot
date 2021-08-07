@@ -5,10 +5,10 @@ export namespace NumberUtil {
     }
 
     export function getSingleHexDigit(hex: number, digit: number): number {
-        return hex >> (digit << 2) & 0xF;
+        return (hex >> (digit << 2)) & 0xf;
     }
 
     export function getDoubleHexDigit(hex: number, digit: number): number {
-        return hex >> (digit << 3) & 0xFF;
+        return (hex >> (digit << 3)) & 0xff;
     }
 }

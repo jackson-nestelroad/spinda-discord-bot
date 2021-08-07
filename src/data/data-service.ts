@@ -1,15 +1,16 @@
-import { Guild, GuildAttributes } from './model/guild';
-import { Sequelize, Options } from 'sequelize';
-import { Environment } from './environment';
+import { Snowflake } from 'discord.js';
+import { BaseService } from 'panda-discord';
 import { exit } from 'process';
-import { CustomCommand, CustomCommandData } from './model/custom-command';
+import { Sequelize, Options } from 'sequelize';
+
+import { SpindaDiscordBot } from '../bot';
+import { Environment } from './environment';
 import { BlocklistEntry } from './model/blocklist';
 import { CaughtSpinda, CaughtSpindaAttributes, GeneratedSpinda } from './model/caught-spinda';
-import { BaseService } from '../services/base';
-import { DiscordBot } from '../bot';
-import { Snowflake } from 'discord.js';
+import { CustomCommand, CustomCommandData } from './model/custom-command';
+import { Guild, GuildAttributes } from './model/guild';
 
-export class DataService extends BaseService {
+export class DataService extends BaseService<SpindaDiscordBot> {
     public static readonly defaultPrefix: string = '>';
 
     private sequelize: Sequelize;
@@ -25,9 +26,9 @@ export class DataService extends BaseService {
         caughtSpindas: new Map<Snowflake, Array<CaughtSpindaAttributes>>(),
     } as const;
 
-    constructor(bot: DiscordBot) {
+    constructor(bot: SpindaDiscordBot) {
         super(bot);
-        
+
         const options: Options = {
             logging: false,
         };
@@ -37,7 +38,7 @@ export class DataService extends BaseService {
                 ssl: {
                     require: true,
                     rejectUnauthorized: false,
-                }
+                },
             };
         }
         this.sequelize = new Sequelize(Environment.getDatabaseUrl(), options);
@@ -68,7 +69,7 @@ export class DataService extends BaseService {
     }
 
     private async getGuildModel(id: Snowflake): Promise<Guild> {
-        let entry = await this.guilds.findOne({ where: { id }});
+        let entry = await this.guilds.findOne({ where: { id } });
         if (entry === null) {
             entry = await this.guilds.create({
                 id,
@@ -86,20 +87,24 @@ export class DataService extends BaseService {
         return this.cache.guilds.get(id);
     }
 
+    public getCachedGuild(id: Snowflake): GuildAttributes {
+        return this.cache.guilds.get(id);
+    }
+
     public async updateGuild(guild: GuildAttributes): Promise<void> {
         const updated = (await this.guilds.upsert(guild))[0];
         this.cache.guilds.set(updated.id, updated.get());
     }
 
     private async getCustomCommandModels(guildId: Snowflake): Promise<CustomCommand[]> {
-        let entries = await this.customCommands.findAll({ where: { guildId }});
+        let entries = await this.customCommands.findAll({ where: { guildId } });
         return entries;
     }
 
     private async assureCustomCommandsCache(guildId: Snowflake) {
         if (!this.cache.customCommands.has(guildId)) {
             const models = await this.getCustomCommandModels(guildId);
-            const map: Dictionary<CustomCommandData> = { };
+            const map: Dictionary<CustomCommandData> = {};
             for (const model of models) {
                 map[model.name] = model.get();
             }
@@ -117,8 +122,7 @@ export class DataService extends BaseService {
         const map = this.cache.customCommands.get(guildId);
         if (map[data.name]) {
             await this.customCommands.update(data, { where: { guildId, name: data.name } });
-        }
-        else {
+        } else {
             await this.customCommands.create({ guildId, ...data });
         }
         map[data.name] = data;
@@ -126,13 +130,13 @@ export class DataService extends BaseService {
 
     public async removeCustomCommand(guildId: Snowflake, name: string): Promise<boolean> {
         await this.assureCustomCommandsCache(guildId);
-        const removed = (await this.customCommands.destroy({ where: { guildId, name }})) !== 0;
+        const removed = (await this.customCommands.destroy({ where: { guildId, name } })) !== 0;
         delete this.cache.customCommands.get(guildId)[name];
         return removed;
     }
 
     private async getBlocklistModels(guildId: Snowflake): Promise<BlocklistEntry[]> {
-        let entries = await this.blocklist.findAll({ where: { guildId }});
+        let entries = await this.blocklist.findAll({ where: { guildId } });
         return entries;
     }
 
@@ -163,7 +167,7 @@ export class DataService extends BaseService {
 
     public async removeFromBlocklist(guildId: Snowflake, userId: Snowflake): Promise<boolean> {
         await this.assureBlocklistCache(guildId);
-        const removed = (await this.blocklist.destroy({ where: { guildId, userId }})) !== 0;
+        const removed = (await this.blocklist.destroy({ where: { guildId, userId } })) !== 0;
         this.cache.blocklist.get(guildId).delete(userId);
         return removed;
     }
@@ -199,8 +203,7 @@ export class DataService extends BaseService {
         for (const model of allSavedModels) {
             if (seenPositions.has(model.position)) {
                 badModels.push(model);
-            }
-            else {
+            } else {
                 if (model.position > maxPositionSeen) {
                     maxPositionSeen = model.position;
                 }
@@ -208,17 +211,16 @@ export class DataService extends BaseService {
                 goodModels.push(model);
             }
         }
-        
+
         // Max position is too large, redefine good and bad models based on position number
-        if (maxPositionSeen + 1 > allSavedModels.length) { 
+        if (maxPositionSeen + 1 > allSavedModels.length) {
             maxPositionSeen -= maxPositionSeen + 1 - allSavedModels.length;
             goodModels = [];
             badModels = [];
             for (const model of allSavedModels) {
                 if (model.position <= maxPositionSeen) {
                     goodModels.push(model);
-                }
-                else {
+                } else {
                     badModels.push(model);
                 }
             }
@@ -247,13 +249,13 @@ export class DataService extends BaseService {
     }
 
     public async swapCaughtSpindaPositions(userId: Snowflake, first: number, second: number) {
-        const firstModels = await this.caughtSpindas.findAll({ where: { userId, position: first }});
+        const firstModels = await this.caughtSpindas.findAll({ where: { userId, position: first } });
         if (firstModels.length !== 1) {
             await this.correctCaughtSpindaModels(userId);
             return this.swapCaughtSpindaPositions(userId, first, second);
         }
 
-        const secondModels = await this.caughtSpindas.findAll({ where: { userId, position: second }});
+        const secondModels = await this.caughtSpindas.findAll({ where: { userId, position: second } });
         if (secondModels.length !== 1) {
             await this.correctCaughtSpindaModels(userId);
             return this.swapCaughtSpindaPositions(userId, first, second);
@@ -268,13 +270,18 @@ export class DataService extends BaseService {
     }
 
     public async releaseCaughtSpinda(userId: Snowflake, pos: number) {
-        await this.caughtSpindas.destroy({ where: { userId, position: pos }});
+        await this.caughtSpindas.destroy({ where: { userId, position: pos } });
         await this.correctCaughtSpindaModels(userId);
     }
 
-    public async catchSpinda(userId: Snowflake, spinda: GeneratedSpinda, pos: number, allowCorrection: boolean = true): Promise<void> {
+    public async catchSpinda(
+        userId: Snowflake,
+        spinda: GeneratedSpinda,
+        pos: number,
+        allowCorrection: boolean = true,
+    ): Promise<void> {
         const collection = await this.assureCaughtSpindaCache(userId);
-        
+
         let model: CaughtSpinda;
 
         // Position exceeds current array
@@ -284,17 +291,21 @@ export class DataService extends BaseService {
             ++collection.length;
 
             model = await this.caughtSpindas.create({ userId, position: pos, ...spinda });
-        }
-        else {
-            const [numUpdated, updated] = await this.caughtSpindas.update(spinda, { where: { userId, position: pos }, returning: true });
-            
+        } else {
+            const [numUpdated, updated] = await this.caughtSpindas.update(spinda, {
+                where: { userId, position: pos },
+                returning: true,
+            });
+
             // numUpdated should be 1
             // If it isn't, something bad happened
             // The cache may have been corrupted, so we fix the cache and database, then try again
 
             if (numUpdated !== 1) {
                 if (!allowCorrection) {
-                    throw new Error(`Could not correct caught Spinda collection for user ID ${userId}. Database correction required.`);
+                    throw new Error(
+                        `Could not correct caught Spinda collection for user ID ${userId}. Database correction required.`,
+                    );
                 }
 
                 await this.correctCaughtSpindaModels(userId);
@@ -305,11 +316,10 @@ export class DataService extends BaseService {
                 }
                 // Not much we can do if multiple Spinda got overwritten
                 else {
-                    await Promise.all(updated.slice(1).map(async (model) => await model.destroy()));
+                    await Promise.all(updated.slice(1).map(async model => await model.destroy()));
                     model = updated[0];
                 }
-            }
-            else {
+            } else {
                 model = updated[0];
             }
         }

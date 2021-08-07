@@ -1,11 +1,12 @@
 import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D, ImageData } from 'canvas';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { DiscordBot } from '../../../bot';
+import { BaseService } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../../../bot';
 import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
-import { BaseService } from '../../../services/base';
 import { CircularBuffer } from '../../../util/circular-buffer';
-import { NumberUtil } from '../../../util/number';
 import { Color, RGBAColor } from '../../../util/color';
+import { NumberUtil } from '../../../util/number';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
@@ -24,15 +25,13 @@ type SpotData<T> = Record<Exclude<SpotLocation, SpotLocation.Count>, T>;
 class Resource {
     private imageData: Image = null;
 
-    public constructor(
-        private readonly path: string,
-    ) { }
+    public constructor(private readonly path: string) {}
 
     public get image(): Image {
         return this.imageData;
     }
 
-    public async load(bot: DiscordBot) {
+    public async load(bot: SpindaDiscordBot) {
         this.imageData = await loadImage(bot.resourceService.resolve(this.path));
     }
 
@@ -42,10 +41,7 @@ class Resource {
 }
 
 class Spot extends Resource {
-    public constructor(
-        path: string,
-        public readonly anchor: Point,
-    ) { 
+    public constructor(path: string, public readonly anchor: Point) {
         super(path);
     }
 }
@@ -61,9 +57,9 @@ interface HordeGenerationResult {
 }
 
 type Resources = Resource | ResourceMap;
-export interface ResourceMap extends Dictionary<Resources> { };
+export interface ResourceMap extends Dictionary<Resources> {}
 
-type CanvasGlobalCompositeOperation =  typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
+type CanvasGlobalCompositeOperation = typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
 
 export class CanvasBundle {
     public canvas: Canvas = createCanvas(0, 0);
@@ -86,35 +82,23 @@ export class CanvasBundle {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    public drawImage(
-        composite: CanvasGlobalCompositeOperation,
-        ...args: any[]
-    ) {
+    public drawImage(composite: CanvasGlobalCompositeOperation, ...args: any[]) {
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.globalCompositeOperation = composite;
         this.ctx.drawImage(...args);
     }
 
-    public drawCanvas(
-        composite: CanvasGlobalCompositeOperation,
-        bundle: CanvasBundle
-    ) {
+    public drawCanvas(composite: CanvasGlobalCompositeOperation, bundle: CanvasBundle) {
         this.drawImage(composite, bundle.canvas, 0, 0);
     }
 
-    public fillColor(
-        composite: CanvasGlobalCompositeOperation,
-        color: RGBAColor
-    ) {
+    public fillColor(composite: CanvasGlobalCompositeOperation, color: RGBAColor) {
         this.ctx.globalCompositeOperation = composite;
         this.ctx.fillStyle = color.hexString();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    public fillGradient(
-        composite: CanvasGlobalCompositeOperation,
-        gradient: CanvasGradient
-    ) {
+    public fillGradient(composite: CanvasGlobalCompositeOperation, gradient: CanvasGradient) {
         this.ctx.globalCompositeOperation = composite;
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -138,11 +122,11 @@ export class CanvasBundle {
     }
 
     public getImageData(): ImageData {
-        return this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height)
+        return this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 
-export class SpindaGeneratorService extends BaseService {
+export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     private readonly resources = {
         base: new Resource('spinda/base.png'),
         components: {
@@ -241,8 +225,7 @@ export class SpindaGeneratorService extends BaseService {
             const value = resources[key];
             if (value instanceof Resource) {
                 await value.load(this.bot);
-            }
-            else {
+            } else {
                 await this.loadResources(value);
             }
         }
@@ -285,7 +268,7 @@ export class SpindaGeneratorService extends BaseService {
                 Math.random(),
                 Math.random(),
                 // Limited value range, so the spots aren't too dark
-                (Math.random() * 0.40) + 0.60,
+                Math.random() * 0.4 + 0.6,
             ).toRGB().hex;
         }
     }
@@ -310,13 +293,12 @@ export class SpindaGeneratorService extends BaseService {
         let baseSpots: SpotData<Spot>;
         if (features & SpindaFeatures.SmallSpots) {
             baseSpots = this.resources.smallSpots;
-        }
-        else {
+        } else {
             baseSpots = this.resources.spots;
         }
 
         // Copy spots over
-        const spots: Partial<SpotData<Spot>> = { };
+        const spots: Partial<SpotData<Spot>> = {};
         for (let i = SpotLocation.Start; i < SpotLocation.Count; ++i) {
             spots[i] = baseSpots[i];
         }
@@ -363,7 +345,10 @@ export class SpindaGeneratorService extends BaseService {
         buffer.clear();
     }
 
-    public async generate(spinda: GeneratedSpinda = this.newSpinda(), scale: boolean = true): Promise<SpindaGenerationResult> {
+    public async generate(
+        spinda: GeneratedSpinda = this.newSpinda(),
+        scale: boolean = true,
+    ): Promise<SpindaGenerationResult> {
         if (this.canvases.length < this.numCanvases) {
             for (let i = this.canvases.length; i < this.numCanvases; ++i) {
                 this.canvases.push(new CanvasBundle());
@@ -395,7 +380,7 @@ export class SpindaGeneratorService extends BaseService {
 
         // Draw color mask into first canvas
         SpindaColorMask.draw(spinda, firstCanvas);
-        
+
         // Draw red body into second canvas
         this.drawComponent(secondCanvas, 'source-over', this.resources.components.red);
 
@@ -405,7 +390,7 @@ export class SpindaGeneratorService extends BaseService {
             const spot: Spot = spots[i];
             const origin: Point = spot.anchor.translate(
                 NumberUtil.getSingleHexDigit(spinda.pid, 2 * i),
-                NumberUtil.getSingleHexDigit(spinda.pid, 2 * i + 1)
+                NumberUtil.getSingleHexDigit(spinda.pid, 2 * i + 1),
             );
 
             this.drawComponent(secondCanvas, 'source-over', spot, origin);
@@ -418,8 +403,7 @@ export class SpindaGeneratorService extends BaseService {
         if (spinda.features & SpindaFeatures.Inverted) {
             secondCanvas.fillColor('source-in', SpindaColors.base);
             thirdCanvas.drawCanvas('source-in', firstCanvas);
-        }
-        else if (spinda.colorChange !== SpindaColorChange.None) {
+        } else if (spinda.colorChange !== SpindaColorChange.None) {
             secondCanvas.drawCanvas('source-in', firstCanvas);
         }
 
@@ -448,10 +432,10 @@ export class SpindaGeneratorService extends BaseService {
     public async horde(spindaCollection?: Readonly<Array<GeneratedSpinda>>): Promise<HordeGenerationResult> {
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
-            ? [...new Array(SpindaGeneratorService.historySize)]
-                .map(async () => await this.generate(this.newSpinda(), false))
-            : spindaCollection
-                .map(async (spinda) => await this.generate(spinda, false))
+                ? [...new Array(SpindaGeneratorService.historySize)].map(
+                      async () => await this.generate(this.newSpinda(), false),
+                  )
+                : spindaCollection.map(async spinda => await this.generate(spinda, false)),
         );
 
         const width = this.getSpindaWidth();
@@ -470,7 +454,18 @@ export class SpindaGeneratorService extends BaseService {
             const image = new Image();
             image.src = spinda.buffer;
 
-            hordeCanvas.drawImage('source-over', image, 0, 0, width, height, scaledWidth * i, 0, scaledWidth, scaledHeight);
+            hordeCanvas.drawImage(
+                'source-over',
+                image,
+                0,
+                0,
+                width,
+                height,
+                scaledWidth * i,
+                0,
+                scaledWidth,
+                scaledHeight,
+            );
         }
 
         return {

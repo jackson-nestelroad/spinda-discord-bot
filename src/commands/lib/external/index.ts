@@ -1,6 +1,5 @@
-import { CommandTypeArray } from '../base';
+import { CommandTypeArray } from 'panda-discord';
+
 import { MediaWikiCommands } from './wiki';
 
-export const ExternalCommands: CommandTypeArray = [
-    ...MediaWikiCommands,
-];
+export const ExternalCommands: CommandTypeArray = [...MediaWikiCommands];

@@ -1,10 +1,18 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface EightBallArgs {
     question?: string;
 }
 
-export class EightBallCommand extends ComplexCommand<EightBallArgs> {
+export class EightBallCommand extends ComplexCommand<SpindaDiscordBot, EightBallArgs> {
     public prefix = ':8ball: - ';
     public name = '8ball';
     public description = 'Shakes the Magic 8-ball for a glimpse into the future.';
@@ -36,14 +44,14 @@ export class EightBallCommand extends ComplexCommand<EightBallArgs> {
         'Better not tell you now.',
         'Cannot predict now.',
         'Concentrate and ask again.',
-        'Don\'t count on it.',
+        "Don't count on it.",
         'My reply is no.',
         'My sources say no.',
         'Outlook not so good.',
-        'Very doubtful.'
+        'Very doubtful.',
     ];
 
-    public async run({ src }: CommandParameters, args: EightBallArgs) {
+    public async run({ src }: CommandParameters<SpindaDiscordBot>, args: EightBallArgs) {
         await src.send(this.prefix + this.options[Math.floor(Math.random() * this.options.length)]);
     }
 }

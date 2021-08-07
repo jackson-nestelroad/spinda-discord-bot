@@ -1,14 +1,22 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { SpindaCommandNames } from './command-names';
-import { EmbedTemplates } from '../../../util/embed';
-import { SpindaGeneratorService } from './generator';
 import { MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { SpindaCommandNames } from './command-names';
+import { SpindaGeneratorService } from './generator';
 
 interface ReleaseArgs {
     position: number;
 }
 
-export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
+export class ReleaseCommand extends ComplexCommand<SpindaDiscordBot, ReleaseArgs> {
     public name = SpindaCommandNames.Release;
     public description = 'Releases a single Spinda from your party.';
     public category = CommandCategory.Spinda;
@@ -23,7 +31,7 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: ReleaseArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ReleaseArgs) {
         if (args.position <= 0) {
             throw new Error(`Position must be a positive integer.`);
         }
@@ -72,9 +80,10 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
         try {
             interaction = await response.message.awaitMessageComponent({
                 filter: interaction => interaction.user.id === src.author.id,
-                time: 10000
-            });   
+                time: 10000,
+            });
         } catch (error) {
+            response = await disableButtons();
             throw new Error('You did not respond in time.');
         }
 
@@ -83,15 +92,13 @@ export class ReleaseCommand extends ComplexCommand<ReleaseArgs> {
 
         if (interaction.customId === 'cancel') {
             return;
-        }
-        else if (interaction.customId === 'confirm') {
+        } else if (interaction.customId === 'confirm') {
             await bot.dataService.releaseCaughtSpinda(src.author.id, args.position - 1);
 
             const confirmEmbed = bot.createEmbed(EmbedTemplates.Success);
             confirmEmbed.setDescription(`Goodbye, Spinda! Successfully released position ${args.position}.`);
             await src.send({ embeds: [confirmEmbed] });
-        }
-        else {
+        } else {
             throw new Error(`Unknown interaction custom ID: ${interaction.customId}.`);
         }
     }

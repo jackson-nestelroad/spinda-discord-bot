@@ -1,13 +1,21 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../../bot';
 
 interface MediaWikiArgs {
     url: string;
     query: string;
 }
 
-export class MediaWikiCommand extends ComplexCommand<MediaWikiArgs> {
+export class MediaWikiCommand extends ComplexCommand<SpindaDiscordBot, MediaWikiArgs> {
     public name = 'media-wiki';
-    public description = 'Searches a MediaWiki website for a page matching the given query.'
+    public description = 'Searches a MediaWiki website for a page matching the given query.';
     public category = CommandCategory.Secret;
     public permission = CommandPermission.Owner;
     public cooldown = StandardCooldowns.Medium;
@@ -25,7 +33,7 @@ export class MediaWikiCommand extends ComplexCommand<MediaWikiArgs> {
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: MediaWikiArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: MediaWikiArgs) {
         await bot.mediaWikiService.searchSite(src, args.url, args.query);
     }
 }

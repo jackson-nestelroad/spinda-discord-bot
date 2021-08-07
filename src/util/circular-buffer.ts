@@ -4,9 +4,7 @@ export class CircularBuffer<T> {
     private data: T[];
     private head: number;
 
-    constructor(
-        public readonly size: number,
-    ) { 
+    constructor(public readonly size: number) {
         if (size <= 0) {
             throw new Error('Circular array size must be larger than 0.');
         }
@@ -32,8 +30,7 @@ export class CircularBuffer<T> {
     public set(newData: T[]) {
         if (newData.length > this.size) {
             this.data = newData.slice(0, this.size);
-        }
-        else {
+        } else {
             if (newData.length < this.size) {
                 newData.length = this.size;
             }

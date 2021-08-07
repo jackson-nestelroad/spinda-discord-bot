@@ -1,7 +1,15 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { CustomCommandEngine, CustomCommandMetadata } from '../../../custom-commands/custom-command-engine';
 import { ApplicationCommandData, MessageEmbed } from 'discord.js';
-import { EmbedTemplates } from '../../../util/embed';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { CustomCommandEngine, CustomCommandMetadata } from '../../../custom-commands/custom-command-engine';
 import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 
 interface SetCommandArgs {
@@ -9,10 +17,11 @@ interface SetCommandArgs {
     message: string;
 }
 
-export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
+export class SetCommandCommand extends ComplexCommand<SpindaDiscordBot, SetCommandArgs> {
     public name = 'set-command';
     public description = 'Sets a custom command for the guild that responds with the given message.';
-    public moreDescription = 'You may use the following variables in the command message to customize your command\'s response.';
+    public moreDescription =
+        "You may use the following variables in the command message to customize your command's response.";
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.High;
@@ -40,7 +49,7 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
         });
     }
 
-    public async run({ bot, src }: CommandParameters, args: SetCommandArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: SetCommandArgs) {
         // Discord allows up to 100 custom slash commands, so we do the same
         const allCustomCommandsForGuild = await bot.dataService.getCustomCommands(src.guild.id);
         if (Object.keys(allCustomCommandsForGuild).length > this.maxCustomCommands) {
@@ -96,28 +105,25 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
             // Create slash command for this guild only
             const newSlashCommandData: ApplicationCommandData = {
                 name: data.name,
-                    description: data.description,
-                    options: !(data.flags & CustomCommandFlag.NoContent)
-                        ? [
-                            { 
-                                name: data.contentName,
-                                description: data.contentDescription,
-                                type: "STRING",
-                                required: (data.flags & CustomCommandFlag.ContentRequired) !== 0,
-                            },
-                        ]
-                        : [],
-                    defaultPermission: true,
-                
-            }
+                description: data.description,
+                options: !(data.flags & CustomCommandFlag.NoContent)
+                    ? [
+                          {
+                              name: data.contentName,
+                              description: data.contentDescription,
+                              type: 'STRING',
+                              required: (data.flags & CustomCommandFlag.ContentRequired) !== 0,
+                          },
+                      ]
+                    : [],
+                defaultPermission: true,
+            };
             if (oldSlashCommand) {
                 await src.guild.commands.edit(oldSlashCommand, newSlashCommandData);
-            }
-            else {
+            } else {
                 await src.guild.commands.create(newSlashCommandData);
             }
-        }
-        else {
+        } else {
             // Slash command is now disabled on this command
             if (oldSlashCommand) {
                 await src.guild.commands.delete(oldSlashCommand);
@@ -127,7 +133,7 @@ export class SetCommandCommand extends ComplexCommand<SetCommandArgs> {
         // Save to the database last
         // If the slash command creation fails, we don't want a dangling custom command
         await bot.dataService.setCustomCommand(src.guild.id, data);
-        
+
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(`Successfully set command \`${command}\`.`);
         await src.send({ embeds: [embed] });

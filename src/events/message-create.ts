@@ -1,18 +1,14 @@
 import { Message } from 'discord.js';
-import { BaseEvent } from './base';
-import { Validation } from './util/validate';
-import { DiscordBot } from '../bot';
-import { ChatCommandParameters } from '../commands/lib/base';
+import { BaseEvent, ChatCommandParameters, CommandSource } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
-import { CommandSource } from '../util/command-source';
 
-const event = 'messageCreate';
-
-export class MessageCreateEvent extends BaseEvent<typeof event> {
+export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
     private forbiddenMentionRegex = /@(everyone|here)/g;
 
-    constructor(bot: DiscordBot) {
-        super(bot, event);
+    constructor(bot: SpindaDiscordBot) {
+        super(bot, 'messageCreate');
     }
 
     private async runCommand(content: string, msg: Message, guild: GuildAttributes) {
@@ -21,19 +17,19 @@ export class MessageCreateEvent extends BaseEvent<typeof event> {
         content = content.substr(cmd.length).trim();
         content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
 
-        const params: ChatCommandParameters = {
+        const params: ChatCommandParameters<SpindaDiscordBot> = {
             bot: this.bot,
             src: new CommandSource(msg),
             args,
             content,
-            guild,
+            guildId: guild.id,
         };
 
         // Global command
         if (this.bot.commands.has(cmd)) {
             try {
-                const command = this.bot.commands.get(cmd)
-                if (Validation.validate(params, command, params.src.member)) {
+                const command = this.bot.commands.get(cmd);
+                if (this.bot.validate(params, command)) {
                     await command.executeChat(params);
                 }
             } catch (error) {
@@ -56,7 +52,7 @@ export class MessageCreateEvent extends BaseEvent<typeof event> {
             }
         }
     }
-    
+
     public async run(msg: Message) {
         // User is a bot or in a direct message
         if (msg.author.bot || msg.guild === null) {
@@ -73,24 +69,27 @@ export class MessageCreateEvent extends BaseEvent<typeof event> {
         if (blocklist.has(msg.author.id)) {
             return;
         }
-    
+
         const guild = await this.bot.dataService.getGuild(msg.guild.id);
         const prefix = guild.prefix;
-        
+
         if (!msg.content.startsWith(prefix)) {
             // Bot is mentioned
             if (msg.mentions.users.has(this.bot.client.user.id)) {
                 // Bot mention is the message's prefix
                 const mentionIndex = msg.content.indexOf(this.bot.client.user.id);
                 const endOfMentionString = mentionIndex + this.bot.client.user.id.length;
-                if ((mentionIndex === 2 || (mentionIndex === 3 && msg.content[2] === '!'))
-                    && msg.content[0] === '<' && msg.content[1] === '@' && msg.content[endOfMentionString] === '>') {
+                if (
+                    (mentionIndex === 2 || (mentionIndex === 3 && msg.content[2] === '!')) &&
+                    msg.content[0] === '<' &&
+                    msg.content[1] === '@' &&
+                    msg.content[endOfMentionString] === '>'
+                ) {
                     let content = msg.content.substr(endOfMentionString + 1).trim();
                     await this.runCommand(content, msg, guild);
                 }
             }
-        }
-        else {
+        } else {
             let content = msg.content.substr(prefix.length);
             await this.runCommand(content, msg, guild);
         }

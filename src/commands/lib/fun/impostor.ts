@@ -1,13 +1,21 @@
 import { GuildMember } from 'discord.js';
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
 
-type WeightedDistribution<T> = Array<{ value: T, weight: number }>;
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+type WeightedDistribution<T> = Array<{ value: T; weight: number }>;
 
 interface ImpostorArgs {
     user: GuildMember;
 }
 
-export class ImpostorCommand extends ComplexCommand<ImpostorArgs> {
+export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorArgs> {
     public name = 'impostor';
     public description = 'Checks if a user is an impostor.';
     public category = CommandCategory.Fun;
@@ -29,27 +37,23 @@ export class ImpostorCommand extends ComplexCommand<ImpostorArgs> {
 
     private readonly stars: WeightedDistribution<string[] | string> = [
         { weight: 800, value: ' ' },
-        { weight: 180, value: [
-            '\u{2DA}',
-            '.',
-            '\u{B7}',
-            '\u{B0}',
-            '\u{2022}',
-            '\u{2217}',
-            '\u{204E}',
-            '\u{2055}',
-            '\u{22C6}',
-            '*',
-        ] },
-        { weight: 19, value: [
-            '\u{2727}',
-            '\u{2735}',
-            '\u{2737}',
-        ] },
-        { weight: 1, value: [
-            '\u{25D0}',
-            '\u{25D1}',
-        ] },
+        {
+            weight: 180,
+            value: [
+                '\u{2DA}',
+                '.',
+                '\u{B7}',
+                '\u{B0}',
+                '\u{2022}',
+                '\u{2217}',
+                '\u{204E}',
+                '\u{2055}',
+                '\u{22C6}',
+                '*',
+            ],
+        },
+        { weight: 19, value: ['\u{2727}', '\u{2735}', '\u{2737}'] },
+        { weight: 1, value: ['\u{25D0}', '\u{25D1}'] },
     ];
 
     private getStar(): string {
@@ -93,8 +97,10 @@ export class ImpostorCommand extends ComplexCommand<ImpostorArgs> {
         return `\`\`\`${message.join('\n')}\`\`\``;
     }
 
-    public async run({ bot, src }: CommandParameters, args: ImpostorArgs) {
-        const name = args.user?.user.username ?? (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ImpostorArgs) {
+        const name =
+            args.user?.user.username ??
+            (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
 
         await src.send(this.generateText(name, this.identity));
     }

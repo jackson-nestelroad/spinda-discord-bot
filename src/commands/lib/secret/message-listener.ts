@@ -1,9 +1,16 @@
 import { Message } from 'discord.js';
-import { DiscordBot } from '../../../bot';
-import { DiscordUtil } from '../../../util/discord';
-import { EmbedTemplates } from '../../../util/embed';
-import { EvalUtil } from '../../../util/eval';
-import { ArgumentsConfig, ArgumentType, CommandCategory, CommandParameters, CommandPermission, ComplexCommand, NestedCommand } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    DiscordUtil,
+    EmbedTemplates,
+    EvalUtil,
+    NestedCommand,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 type MessageListener = (msg: Message) => Promise<any>;
 
@@ -11,7 +18,7 @@ class SharedMessageListeners {
     public nextId: number = 0;
     public readonly listeners: Map<number, MessageListener> = new Map();
 
-    public async removeListenerFromBot(bot: DiscordBot, id: number) {
+    public async removeListenerFromBot(bot: SpindaDiscordBot, id: number) {
         bot.client.removeListener('message', this.listeners.get(id));
         this.listeners.delete(id);
     }
@@ -21,7 +28,11 @@ interface AddMessageListenerArgs {
     code: string;
 }
 
-class AddMessageListenerSubCommand extends ComplexCommand<AddMessageListenerArgs, SharedMessageListeners> {
+class AddMessageListenerSubCommand extends ComplexCommand<
+    SpindaDiscordBot,
+    AddMessageListenerArgs,
+    SharedMessageListeners
+> {
     public name = 'add';
     public description = 'Adds a new message listener to the bot.';
     public category = CommandCategory.Secret;
@@ -35,8 +46,9 @@ class AddMessageListenerSubCommand extends ComplexCommand<AddMessageListenerArgs
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: AddMessageListenerArgs) {
-        const code = DiscordUtil.getCodeBlockOrLine(args.code) ?? args.code;
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: AddMessageListenerArgs) {
+        const match = DiscordUtil.getCodeBlockOrLine(args.code);
+        const code = match.match ? match.result.content : args.code;
 
         const id = this.shared.nextId++;
         const listener = async (newMsg: Message) => {
@@ -74,7 +86,11 @@ interface RemoveMessageListenerArgs {
     id: number;
 }
 
-class RemoveMessageListenerSubCommand extends ComplexCommand<RemoveMessageListenerArgs, SharedMessageListeners> {
+class RemoveMessageListenerSubCommand extends ComplexCommand<
+    SpindaDiscordBot,
+    RemoveMessageListenerArgs,
+    SharedMessageListeners
+> {
     public name = 'remove';
     public description = 'Removes one of the message listeners added to the bot.';
     public category = CommandCategory.Secret;
@@ -88,7 +104,7 @@ class RemoveMessageListenerSubCommand extends ComplexCommand<RemoveMessageListen
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: RemoveMessageListenerArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: RemoveMessageListenerArgs) {
         if (!this.shared.listeners.has(args.id)) {
             throw new Error(`Invalid ID.`);
         }
@@ -101,7 +117,7 @@ class RemoveMessageListenerSubCommand extends ComplexCommand<RemoveMessageListen
     }
 }
 
-export class MessageListenerCommand extends NestedCommand<SharedMessageListeners> {
+export class MessageListenerCommand extends NestedCommand<SpindaDiscordBot, SharedMessageListeners> {
     public name = 'message-listener';
     public description = 'Adds or removes a new message listener to the bot.';
     public category = CommandCategory.Secret;
@@ -111,8 +127,5 @@ export class MessageListenerCommand extends NestedCommand<SharedMessageListeners
         return new SharedMessageListeners();
     }
 
-    public subCommands = [
-        AddMessageListenerSubCommand,
-        RemoveMessageListenerSubCommand,
-    ];
+    public subcommands = [AddMessageListenerSubCommand, RemoveMessageListenerSubCommand];
 }

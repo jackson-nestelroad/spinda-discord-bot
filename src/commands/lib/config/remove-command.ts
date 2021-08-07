@@ -1,11 +1,19 @@
-import { EmbedTemplates } from '../../../util/embed';
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RemoveCommandArgs {
     command: string;
 }
 
-export class RemoveCommandCommand extends ComplexCommand<RemoveCommandArgs> {
+export class RemoveCommandCommand extends ComplexCommand<SpindaDiscordBot, RemoveCommandArgs> {
     public name = 'remove-command';
     public description = 'Removes a custom command that was previously set for the guild.';
     public category = CommandCategory.Config;
@@ -20,9 +28,9 @@ export class RemoveCommandCommand extends ComplexCommand<RemoveCommandArgs> {
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: RemoveCommandArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: RemoveCommandArgs) {
         const command = args.command.toLowerCase();
-        
+
         // Remove slash command first
         const slashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
         if (slashCommand) {

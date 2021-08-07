@@ -39,10 +39,13 @@ export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
     readonly position: number;
 }
 
-interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> { };
+interface CaughtSpindaCreationAttributes
+    extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> {}
 
-export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
-    implements CaughtSpindaAttributes {
+export class CaughtSpinda
+    extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
+    implements CaughtSpindaAttributes
+{
     public readonly id: number;
     public readonly userId: Snowflake;
     public readonly position: number;
@@ -51,54 +54,57 @@ export class CaughtSpinda extends Model<CaughtSpindaAttributes, CaughtSpindaCrea
     public readonly colorChange: SpindaColorChange;
     public readonly features: number;
     public readonly customColor: number;
-    
+
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
     static initialize(sequelize: Sequelize) {
-        CaughtSpinda.init({
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true,
+        CaughtSpinda.init(
+            {
+                id: {
+                    type: DataTypes.INTEGER,
+                    primaryKey: true,
+                    autoIncrement: true,
+                },
+                userId: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    unique: false,
+                },
+                position: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    unique: false,
+                    defaultValue: 0,
+                },
+                generatedAt: {
+                    type: DataTypes.DATE,
+                    allowNull: false,
+                },
+                pid: {
+                    type: DataTypes.BIGINT,
+                    allowNull: false,
+                },
+                colorChange: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: SpindaColorChange.None,
+                },
+                features: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: SpindaFeatures.None,
+                },
+                customColor: {
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                    defaultValue: null,
+                },
             },
-            userId: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                unique: false,
+            {
+                sequelize,
+                tableName: 'caughtspindas',
             },
-            position: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                unique: false,
-                defaultValue: 0,
-            },
-            generatedAt: {
-                type: DataTypes.DATE,
-                allowNull: false,
-            },
-            pid: {
-                type: DataTypes.BIGINT,
-                allowNull: false,
-            },
-            colorChange: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: SpindaColorChange.None,
-            },
-            features: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: SpindaFeatures.None,
-            },
-            customColor: {
-                type: DataTypes.INTEGER,
-                allowNull: true,
-                defaultValue: null,
-            },
-        }, {
-            sequelize,
-            tableName: 'caughtspindas',
-        });
+        );
     }
 }

@@ -1,15 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { Color, RGBAColor } from '../../../util/color';
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { Color, RGBAColor } from '../../../util/color';
 
 interface ColorArgs {
     color?: string;
 }
 
-export class ColorCommand extends ComplexCommand<ColorArgs> {
+export class ColorCommand extends ComplexCommand<SpindaDiscordBot, ColorArgs> {
     public name = 'color';
-    public description = 'Displays a given or random color.'
+    public description = 'Displays a given or random color.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
@@ -29,14 +37,13 @@ export class ColorCommand extends ComplexCommand<ColorArgs> {
     private readonly canvas: Canvas = createCanvas(this.canvasSize, this.canvasSize);
     private readonly ctx: CanvasRenderingContext2D = this.canvas.getContext('2d');
 
-    public async run({ bot, src }: CommandParameters, args: ColorArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ColorArgs) {
         let color: RGBAColor = null;
 
         // Random color
         if (!args.color) {
             color = Color.Hex(Math.random() * 0x1000000);
-        }
-        else {
+        } else {
             const rgb = args.color.split(',');
             // RGB format
             if (rgb.length === 3) {
@@ -74,7 +81,7 @@ export class ColorCommand extends ComplexCommand<ColorArgs> {
         // Generate image
         this.ctx.fillStyle = rgbString;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Attach generated file (.png extension is needed)
         const attachment = new MessageAttachment(this.canvas.toBuffer(), 'thumbnail.png');
         embed.setThumbnail('attachment://thumbnail.png');

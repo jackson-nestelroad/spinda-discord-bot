@@ -1,6 +1,5 @@
 import axios from 'axios';
-import { BaseService } from './base';
-import { CommandSource } from '../util/command-source';
+import { BaseService, CommandSource } from 'panda-discord';
 
 interface ConfirmedSiteEntry {
     siteName: string;
@@ -30,7 +29,7 @@ export class MediaWikiService extends BaseService {
                 throw new Error(`${url} is not a valid URL.`);
             }
         }
-        
+
         // Make sure we are using a valid protocol
         if (parsed.protocol !== 'https:') {
             parsed.protocol = 'https:';
@@ -48,7 +47,7 @@ export class MediaWikiService extends BaseService {
             throw new Error(`Search query cannot be empty.`);
         }
 
-        await src.defer();
+        await src.deferReply();
         site = site.toLowerCase();
         if (!this.confirmedSites.has(site)) {
             site = this.validateURL(site);
@@ -83,7 +82,7 @@ export class MediaWikiService extends BaseService {
         if (!Array.isArray(response.data) || response.data.length !== 4) {
             throw new Error(`Invalid response data.`);
         }
-        
+
         const embed = this.bot.createEmbed();
         embed.setTitle(entry.siteName);
         embed.setURL(entry.homePage);
@@ -91,8 +90,7 @@ export class MediaWikiService extends BaseService {
 
         if (response.data[1].length === 0) {
             embed.setDescription('No results found!');
-        }
-        else {
+        } else {
             const results: string[] = [];
             for (let i = 0; i < response.data[1].length; ++i) {
                 results.push(`${i + 1}. [${response.data[1][i]}](${response.data[3][i]})`);

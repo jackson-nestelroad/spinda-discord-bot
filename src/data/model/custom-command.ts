@@ -22,10 +22,12 @@ export interface CustomCommandAttributes extends CustomCommandData {
     readonly guildId: Snowflake;
 }
 
-interface CustomCommandCreationAttributes extends Optional<CustomCommandAttributes, 'id'> { };
+interface CustomCommandCreationAttributes extends Optional<CustomCommandAttributes, 'id'> {}
 
-export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandCreationAttributes>
-    implements CustomCommandAttributes {
+export class CustomCommand
+    extends Model<CustomCommandAttributes, CustomCommandCreationAttributes>
+    implements CustomCommandAttributes
+{
     public readonly id: number;
     public readonly guildId: Snowflake;
     public name: string;
@@ -39,44 +41,47 @@ export class CustomCommand extends Model<CustomCommandAttributes, CustomCommandC
     public readonly updatedAt!: Date;
 
     static initialize(sequelize: Sequelize) {
-        CustomCommand.init({
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true,
+        CustomCommand.init(
+            {
+                id: {
+                    type: DataTypes.INTEGER,
+                    primaryKey: true,
+                    autoIncrement: true,
+                },
+                guildId: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
+                name: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
+                message: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                },
+                description: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                },
+                contentName: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                },
+                contentDescription: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                },
+                flags: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: CustomCommandFlag.None,
+                },
             },
-            guildId: {
-                type: DataTypes.STRING,
-                allowNull: false,
+            {
+                sequelize,
+                tableName: 'customcommands',
             },
-            name: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            message: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-            },
-            description: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-            },
-            contentName: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-            },
-            contentDescription: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-            },
-            flags: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: CustomCommandFlag.None,
-            },
-        }, {
-            sequelize,
-            tableName: 'customcommands',
-        });
+        );
     }
 }

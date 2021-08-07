@@ -1,9 +1,13 @@
-import { CommandMap, CommandTypeArray } from './lib/base';
+import { CommandTypeArray } from 'panda-discord';
+
 import { BlocklistCommand } from './lib/config/blocklist';
 import { LogsCommand } from './lib/config/logs';
 import { PrefixCommand } from './lib/config/prefix';
 import { RemoveCommandCommand } from './lib/config/remove-command';
+import { RunCustomCommand } from './lib/config/run-custom';
+import { RunUniversalCommand } from './lib/config/run-universal';
 import { SetCommandCommand } from './lib/config/set-command';
+import { SnapshotMembersCommand } from './lib/config/snapshot-members';
 import { ExternalCommands } from './lib/external';
 import { EightBallCommand } from './lib/fun/8ball';
 import { BotsnackCommand } from './lib/fun/botsnack';
@@ -16,8 +20,8 @@ import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { PokengineCommands } from './lib/pokengine';
 import { EvalCommand } from './lib/secret/eval';
+import { MessageListenerCommand } from './lib/secret/message-listener';
 import { RefreshCommand } from './lib/secret/refresh';
-import { RunCustomCommand } from './lib/config/run-custom';
 import { SayCommand } from './lib/secret/say';
 import { SpindaCommands } from './lib/spinda';
 import { CleanCommand } from './lib/utility/clean';
@@ -25,11 +29,8 @@ import { HelpCommand } from './lib/utility/help';
 import { MemoryCommand } from './lib/utility/memory';
 import { PingCommand } from './lib/utility/ping';
 import { UptimeCommand } from './lib/utility/uptime';
-import { SnapshotMembersCommand } from './lib/config/snapshot-members';
-import { MessageListenerCommand } from './lib/secret/message-listener';
-import { RunUniversalCommand } from './lib/config/run-universal';
 
-const CommandTypes: CommandTypeArray = [
+export const CommandTypes: CommandTypeArray = [
     PingCommand,
     HelpCommand,
     CleanCommand,
@@ -37,7 +38,7 @@ const CommandTypes: CommandTypeArray = [
     MemoryCommand,
 
     ...SpindaCommands,
-    
+
     BotsnackCommand,
     ConchCommand,
     EightBallCommand,
@@ -65,15 +66,3 @@ const CommandTypes: CommandTypeArray = [
     RunUniversalCommand,
     SnapshotMembersCommand,
 ];
-
-export namespace Commands {
-    export function buildCommandMap(): CommandMap<string> {
-        const map = new Map();
-        for (const cmd of CommandTypes) {
-            const instance = new cmd();
-            instance.initialize();
-            map.set(instance.name, instance);
-        }
-        return map;
-    }
-}

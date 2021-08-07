@@ -22,7 +22,7 @@ export interface GuildAttributes {
     logOptions: number;
 }
 
-interface GuildCreationAttributes extends Optional<GuildAttributes, 'internalId' | 'logOptions'> { };
+interface GuildCreationAttributes extends Optional<GuildAttributes, 'internalId' | 'logOptions'> {}
 
 export class Guild extends Model<GuildAttributes, GuildCreationAttributes> implements GuildAttributes {
     public readonly internalId!: number;
@@ -51,35 +51,37 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
     }
 
     static initialize(sequelize: Sequelize) {
-        Guild.init({
-            internalId: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true,
+        Guild.init(
+            {
+                internalId: {
+                    type: DataTypes.INTEGER,
+                    primaryKey: true,
+                    autoIncrement: true,
+                },
+                id: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                    unique: true,
+                },
+                prefix: {
+                    type: DataTypes.STRING,
+                    allowNull: false,
+                },
+                logChannelId: {
+                    type: DataTypes.STRING,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                logOptions: {
+                    type: DataTypes.INTEGER,
+                    allowNull: false,
+                    defaultValue: 0,
+                },
             },
-            id: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                unique: true,
+            {
+                sequelize,
+                tableName: 'guilds',
             },
-            prefix: {
-                type: DataTypes.STRING,
-                allowNull: false,
-            },
-            logChannelId: {
-                type: DataTypes.STRING,
-                allowNull: true,
-                defaultValue: null,
-            },
-            logOptions: {
-                type: DataTypes.INTEGER,
-                allowNull: false,
-                defaultValue: 0,
-            },
-
-        }, {
-            sequelize,
-            tableName: 'guilds'
-        });
+        );
     }
 }

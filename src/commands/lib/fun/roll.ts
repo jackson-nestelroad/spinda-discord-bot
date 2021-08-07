@@ -1,14 +1,23 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RollArgs {
     roll: string;
 }
 
-export class RollCommand extends ComplexCommand<RollArgs> {
+export class RollCommand extends ComplexCommand<SpindaDiscordBot, RollArgs> {
     public prefix = ':game_die: - ';
     public name = 'roll';
     public description = 'Rolls a die according to the dice format given.';
-    public moreDescription = 'You an specify the number of sides, number of rolls, and any extra mathematical operations on nested dice rolls. Mathematical operations can use the results of other dice rolls as well.';
+    public moreDescription =
+        'You an specify the number of sides, number of rolls, and any extra mathematical operations on nested dice rolls. Mathematical operations can use the results of other dice rolls as well.';
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
@@ -28,7 +37,7 @@ export class RollCommand extends ComplexCommand<RollArgs> {
     private readonly operations = {
         '+': 'Bonus',
         '-': 'Penalty',
-        'x': 'Multiplier',
+        x: 'Multiplier',
         '/': 'Divisor',
     } as const;
 
@@ -53,7 +62,7 @@ export class RollCommand extends ComplexCommand<RollArgs> {
         return rollCount;
     }
 
-    public async run({ bot, src }: CommandParameters, args: RollArgs) {
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: RollArgs) {
         let roll = args.roll;
         let rollCount = 0;
 
@@ -97,15 +106,26 @@ export class RollCommand extends ComplexCommand<RollArgs> {
             }
 
             let oldResult = result;
-            
+
             switch (operator) {
-                case '+': result += nestedResult; break;
-                case '-': result -= nestedResult; break;
-                case 'x': result *= nestedResult; break;
-                case '/': result = Math.round(result / nestedResult); break;
+                case '+':
+                    result += nestedResult;
+                    break;
+                case '-':
+                    result -= nestedResult;
+                    break;
+                case 'x':
+                    result *= nestedResult;
+                    break;
+                case '/':
+                    result = Math.round(result / nestedResult);
+                    break;
             }
-            
-            embed.addField(this.operations[operator], `${oldResult} ${operator} ${nestedResultString} ${this.arrow} ${result}`);
+
+            embed.addField(
+                this.operations[operator],
+                `${oldResult} ${operator} ${nestedResultString} ${this.arrow} ${result}`,
+            );
         }
 
         embed.setTitle(`:game_die: ${this.arrow} ${result}`);

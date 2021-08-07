@@ -4,7 +4,7 @@ export namespace Environment {
     export function getEnvironment(): 'production' | 'development' | undefined {
         return process.env.NODE_ENV as any;
     }
-    
+
     export function getDiscordToken(): string {
         return process.env.DISCORD_TOKEN;
     }
@@ -21,15 +21,15 @@ export namespace Environment {
         export function getCookie(): string {
             return process.env.POKENGINE_COOKIE;
         }
-    
+
         export function getGuildId(): Snowflake {
             return process.env.POKENGINE_GUILD_ID as Snowflake;
         }
-    
+
         export function getAccessChannelId(): Snowflake {
             return process.env.POKENGINE_ACCESS_CHANNEL_ID as Snowflake;
         }
-    
+
         export function getAccessRoleId(): Snowflake {
             return process.env.POKENGINE_ACCESS_ROLE_ID as Snowflake;
         }

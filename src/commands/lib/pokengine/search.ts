@@ -1,9 +1,17 @@
-import { CommandCategory, CommandPermission, CommandParameters, StandardCooldowns, ComplexCommand, ArgumentsConfig, ArgumentType } from '../base';
-import { MessageEmbed } from 'discord.js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { MessageEmbed } from 'discord.js';
+import {
+    ArgumentsConfig,
+    ArgumentType,
+    CommandParameters,
+    CommandSource,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { PokengineUtil } from './util';
-import { CommandSource } from '../../../util/command-source';
 
 enum SearchTabs {
     'Pok\u{00E9}mon',
@@ -23,12 +31,14 @@ interface SearchArgs {
     query: string;
 }
 
-export class SearchCommand extends ComplexCommand<SearchArgs> {
+export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> {
     public readonly searchPath: string = '/search';
 
     public name = 'search';
     public description = `Searches the Pok\u{00E9}ngine website with a given query and returns the first result only.`;
-    public moreDescription = `If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor('help')}.`;
+    public moreDescription = `If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor(
+        'help',
+    )}.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
@@ -45,7 +55,10 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
 
     private searchFor(query: string): string {
         // Encode #, because they are used in searching
-        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(/#/g, '%23');
+        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(
+            /#/g,
+            '%23',
+        );
     }
 
     private async sendEmbed(src: CommandSource, embed: MessageEmbed, searchUrl: string) {
@@ -53,8 +66,8 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
         await src.send({ embeds: [embed] });
     }
 
-    public async run({ bot, src }: CommandParameters, args: SearchArgs) {
-        await src.defer();
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: SearchArgs) {
+        await src.deferReply();
 
         const searchUrl = this.searchFor(args.query);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
@@ -62,7 +75,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
         const title = searchResults('#content .content.above').last();
 
         const embed: MessageEmbed = bot.createEmbed();
-        
+
         // No results
         if (title.length === 0) {
             embed.setTitle('No results found!');
@@ -72,9 +85,11 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
         // Cached map names to upper case string
         if (!this.tabNamesToUpperCase) {
             this.tabNamesToUpperCase = new Map();
-            Object.keys(SearchTabs).filter(key => isNaN(parseInt(key))).forEach(name => {
-                this.tabNamesToUpperCase.set(name as SearchTab, name.toUpperCase());
-            });
+            Object.keys(SearchTabs)
+                .filter(key => isNaN(parseInt(key)))
+                .forEach(name => {
+                    this.tabNamesToUpperCase.set(name as SearchTab, name.toUpperCase());
+                });
         }
 
         const titleText = title.text();
@@ -104,7 +119,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
             }
             // Results are Pokemon
             else if (searchResults('#monsters').length > 0) {
-                PokengineUtil.embedDexBlock(embed, { 
+                PokengineUtil.embedDexBlock(embed, {
                     num: parseInt(firstDexBlock.attr('data-id')),
                     name: firstDexBlock.attr('title'),
                     pagePath: firstDexBlock.attr('href'),
@@ -119,7 +134,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                     imagePath: firstDexBlock.find('img').attr('data-src'),
                 });
             }
-            
+
             return this.sendEmbed(src, embed, searchUrl);
         }
 
@@ -127,7 +142,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
         const firstTableRow = searchResults('.search-table tr').first();
         if (firstTableRow.length > 0) {
             const cols = firstTableRow.children();
-            
+
             switch (tab) {
                 case 'Abilities': {
                     PokengineUtil.embedAbility(embed, {
@@ -136,7 +151,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                         description: cols.eq(2).text(),
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
-                    
+
                     return this.sendEmbed(src, embed, searchUrl);
                 }
 
@@ -148,7 +163,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                         pagePath: cols.eq(2).find('a').attr('href'),
                         imagePath: cols.eq(1).find('img').attr('data-src'),
                     });
-                    
+
                     return this.sendEmbed(src, embed, searchUrl);
                 }
 
@@ -157,10 +172,15 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                         num: parseInt(cols.eq(0).text().substr(1)),
                         name: cols.eq(1).text() || 'Unnamed Map',
                         owner: cols.eq(2).find('a').text(),
-                        region: (cols.eq(3).contents().filter((index, element) => (element as any).nodeType == 3)[0] as any).nodeValue,
+                        region: (
+                            cols
+                                .eq(3)
+                                .contents()
+                                .filter((index, element) => (element as any).nodeType == 3)[0] as any
+                        ).nodeValue,
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
-                    
+
                     return this.sendEmbed(src, embed, searchUrl);
                 }
 
@@ -173,7 +193,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                         description: cols.last().text(),
                         pagePath: cols.eq(1).find('a').attr('href'),
                     });
-                    
+
                     return this.sendEmbed(src, embed, searchUrl);
                 }
 
@@ -186,7 +206,7 @@ export class SearchCommand extends ComplexCommand<SearchArgs> {
                         pagePath: cols.eq(2).find('a').attr('href'),
                         imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
                     });
-                    
+
                     return this.sendEmbed(src, embed, searchUrl);
                 }
             }
