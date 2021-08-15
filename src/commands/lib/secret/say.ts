@@ -49,7 +49,7 @@ export class SayCommand extends LegacyCommand<SpindaDiscordBot, SayArgs> {
             if (
                 msg.mentions.channels.size > 0 &&
                 args.length > 0 &&
-                args[0] === msg.mentions.channels.first().toString()
+                args.get(0) === msg.mentions.channels.first().toString()
             ) {
                 const channelMention = args.shift();
                 content = content.substr(channelMention.length).trimLeft();
