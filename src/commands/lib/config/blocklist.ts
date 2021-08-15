@@ -84,12 +84,19 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<SpindaDiscordBot, ViewB
             description: 'Page number to view, starting at 1.',
             type: ArgumentType.Integer,
             required: false,
+            default: 1,
+            transformers: {
+                any: (value, result) => {
+                    result.value = value - 1;
+                    if (result.value < 0) {
+                        result.error = 'Invalid page number.';
+                    }
+                },
+            }
         },
     };
 
     public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: ViewBlocklistPageArgs) {
-        let pageNumber = args.page - 1 ?? 0;
-
         const blocklist = await bot.dataService.getBlocklist(guildId);
 
         // Display blocklist
@@ -98,13 +105,13 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<SpindaDiscordBot, ViewB
         const blocklistArray = [...blocklist.values()];
 
         const lastPageNumber = Math.ceil(blocklistArray.length / 10) - 1;
-        pageNumber = Math.min(pageNumber, lastPageNumber);
+        const pageNumber = Math.min(args.page, lastPageNumber);
 
         if (blocklistArray.length === 0) {
             embed.setDescription('No one!');
         } else {
             const index = pageNumber * this.pageSize;
-            const description = [`**Page ${pageNumber + 1}**`]
+            const description = [`**Page ${pageNumber + 1}/${lastPageNumber + 1}**`]
                 .concat(blocklistArray.slice(index, index + this.pageSize).map(id => `<@${id}>`))
                 .join('\n');
             embed.setDescription(description);
