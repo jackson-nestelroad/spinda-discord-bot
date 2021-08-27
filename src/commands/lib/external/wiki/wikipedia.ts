@@ -22,7 +22,7 @@ export class WikipediaCommand extends ComplexCommand<SpindaDiscordBot, Wikipedia
     public args: ArgumentsConfig<WikipediaArgs> = {
         query: {
             description: 'Search query.',
-            type: ArgumentType.String,
+            type: ArgumentType.RestOfContent,
             required: true,
         },
     };
