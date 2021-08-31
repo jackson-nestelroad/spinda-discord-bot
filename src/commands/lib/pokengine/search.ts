@@ -14,7 +14,8 @@ import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../b
 import { PokengineUtil } from './util';
 
 enum SearchTabs {
-    'Pok\u{00E9}mon',
+    'Mons',
+    'Auction',
     'Moves',
     'Items',
     'Abilities',
@@ -22,7 +23,6 @@ enum SearchTabs {
     'Maps',
     'Trainers',
     'Forums',
-    'Posts',
 }
 
 type SearchTab = keyof typeof SearchTabs;
@@ -30,6 +30,8 @@ type SearchTab = keyof typeof SearchTabs;
 interface SearchArgs {
     query: string;
 }
+
+type SearchTabHandler = (results: cheerio.CheerioAPI, embed: MessageEmbed) => void;
 
 export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> {
     public readonly searchPath: string = '/search';
@@ -51,7 +53,156 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         },
     };
 
-    public tabNamesToUpperCase: Map<SearchTab, string> = null;
+    public tabNamesToUpperCase: Map<SearchTabs, string> = null;
+
+    public searchTabHandlers: { [tab in SearchTabs]: SearchTabHandler } = {
+        [SearchTabs.Mons]: (results, embed) => {
+            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+            if (handle) {
+                PokengineUtil.embedDexBlock(embed, {
+                    num: parseInt(firstDexBlock.attr('data-id')),
+                    name: firstDexBlock.attr('title'),
+                    pagePath: firstDexBlock.attr('href'),
+                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                });
+            }
+        },
+        [SearchTabs.Auction]: (results, embed) => {
+            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+            if (handle) {
+                const levelMatch = firstDexBlock.text().match(/^Lv\.(\d+)/);
+                const level = levelMatch ? levelMatch[1] : '???';
+                PokengineUtil.embedDexBlock(embed, {
+                    name: `Lv. ${level} ${firstDexBlock.attr('title')}`,
+                    pagePath: firstDexBlock.attr('href'),
+                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                });
+                const bottomEntryNodes = firstDexBlock.find('span.time').contents();
+                for (let i = 0; i < bottomEntryNodes.length; ++i) {
+                    const nodeText = bottomEntryNodes.eq(i).text();
+                    if (nodeText) {
+                        const field = nodeText.split(':');
+                        if (field.length === 2) {
+                            embed.addField(field[0].trim(), field[1].trim(), true);
+                        }
+                    }
+                }
+            }
+        },
+        [SearchTabs.Trainers]: (results, embed) => {
+            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+            if (handle) {
+                PokengineUtil.embedDexBlock(embed, {
+                    name: firstDexBlock.text(),
+                    pagePath: firstDexBlock.attr('href'),
+                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                });
+            }
+        },
+        [SearchTabs.Moves]: (results, embed) => {
+            const [cols, handle] = this.handleSearchTable(results, embed);
+            if (handle) {
+                PokengineUtil.embedMove(embed, {
+                    num: parseInt(cols.eq(0).text().substr(1)),
+                    name: cols.eq(1).text(),
+                    type: cols.eq(2).text() as any,
+                    category: cols.eq(3).text() as any,
+                    description: cols.last().text(),
+                    pagePath: cols.eq(1).find('a').attr('href'),
+                });
+            }
+        },
+        [SearchTabs.Items]: (results, embed) => {
+            const [cols, handle] = this.handleSearchTable(results, embed);
+            if (handle) {
+                PokengineUtil.embedItem(embed, {
+                    num: parseInt(cols.eq(0).text().substr(1)),
+                    name: cols.eq(2).text(),
+                    description: cols.eq(3).text(),
+                    pagePath: cols.eq(2).find('a').attr('href'),
+                    imagePath: cols.eq(1).find('img').attr('data-src'),
+                });
+            }
+        },
+        [SearchTabs.Abilities]: (results, embed) => {
+            const [cols, handle] = this.handleSearchTable(results, embed);
+            if (handle) {
+                PokengineUtil.embedAbility(embed, {
+                    num: parseInt(cols.eq(0).text().substr(1)),
+                    name: cols.eq(1).text(),
+                    description: cols.eq(2).text(),
+                    pagePath: cols.eq(1).find('a').attr('href'),
+                });
+            }
+        },
+        [SearchTabs.Players]: (results, embed) => {
+            const [cols, handle] = this.handleSearchTable(results, embed);
+            if (handle) {
+                PokengineUtil.embedPlayer(embed, {
+                    num: parseInt(cols.eq(0).text().substr(1)),
+                    name: cols.eq(2).text(),
+                    joined: cols.eq(3).find('span').text(),
+                    lastActive: cols.eq(4).find('span').text(),
+                    pagePath: cols.eq(2).find('a').attr('href'),
+                    imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
+                });
+            }
+        },
+        [SearchTabs.Maps]: (results, embed) => {
+            const [cols, handle] = this.handleSearchTable(results, embed);
+            if (handle) {
+                PokengineUtil.embedMap(embed, {
+                    num: parseInt(cols.eq(0).text().substr(1)),
+                    name: cols.eq(1).text() || 'Unnamed Map',
+                    owner: cols.eq(2).find('a').text(),
+                    region: (
+                        cols
+                            .eq(3)
+                            .contents()
+                            .filter((index, element) => (element as any).nodeType == 3)[0] as any
+                    ).nodeValue,
+                    pagePath: cols.eq(1).find('a').attr('href'),
+                });
+            }
+        },
+        [SearchTabs.Forums]: (results, embed) => {
+            const firstForumPost = results('.content.below .content-inner.forum').first();
+            if (firstForumPost.length > 0) {
+                const origin = firstForumPost.find('.time').find('a');
+                PokengineUtil.embedPost(embed, {
+                    title: firstForumPost.find('.title').text(),
+                    author: origin.eq(0).text(),
+                    posted: origin.eq(1).text(),
+                    pagePath: origin.eq(1).attr('href'),
+                });
+            } else {
+                embed.setTitle('Failed to parse forum post.');
+            }
+        },
+    };
+
+    private handleDexBlock(results: cheerio.CheerioAPI, embed: MessageEmbed): [cheerio.Cheerio<cheerio.Element>, boolean] {
+        const firstDexBlock = results('.dex-block').first();
+        if (firstDexBlock.length > 0) {
+            if (firstDexBlock.text() === 'Private') {
+                PokengineUtil.embedPrivate(embed);
+                return [firstDexBlock, false];
+            }
+        }
+        else {
+            embed.setTitle('Failed to find dex block.');
+            return [firstDexBlock, false];
+        }
+        return [firstDexBlock, true];
+    }
+
+    private handleSearchTable(results: cheerio.CheerioAPI, embed: MessageEmbed): [cheerio.Cheerio<cheerio.Element>, boolean] {
+        const firstTableRow = results('.search-table tr').first();
+        if (firstTableRow.length > 0) {
+            return [firstTableRow.children(), true];
+        }
+        return [null, false];
+    }
 
     private searchFor(query: string): string {
         // Encode #, because they are used in searching
@@ -69,164 +220,54 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: SearchArgs) {
         await src.deferReply();
 
-        const searchUrl = this.searchFor(args.query);
-        const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
-        const searchResults = cheerio.load(searchResponse.data);
-        const title = searchResults('#content .content.above').last();
-
-        const embed: MessageEmbed = bot.createEmbed();
-
-        // No results
-        if (title.length === 0) {
-            embed.setTitle('No results found!');
-            return this.sendEmbed(src, embed, searchUrl);
-        }
-
         // Cached map names to upper case string
         if (!this.tabNamesToUpperCase) {
             this.tabNamesToUpperCase = new Map();
             Object.keys(SearchTabs)
-                .filter(key => isNaN(parseInt(key)))
-                .forEach(name => {
-                    this.tabNamesToUpperCase.set(name as SearchTab, name.toUpperCase());
+                .map(key => parseInt(key))
+                .filter(key => !isNaN(key))
+                .forEach(id => {
+                    this.tabNamesToUpperCase.set(id, SearchTabs[id].toUpperCase());
                 });
         }
 
-        const titleText = title.text();
-        const upperCaseTitleText = titleText.toUpperCase();
+        const searchUrl = this.searchFor(args.query);
+        const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
+        const searchResults = cheerio.load(searchResponse.data);
+
+        const selectedTab = searchResults('#top-bar .tabs > a.selected').first();
+        const selectedTabTextUppercase = selectedTab.text().toUpperCase();
 
         // Get which tab we are on
-        // This is important for all search results that use a search table to display results
-        let tab: SearchTab;
+        let tab: SearchTabs = -1;
         const mapIter = this.tabNamesToUpperCase.entries();
         let curr = mapIter.next();
         while (!curr.done) {
-            if (upperCaseTitleText.includes(curr.value[1])) {
+            if (selectedTabTextUppercase.indexOf(curr.value[1]) === 0) {
                 tab = curr.value[0];
                 break;
             }
             curr = mapIter.next();
         }
 
-        embed.setAuthor(`First result for "${titleText}"`);
+        const embed: MessageEmbed = bot.createEmbed();
 
-        const firstDexBlock = searchResults('.dex-block').first();
-        // Results are Pokemon or Trainers
-        if (firstDexBlock.length > 0) {
-            // Result is private
-            if (firstDexBlock.text() === 'Private') {
-                PokengineUtil.embedPrivate(embed);
-            }
-            // Results are Pokemon
-            else if (searchResults('#monsters').length > 0) {
-                PokengineUtil.embedDexBlock(embed, {
-                    num: parseInt(firstDexBlock.attr('data-id')),
-                    name: firstDexBlock.attr('title'),
-                    pagePath: firstDexBlock.attr('href'),
-                    imagePath: firstDexBlock.find('img').attr('data-src'),
-                });
-            }
-            // Results are Trainers
-            else {
-                PokengineUtil.embedDexBlock(embed, {
-                    name: firstDexBlock.text(),
-                    pagePath: firstDexBlock.attr('href'),
-                    imagePath: firstDexBlock.find('img').attr('data-src'),
-                });
-            }
-
+        // No results
+        if (tab < 0) {
+            embed.setTitle('No results found!');
             return this.sendEmbed(src, embed, searchUrl);
         }
 
-        // Check for search table
-        const firstTableRow = searchResults('.search-table tr').first();
-        if (firstTableRow.length > 0) {
-            const cols = firstTableRow.children();
+        const title = searchResults('#content .content.above').last();
+        const titleText = title.text();
+        embed.setAuthor(titleText ? `First result for "${titleText}"` : '(No title)');
 
-            switch (tab) {
-                case 'Abilities': {
-                    PokengineUtil.embedAbility(embed, {
-                        num: parseInt(cols.eq(0).text().substr(1)),
-                        name: cols.eq(1).text(),
-                        description: cols.eq(2).text(),
-                        pagePath: cols.eq(1).find('a').attr('href'),
-                    });
-
-                    return this.sendEmbed(src, embed, searchUrl);
-                }
-
-                case 'Items': {
-                    PokengineUtil.embedItem(embed, {
-                        num: parseInt(cols.eq(0).text().substr(1)),
-                        name: cols.eq(2).text(),
-                        description: cols.eq(3).text(),
-                        pagePath: cols.eq(2).find('a').attr('href'),
-                        imagePath: cols.eq(1).find('img').attr('data-src'),
-                    });
-
-                    return this.sendEmbed(src, embed, searchUrl);
-                }
-
-                case 'Maps': {
-                    PokengineUtil.embedMap(embed, {
-                        num: parseInt(cols.eq(0).text().substr(1)),
-                        name: cols.eq(1).text() || 'Unnamed Map',
-                        owner: cols.eq(2).find('a').text(),
-                        region: (
-                            cols
-                                .eq(3)
-                                .contents()
-                                .filter((index, element) => (element as any).nodeType == 3)[0] as any
-                        ).nodeValue,
-                        pagePath: cols.eq(1).find('a').attr('href'),
-                    });
-
-                    return this.sendEmbed(src, embed, searchUrl);
-                }
-
-                case 'Moves': {
-                    PokengineUtil.embedMove(embed, {
-                        num: parseInt(cols.eq(0).text().substr(1)),
-                        name: cols.eq(1).text(),
-                        type: cols.eq(2).text() as any,
-                        category: cols.eq(3).text() as any,
-                        description: cols.last().text(),
-                        pagePath: cols.eq(1).find('a').attr('href'),
-                    });
-
-                    return this.sendEmbed(src, embed, searchUrl);
-                }
-
-                case 'Players': {
-                    PokengineUtil.embedPlayer(embed, {
-                        num: parseInt(cols.eq(0).text().substr(1)),
-                        name: cols.eq(2).text(),
-                        joined: cols.eq(3).find('span').text(),
-                        lastActive: cols.eq(4).find('span').text(),
-                        pagePath: cols.eq(2).find('a').attr('href'),
-                        imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
-                    });
-
-                    return this.sendEmbed(src, embed, searchUrl);
-                }
-            }
+        const handler = this.searchTabHandlers[tab];
+        if (!handler) {
+            embed.setTitle('Could not parse results.');
+        } else {
+            handler(searchResults, embed);
         }
-
-        // The only other option is Forums/Posts
-        const firstForumPost = searchResults('.content.below .content-inner.forum').first();
-        if (firstForumPost.length > 0) {
-            const origin = firstForumPost.find('.time').find('a');
-            PokengineUtil.embedPost(embed, {
-                title: firstForumPost.find('.title').text(),
-                author: origin.eq(0).text(),
-                posted: origin.eq(1).text(),
-                pagePath: origin.eq(1).attr('href'),
-            });
-
-            return await this.sendEmbed(src, embed, searchUrl);
-        }
-
-        embed.setTitle('Could not parse results.');
-        return await this.sendEmbed(src, embed, searchUrl);
+        this.sendEmbed(src, embed, searchUrl);
     }
 }
