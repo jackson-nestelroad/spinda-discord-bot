@@ -90,7 +90,7 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
                 `You may also use \`@${bot.name} cmd\` to run any command. Public commands are also available as slash commands.\n\nUse \`${prefix}${this.name}\` to view commands in a specific category.`,
             );
 
-            embed.addField('Categories', [...this.commandListByCategory.keys()].join('\n'));
+            embed.addField('Categories', [...this.commandListByCategory.keys(), CommandCategory.Custom].join('\n'));
         } else {
             const query = args.query;
 
