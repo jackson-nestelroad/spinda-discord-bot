@@ -1,13 +1,13 @@
-import { MessageAttachment } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     StandardCooldowns,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+import { MessageAttachment } from 'discord.js';
 import { SpindaColorChange } from '../../../data/model/caught-spinda';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
@@ -49,7 +49,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
 
         const caughtSpinda = await bot.dataService.getCaughtSpinda(src.author.id);
         if (caughtSpinda.length === 0) {
-            const prefix = bot.dataService.getCachedGuild(guildId);
+            const prefix = bot.dataService.getCachedGuild(guildId).prefix;
             throw new Error(
                 `You have not yet caught a Spinda! Use \`${prefix}${SpindaCommandNames.Catch}\` to catch one of the last generated Spinda in the channel.`,
             );
