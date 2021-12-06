@@ -452,4 +452,9 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             customColor: null,
         };
     }
+
+    public restart() {
+        this.history.clear();
+        this.todaysGen = undefined;
+    }
 }

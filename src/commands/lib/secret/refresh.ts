@@ -1,6 +1,5 @@
-import { CommandParameters, SimpleCommand } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { CommandParameters, SimpleCommand } from 'panda-discord';
 
 export class RefreshCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'refresh';
@@ -12,6 +11,7 @@ export class RefreshCommand extends SimpleCommand<SpindaDiscordBot> {
         bot.refreshCommands();
         bot.dataService.clearCache();
         bot.customCommandService.clearCooldowns();
+        bot.spindaGeneratorService.restart();
         await src.reply('Refresh successful.');
     }
 }
