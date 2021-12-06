@@ -48,8 +48,8 @@ export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
         let wantedSpinda = bot.spindaGeneratorService.getFromChannelHistory(src.channel.id, wantedPosition);
 
         if (!wantedSpinda) {
-            const prefix = bot.dataService.getCachedGuild(guildId);
-            const generateMessage = `Use \`${prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
+            const guild = bot.dataService.getCachedGuild(guildId);
+            const generateMessage = `Use \`${guild.prefix}${SpindaCommandNames.Generate}\` to generate a Spinda to catch.`;
             if (wantedPosition === 0) {
                 throw new Error('No new Spinda found in this channel. ' + generateMessage);
             } else {
