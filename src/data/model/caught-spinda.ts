@@ -1,5 +1,6 @@
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
+
 import { Snowflake } from 'discord.js';
-import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
 
 export enum SpindaColorChange {
     Random = -1,
@@ -40,12 +41,11 @@ export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
 }
 
 interface CaughtSpindaCreationAttributes
-    extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> {}
+    extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> { }
 
 export class CaughtSpinda
     extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
-    implements CaughtSpindaAttributes
-{
+    implements CaughtSpindaAttributes {
     public readonly id: number;
     public readonly userId: Snowflake;
     public readonly position: number;

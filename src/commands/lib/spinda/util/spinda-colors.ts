@@ -1,5 +1,6 @@
-import { GeneratedSpinda, SpindaColorChange } from '../../../../data/model/caught-spinda';
 import { Color, RGBAColor } from '../../../../util/color';
+import { GeneratedSpinda, SpindaColorChange } from '../../../../data/model/caught-spinda';
+
 import { CanvasBundle } from '../generator';
 
 export interface SpindaColorPalette {
@@ -14,7 +15,6 @@ export const ShaderConstants = {
 } as const;
 
 export const SpindaColors = {
-    base: Color.Hex(0xffdbaa),
     spot: Color.Hex(0xf75d5d),
     black: Color.Hex(0x000000),
     white: Color.Hex(0xffffff),

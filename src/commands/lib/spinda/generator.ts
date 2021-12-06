@@ -1,63 +1,16 @@
-import { createCanvas, loadImage, Image, Canvas, CanvasRenderingContext2D, ImageData } from 'canvas';
-import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { BaseService } from 'panda-discord';
-
-import { SpindaDiscordBot } from '../../../bot';
-import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
-import { CircularBuffer } from '../../../util/circular-buffer';
+import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas, loadImage } from 'canvas';
 import { Color, RGBAColor } from '../../../util/color';
+import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
+import { Message, MessageAttachment, Snowflake } from 'discord.js';
+import { Resource, ResourceMap, SpindaGenerationMetadata, SpindaResourceConfig, SpindaType, Spot, SpotData, SpotLocation } from './util/resources';
+import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
+
+import { BaseService } from 'panda-discord';
+import { CircularBuffer } from '../../../util/circular-buffer';
 import { NumberUtil } from '../../../util/number';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
-import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
-
-enum SpotLocation {
-    Start = 0,
-    TopLeft = 0,
-    TopRight = 1,
-    BottomLeft = 2,
-    BottomRight = 3,
-    Count = 4,
-}
-
-type SpotData<T> = Record<Exclude<SpotLocation, SpotLocation.Count>, T>;
-
-class Resource {
-    private imageData: Image = null;
-
-    public constructor(private readonly path: string) {}
-
-    public get image(): Image {
-        return this.imageData;
-    }
-
-    public async load(bot: SpindaDiscordBot) {
-        this.imageData = await loadImage(bot.resourceService.resolve(this.path));
-    }
-
-    public loaded(): boolean {
-        return this.image !== null;
-    }
-}
-
-class Spot extends Resource {
-    public constructor(path: string, public readonly anchor: Point) {
-        super(path);
-    }
-}
-
-interface SpindaGenerationResult {
-    readonly buffer: Buffer;
-    readonly info: GeneratedSpinda;
-}
-
-interface HordeGenerationResult {
-    readonly buffer: Buffer;
-    readonly info: Array<GeneratedSpinda>;
-}
-
-type Resources = Resource | ResourceMap;
-export interface ResourceMap extends Dictionary<Resources> {}
+import { SpindaDiscordBot } from '../../../bot';
 
 type CanvasGlobalCompositeOperation = typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
 
@@ -126,34 +79,18 @@ export class CanvasBundle {
     }
 }
 
-export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
-    private readonly resources = {
-        base: new Resource('spinda/base.png'),
-        components: {
-            red: new Resource('spinda/components/red.png'),
-            tan: new Resource('spinda/components/tan.png'),
-            black: new Resource('spinda/components/black.png'),
-            mouth: new Resource('spinda/components/mouth.png'),
-            shading: new Resource('spinda/components/shading.png'),
-        },
-        spots: {
-            [SpotLocation.TopLeft]: new Spot('spinda/medium/top_left_spot.png', new Point(-2, -4)),
-            [SpotLocation.TopRight]: new Spot('spinda/medium/top_right_spot.png', new Point(19, 2)),
-            [SpotLocation.BottomLeft]: new Spot('spinda/medium/bottom_left_spot.png', new Point(2, 10)),
-            [SpotLocation.BottomRight]: new Spot('spinda/medium/bottom_right_spot.png', new Point(13, 14)),
-        },
-        smallSpots: {
-            [SpotLocation.TopLeft]: new Spot('spinda/small/top_left_spot.png', new Point(0, 0)),
-            [SpotLocation.TopRight]: new Spot('spinda/small/top_right_spot.png', new Point(18, 6)),
-            [SpotLocation.BottomLeft]: new Spot('spinda/small/bottom_left_spot.png', new Point(4, 13)),
-            [SpotLocation.BottomRight]: new Spot('spinda/small/bottom_right_spot.png', new Point(14, 15)),
-        },
-        specialSpots: {
-            heart: new Spot('spinda/special/bottom_left_heart.png', new Point(2, 10)),
-            star: new Spot('spinda/special/bottom_right_star.png', new Point(12, 14)),
-        },
-    } as const;
 
+interface SpindaGenerationResult {
+    readonly buffer: Buffer;
+    readonly info: GeneratedSpinda;
+}
+
+interface HordeGenerationResult {
+    readonly buffer: Buffer;
+    readonly info: Array<GeneratedSpinda>;
+}
+
+export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     // Thickness for outline, set to 0 for no outline
     private readonly outlineThickness: number = 1;
     private readonly scale: number = 2;
@@ -172,15 +109,18 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             [SpindaColorChange.Rainbow]: 150,
         },
         features: {
-            [SpindaFeatures.SmallSpots]: 25,
+            // [SpindaFeatures.SmallSpots]: 25,
             [SpindaFeatures.Heart]: 50,
             [SpindaFeatures.Star]: 50,
             [SpindaFeatures.Inverted]: 30,
         },
     } as const;
 
+    // Have resources been loaded?
+    private loaded: boolean = false;
+
     // Cache for outline shape to draw
-    private outlinePolygon: Point[] = null;
+    private outlinePolygons: Map<SpindaType, Point[]> = new Map();
 
     private readonly numCanvases = 3;
     private canvases: Array<CanvasBundle> = [];
@@ -191,11 +131,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
 
     private getSpindaWidth() {
-        return this.resources.base.image.width + this.outlineThickness * 2;
+        return SpindaGenerationMetadata.width + this.outlineThickness * 2;
     }
 
     private getSpindaHeight() {
-        return this.resources.base.image.height + this.outlineThickness * 2;
+        return SpindaGenerationMetadata.height + this.outlineThickness * 2;
     }
 
     private resetCanvases() {
@@ -216,10 +156,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         bundle.drawImage(composite, resource.image, offset.x + this.outlineThickness, offset.y + this.outlineThickness);
     }
 
-    private resourcesLoaded(): boolean {
-        return this.resources.base.loaded();
-    }
-
     private async loadResources(resources: ResourceMap) {
         for (const key in resources) {
             const value = resources[key];
@@ -228,6 +164,16 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             } else {
                 await this.loadResources(value);
             }
+        }
+    }
+
+    private async loadSpindaResources() {
+        for (const key of Object.keys(SpindaGenerationMetadata.types)) {
+            const resources = SpindaGenerationMetadata.types[key]?.resources;
+            if (!resources) {
+                continue;
+            }
+            await this.loadResources(resources);
         }
     }
 
@@ -273,14 +219,15 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
-    private drawOutline(bundle: CanvasBundle) {
+    private drawOutline(bundle: CanvasBundle, type: SpindaType) {
         if (this.outlineThickness > 0) {
+            const outlinePolygon = this.outlinePolygons.get(type);
             bundle.ctx.strokeStyle = SpindaColors.white.hexString();
             bundle.ctx.lineWidth = this.outlineThickness * 2;
             bundle.ctx.beginPath();
-            bundle.ctx.moveTo(this.outlinePolygon[0].x, this.outlinePolygon[0].y);
-            for (let i = 1; i < this.outlinePolygon.length; ++i) {
-                const point = this.outlinePolygon[i];
+            bundle.ctx.moveTo(outlinePolygon[0].x, outlinePolygon[0].y);
+            for (let i = 1; i < outlinePolygon.length; ++i) {
+                const point = outlinePolygon[i];
                 bundle.ctx.lineTo(point.x, point.y);
             }
             bundle.ctx.closePath();
@@ -288,29 +235,17 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
-    private getSpots(features: SpindaFeatures): SpotData<Spot> {
-        // Use normal or small spots
-        let baseSpots: SpotData<Spot>;
-        if (features & SpindaFeatures.SmallSpots) {
-            baseSpots = this.resources.smallSpots;
-        } else {
-            baseSpots = this.resources.spots;
-        }
-
-        // Copy spots over
-        const spots: Partial<SpotData<Spot>> = {};
-        for (let i = SpotLocation.Start; i < SpotLocation.Count; ++i) {
-            spots[i] = baseSpots[i];
-        }
+    private getSpots(features: SpindaFeatures, resources: SpindaResourceConfig): SpotData<Spot> {
+        let spots: SpotData<Spot> = { ...resources.spots };
 
         // Use heart in bottom left
         if (features & SpindaFeatures.Heart) {
-            spots[SpotLocation.BottomLeft] = this.resources.specialSpots.heart;
+            spots[SpotLocation.BottomLeft] = resources.specialSpots.heart;
         }
 
         // Use star in bottom right
         if (features & SpindaFeatures.Star) {
-            spots[SpotLocation.BottomRight] = this.resources.specialSpots.star;
+            spots[SpotLocation.BottomRight] = resources.specialSpots.star;
         }
 
         return spots as SpotData<Spot>;
@@ -354,8 +289,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                 this.canvases.push(new CanvasBundle());
             }
         }
-        if (!this.resourcesLoaded()) {
-            await this.loadResources(this.resources);
+        if (!this.loaded) {
+            await this.loadSpindaResources();
         }
 
         this.resetCanvases();
@@ -364,12 +299,15 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const secondCanvas = this.canvases[1];
         const thirdCanvas = this.canvases[2];
 
+        const type = SpindaType.Gen3;
+        const generationData = SpindaGenerationMetadata.types[type];
+
         // Create outline polygon
-        if (!this.outlinePolygon) {
+        if (!this.outlinePolygons.has(type)) {
             // Draw initial image for generating outline
-            this.drawComponent(firstCanvas, 'source-over', this.resources.base);
+            this.drawComponent(firstCanvas, 'source-over', generationData.resources.base);
             const drawer = new OutlineDrawer(firstCanvas.getImageData());
-            this.outlinePolygon = drawer.getPolygon();
+            this.outlinePolygons.set(type, drawer.getPolygon());
             firstCanvas.clear();
         }
 
@@ -382,10 +320,10 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         SpindaColorMask.draw(spinda, firstCanvas);
 
         // Draw red body into second canvas
-        this.drawComponent(secondCanvas, 'source-over', this.resources.components.red);
+        this.drawComponent(secondCanvas, 'source-over', generationData.resources.components.red);
 
         // Draw red spots into primary canvas
-        const spots = this.getSpots(spinda.features);
+        const spots = this.getSpots(spinda.features, generationData.resources);
         for (let i = SpotLocation.Start; i < SpotLocation.Count; ++i) {
             const spot: Spot = spots[i];
             const origin: Point = spot.anchor.translate(
@@ -397,11 +335,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
 
         // Draw tan body into third canvas
-        this.drawComponent(thirdCanvas, 'source-over', this.resources.components.tan);
+        this.drawComponent(thirdCanvas, 'source-over', generationData.resources.components.tan);
 
         // Inverted, so tan body is actually colored and spots are actually tan
         if (spinda.features & SpindaFeatures.Inverted) {
-            secondCanvas.fillColor('source-in', SpindaColors.base);
+            secondCanvas.fillColor('source-in', generationData.baseColor);
             thirdCanvas.drawCanvas('source-in', firstCanvas);
         } else if (spinda.colorChange !== SpindaColorChange.None) {
             secondCanvas.drawCanvas('source-in', firstCanvas);
@@ -412,11 +350,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
         // Put it all together
         firstCanvas.clear();
-        this.drawOutline(firstCanvas);
+        this.drawOutline(firstCanvas, type);
         firstCanvas.drawCanvas('source-over', thirdCanvas);
-        this.drawComponent(firstCanvas, 'source-over', this.resources.components.black);
-        this.drawComponent(firstCanvas, 'source-over', this.resources.components.mouth);
-        this.drawComponent(firstCanvas, 'source-over', this.resources.components.shading);
+        this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.black);
+        this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.mouth);
+        this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.shading);
 
         if (scale) {
             firstCanvas.scale(this.scale, secondCanvas);
@@ -433,8 +371,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
                 ? [...new Array(SpindaGeneratorService.historySize)].map(
-                      async () => await this.generate(this.newSpinda(), false),
-                  )
+                    async () => await this.generate(this.newSpinda(), false),
+                )
                 : spindaCollection.map(async spinda => await this.generate(spinda, false)),
         );
 
