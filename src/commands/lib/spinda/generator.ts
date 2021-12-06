@@ -2,7 +2,7 @@ import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas, loadI
 import { Color, RGBAColor } from '../../../util/color';
 import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { Resource, ResourceMap, SpindaGenerationMetadata, SpindaResourceConfig, SpindaType, Spot, SpotData, SpotLocation } from './util/resources';
+import { Resource, ResourceMap, SpindaGeneration, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
 
 import { BaseService } from 'panda-discord';
@@ -96,31 +96,38 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     private readonly scale: number = 2;
 
     private readonly odds = {
-        colors: {
-            [SpindaColorChange.Shiny]: 8192,
-            [SpindaColorChange.Retro]: 15,
-            [SpindaColorChange.Gold]: 50,
-            [SpindaColorChange.Green]: 75,
-            [SpindaColorChange.Blue]: 100,
-            [SpindaColorChange.Purple]: 125,
-            [SpindaColorChange.Pink]: 150,
-            [SpindaColorChange.Gray]: 175,
-            [SpindaColorChange.Custom]: 200,
-            [SpindaColorChange.Rainbow]: 150,
-        },
-        features: {
-            // [SpindaFeatures.SmallSpots]: 25,
-            [SpindaFeatures.Heart]: 50,
-            [SpindaFeatures.Star]: 50,
-            [SpindaFeatures.Inverted]: 30,
-        },
+        colors: [
+            [SpindaColorChange.Shiny, 8192],
+            [SpindaColorChange.Retro, 15],
+            [SpindaColorChange.Gold, 50],
+            [SpindaColorChange.Green, 75],
+            [SpindaColorChange.Blue, 100],
+            [SpindaColorChange.Purple, 125],
+            [SpindaColorChange.Pink, 150],
+            [SpindaColorChange.Gray, 175],
+            [SpindaColorChange.Custom, 200],
+            [SpindaColorChange.Rainbow, 150],
+        ],
+        features: [
+            // [SpindaFeatures.SmallSpots, 25],
+            [SpindaFeatures.Heart, 50],
+            [SpindaFeatures.Star, 50],
+            [SpindaFeatures.Inverted, 30],
+        ],
+        gens: [
+            [SpindaGeneration.Gen3, 10],
+            [SpindaGeneration.Gen4, 10],
+            [SpindaGeneration.Gen5, 10],
+            [SpindaGeneration.Mixed, 10],
+            [SpindaGeneration.Normal, 1],
+        ],
     } as const;
 
     // Have resources been loaded?
     private loaded: boolean = false;
 
     // Cache for outline shape to draw
-    private outlinePolygons: Map<SpindaType, Point[]> = new Map();
+    private outlinePolygons: Map<SpindaGeneration, Point[]> = new Map();
 
     private readonly numCanvases = 3;
     private canvases: Array<CanvasBundle> = [];
@@ -129,6 +136,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     public static readonly partySize: number = 8;
 
     private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
+
+    private todaysGen: SpindaGeneration = undefined;
 
     private getSpindaWidth() {
         return SpindaGenerationMetadata.width + this.outlineThickness * 2;
@@ -168,12 +177,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     }
 
     private async loadSpindaResources() {
-        for (const key of Object.keys(SpindaGenerationMetadata.types)) {
-            const resources = SpindaGenerationMetadata.types[key]?.resources;
-            if (!resources) {
-                continue;
-            }
-            await this.loadResources(resources);
+        for (const key of Object.keys(SpindaGenerationMetadata.gens)) {
+            await this.loadResources(SpindaGenerationMetadata.gens[key].resources);
         }
     }
 
@@ -181,15 +186,36 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         return Math.floor(Math.random() * 0x100000000);
     }
 
+    private getGeneration(spinda: GeneratedSpinda): SpindaGeneration {
+        return (spinda.features & SpindaFeatures.Generation) >>> 4;
+    }
+
     private rollFeatures(spinda: GeneratedSpinda) {
         if (spinda.features === SpindaFeatures.Random) {
             spinda.features = SpindaFeatures.None;
 
             // Merge all features together as a bit string
-            for (const key in this.odds.features) {
-                if (Math.floor(Math.random() * this.odds.features[key]) === 0) {
-                    spinda.features |= +key;
+            for (const [feature, odds] of this.odds.features) {
+                if (Math.floor(Math.random() * odds) === 0) {
+                    spinda.features |= feature;
                 }
+            }
+
+            // Generation is based on a value generated once per day
+            if (this.todaysGen === undefined) {
+                for (const [gen, odds] of this.odds.gens) {
+                    if (Math.floor(Math.random() * odds) === 0) {
+                        this.todaysGen = gen;
+                        break;
+                    }
+                }
+            }
+
+            if (this.todaysGen !== SpindaGeneration.Mixed) {
+                spinda.features |= this.todaysGen << 4;
+
+            } else {
+                spinda.features |= Math.floor(Math.random() * 4) << 4;
             }
         }
     }
@@ -199,9 +225,9 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             spinda.colorChange = SpindaColorChange.None;
 
             // Select first color that meets the odds
-            for (const key in this.odds.colors) {
-                if (Math.floor(Math.random() * this.odds.colors[key]) === 0) {
-                    spinda.colorChange = +key;
+            for (const [color, odds] of this.odds.colors) {
+                if (Math.floor(Math.random() * odds) === 0) {
+                    spinda.colorChange = color;
                     break;
                 }
             }
@@ -219,9 +245,9 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
-    private drawOutline(bundle: CanvasBundle, type: SpindaType) {
+    private drawOutline(bundle: CanvasBundle, gen: SpindaGeneration) {
         if (this.outlineThickness > 0) {
-            const outlinePolygon = this.outlinePolygons.get(type);
+            const outlinePolygon = this.outlinePolygons.get(gen);
             bundle.ctx.strokeStyle = SpindaColors.white.hexString();
             bundle.ctx.lineWidth = this.outlineThickness * 2;
             bundle.ctx.beginPath();
@@ -299,22 +325,23 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const secondCanvas = this.canvases[1];
         const thirdCanvas = this.canvases[2];
 
-        const type = SpindaType.Gen3;
-        const generationData = SpindaGenerationMetadata.types[type];
-
-        // Create outline polygon
-        if (!this.outlinePolygons.has(type)) {
-            // Draw initial image for generating outline
-            this.drawComponent(firstCanvas, 'source-over', generationData.resources.base);
-            const drawer = new OutlineDrawer(firstCanvas.getImageData());
-            this.outlinePolygons.set(type, drawer.getPolygon());
-            firstCanvas.clear();
-        }
-
         // Roll all random features
         this.rollFeatures(spinda);
         this.rollColorChange(spinda);
         this.rollCustomColor(spinda);
+
+        // Resources used for drawing depends on the generation
+        const gen = this.getGeneration(spinda);
+        const generationData = SpindaGenerationMetadata.gens[gen];
+
+        // Create outline polygon
+        if (!this.outlinePolygons.has(gen)) {
+            // Draw initial image for generating outline
+            this.drawComponent(firstCanvas, 'source-over', generationData.resources.base);
+            const drawer = new OutlineDrawer(firstCanvas.getImageData());
+            this.outlinePolygons.set(gen, drawer.getPolygon());
+            firstCanvas.clear();
+        }
 
         // Draw color mask into first canvas
         SpindaColorMask.draw(spinda, firstCanvas);
@@ -350,7 +377,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
         // Put it all together
         firstCanvas.clear();
-        this.drawOutline(firstCanvas, type);
+        this.drawOutline(firstCanvas, gen);
         firstCanvas.drawCanvas('source-over', thirdCanvas);
         this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.black);
         this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.mouth);

@@ -63,24 +63,25 @@ export interface SpindaGenerationConfig {
 type Resources = Resource | ResourceMap;
 export interface ResourceMap extends Record<string | symbol | number, Resources> { }
 
-export enum SpindaType {
-    Normal,
-    Gen3,
-    Gen4,
-    Gen5,
+export enum SpindaGeneration {
+    Mixed = -1,
+    Normal = 0b000,
+    Gen3 = 0b001,
+    Gen4 = 0b010,
+    Gen5 = 0b011,
 }
 
 interface SpindaGenerationMetadataInterface {
     width: number,
     height: number,
-    types: Record<SpindaType, SpindaGenerationConfig>,
+    gens: Record<Exclude<SpindaGeneration, SpindaGeneration.Mixed>, SpindaGenerationConfig>,
 }
 
 export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
     width: 41,
     height: 51,
-    types: {
-        [SpindaType.Normal]: {
+    gens: {
+        [SpindaGeneration.Normal]: {
             baseColor: Color.Hex(0xffdbaa),
             resources: {
                 base: new Resource('spinda/default/base.png'),
@@ -109,8 +110,8 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                 // },
             },
         },
-        [SpindaType.Gen3]: {
-            baseColor: Color.Hex(0xffdbaa),
+        [SpindaGeneration.Gen3]: {
+            baseColor: Color.Hex(0xe0d0a0),
             resources: {
                 base: new Resource('spinda/gen3/base.png'),
                 components: {
@@ -127,12 +128,56 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                     [SpotLocation.BottomRight]: new Spot('spinda/gen3/normal/bottom_right_spot.png', new Point(12, 13)),
                 },
                 specialSpots: {
-                    heart: new Spot('spinda/gen3/special/bottom_left_heart.png', new Point(2, 10)),
-                    star: new Spot('spinda/gen3/special/bottom_right_star.png', new Point(12, 14)),
+                    heart: new Spot('spinda/gen3/special/bottom_left_heart.png', new Point(0, 12)),
+                    star: new Spot('spinda/gen3/special/bottom_right_star.png', new Point(12, 13)),
                 },
             },
         },
-        [SpindaType.Gen4]: null,
-        [SpindaType.Gen5]: null,
+        [SpindaGeneration.Gen4]: {
+            baseColor: Color.Hex(0xe6d5a4),
+            resources: {
+                base: new Resource('spinda/gen4/base.png'),
+                components: {
+                    red: new Resource('spinda/gen4/components/red.png'),
+                    tan: new Resource('spinda/gen4/components/tan.png'),
+                    black: new Resource('spinda/gen4/components/black.png'),
+                    mouth: new Resource('spinda/gen4/components/mouth.png'),
+                    shading: new Resource('spinda/gen4/components/shading.png'),
+                },
+                spots: {
+                    [SpotLocation.TopLeft]: new Spot('spinda/gen4/normal/top_left_spot.png', new Point(-1, -5)),
+                    [SpotLocation.TopRight]: new Spot('spinda/gen4/normal/top_right_spot.png', new Point(19, -4)),
+                    [SpotLocation.BottomLeft]: new Spot('spinda/gen4/normal/bottom_left_spot.png', new Point(0, 9)),
+                    [SpotLocation.BottomRight]: new Spot('spinda/gen4/normal/bottom_right_spot.png', new Point(12, 10)),
+                },
+                specialSpots: {
+                    heart: new Spot('spinda/gen4/special/bottom_left_heart.png', new Point(0, 9)),
+                    star: new Spot('spinda/gen4/special/bottom_right_star.png', new Point(12, 10)),
+                },
+            },
+        },
+        [SpindaGeneration.Gen5]: {
+            baseColor: Color.Hex(0xe6d5a4),
+            resources: {
+                base: new Resource('spinda/gen5/base.png'),
+                components: {
+                    red: new Resource('spinda/gen5/components/red.png'),
+                    tan: new Resource('spinda/gen5/components/tan.png'),
+                    black: new Resource('spinda/gen5/components/black.png'),
+                    mouth: new Resource('spinda/gen5/components/mouth.png'),
+                    shading: new Resource('spinda/gen5/components/shading.png'),
+                },
+                spots: {
+                    [SpotLocation.TopLeft]: new Spot('spinda/gen4/normal/top_left_spot.png', new Point(-1, -4)),
+                    [SpotLocation.TopRight]: new Spot('spinda/gen4/normal/top_right_spot.png', new Point(19, -3)),
+                    [SpotLocation.BottomLeft]: new Spot('spinda/gen4/normal/bottom_left_spot.png', new Point(0, 10)),
+                    [SpotLocation.BottomRight]: new Spot('spinda/gen4/normal/bottom_right_spot.png', new Point(12, 11)),
+                },
+                specialSpots: {
+                    heart: new Spot('spinda/gen4/special/bottom_left_heart.png', new Point(0, 10)),
+                    star: new Spot('spinda/gen4/special/bottom_right_star.png', new Point(12, 11)),
+                },
+            },
+        },
     },
 } as const;

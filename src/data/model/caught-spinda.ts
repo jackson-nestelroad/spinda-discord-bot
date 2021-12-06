@@ -24,6 +24,7 @@ export enum SpindaFeatures {
     Heart = 1 << 1,
     Star = 1 << 2,
     Inverted = 1 << 3,
+    Generation = 0b111 << 4,
 }
 
 export interface GeneratedSpinda {
