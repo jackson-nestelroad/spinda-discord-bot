@@ -20,7 +20,7 @@ export class CaughtSpinda
     public readonly position: number;
     public readonly generatedAt: Date;
     public readonly pid: number;
-    public readonly features: number;
+    public readonly features: bigint;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

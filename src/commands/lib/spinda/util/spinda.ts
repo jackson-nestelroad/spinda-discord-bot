@@ -3,32 +3,29 @@ import { Color, RGBAColor } from '../../../../util/color';
 export interface GeneratedSpindaData {
     pid: number;
     generatedAt: Date;
-    features: number;
+    features: bigint;
 }
 
-export enum SpindaFeature {
-    Random = 0b0000_0000_0000_0000_0000_0000_11111_111_0000,
-    None = 0,
-    SmallSpots,
-    Heart,
-    Star,
-    Inverted,
-    Generation,
-    Color,
-    CustomColor,
+export const SpindaFeature = {
+    Random: 0b0000_0000_0000_0000_0000_0000_11111_111_0000n,
+    None: 0n,
+    SmallSpots: 1,
+    Heart: 2,
+    Star: 3,
+    Inverted: 4,
+    Generation: 5,
+    Color: 6,
+    CustomColor: 7,
 }
 
-type ActualSpindaFeature = Exclude<SpindaFeature, SpindaFeature.Random | SpindaFeature.None>;
-type OneBitSpindaFeature = Exclude<ActualSpindaFeature, SpindaFeature.Generation | SpindaFeature.Color | SpindaFeature.CustomColor>;
-
-const SpindaFeatureBitMask: Record<ActualSpindaFeature, number> = {
-    [SpindaFeature.SmallSpots]: 1 << 0,
-    [SpindaFeature.Heart]: 1 << 1,
-    [SpindaFeature.Star]: 1 << 2,
-    [SpindaFeature.Inverted]: 1 << 3,
-    [SpindaFeature.Generation]: 0b111 << 4,
-    [SpindaFeature.Color]: 0b11111 << 7,
-    [SpindaFeature.CustomColor]: 0b1111_1111_1111_1111_1111_1111 << 12,
+const SpindaFeatureBitMask: Record<number, bigint> = {
+    [SpindaFeature.SmallSpots]: 1n << 0n,
+    [SpindaFeature.Heart]: 1n << 1n,
+    [SpindaFeature.Star]: 1n << 2n,
+    [SpindaFeature.Inverted]: 1n << 3n,
+    [SpindaFeature.Generation]: 0b111n << 4n,
+    [SpindaFeature.Color]: 0b11111n << 7n,
+    [SpindaFeature.CustomColor]: 0b1111_1111_1111_1111_1111_1111n << 12n,
     // Next bit: 36
 };
 
@@ -74,35 +71,36 @@ export class Spinda {
         this.data.features = SpindaFeature.None;
     }
 
-    public getFeature(feature: OneBitSpindaFeature): boolean {
-        return (this.data.features & SpindaFeatureBitMask[feature]) !== 0;
+    public getFeature(feature: number): boolean {
+        const bitMask = SpindaFeatureBitMask[feature];
+        return bitMask && ((this.data.features & BigInt(bitMask)) !== 0n);
     }
 
-    public setFeature(feature: OneBitSpindaFeature): void {
-        this.data.features |= SpindaFeatureBitMask[feature];
+    public setFeature(feature: number): void {
+        this.data.features |= SpindaFeatureBitMask[feature] ?? 0n;
     }
 
     public getGeneration(): SpindaGeneration {
-        return (this.data.features & SpindaFeatureBitMask[SpindaFeature.Generation]) >>> 4;
+        return Number((this.data.features & SpindaFeatureBitMask[SpindaFeature.Generation] ?? 0n) >> 4n);
     }
 
     public setGeneration(gen: SpindaGeneration): void {
-        this.data.features |= (gen << 4) & SpindaFeatureBitMask[SpindaFeature.Generation];
+        this.data.features |= BigInt(gen << 4) & SpindaFeatureBitMask[SpindaFeature.Generation];
     }
 
     public getColor(): SpindaColorChange {
-        return (this.data.features & SpindaFeatureBitMask[SpindaFeature.Color]) >>> 7;
+        return Number((this.data.features & SpindaFeatureBitMask[SpindaFeature.Color]) >> 7n);
     }
 
     public setColor(color: SpindaColorChange): void {
-        this.data.features |= (color << 7) & SpindaFeatureBitMask[SpindaFeature.Color];
+        this.data.features |= BigInt(color << 7) & SpindaFeatureBitMask[SpindaFeature.Color];
     }
 
     public getCustomColor(): RGBAColor {
-        return Color.Hex((this.data.features & SpindaFeatureBitMask[SpindaFeature.CustomColor]) >>> 12);
+        return Color.Hex(Number((this.data.features & SpindaFeatureBitMask[SpindaFeature.CustomColor]) >> 12n));
     }
 
     public setCustomColor(color: RGBAColor) {
-        this.data.features |= (color.hex << 12) & SpindaFeatureBitMask[SpindaFeature.CustomColor];
+        this.data.features |= BigInt(color.hex << 12) & SpindaFeatureBitMask[SpindaFeature.CustomColor];
     }
 }
