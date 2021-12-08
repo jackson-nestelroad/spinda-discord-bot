@@ -2,7 +2,7 @@ import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from
 import { Color, RGBAColor } from '../../../util/color';
 import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { Resource, ResourceMap, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
+import { Resource, ResourceMap, SpindaGenerationConfig, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
 
 import { BaseService } from 'panda-discord';
@@ -319,7 +319,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
         // Resources used for drawing depends on the generation
         const gen = spinda.getGeneration();
-        const generationData = SpindaGenerationMetadata.gens[gen];
+        const generationData: SpindaGenerationConfig = SpindaGenerationMetadata.gens[gen];
 
         // Create outline polygon
         if (!this.outlinePolygons.has(gen)) {

@@ -32,16 +32,13 @@ export class DataService extends BaseService<SpindaDiscordBot> {
 
         const options: Options = {
             logging: false,
-        };
-
-        if (Environment.getEnvironment() === 'production') {
-            options.dialectOptions = {
-                ssl: {
+            dialectOptions: {
+                ssl: Environment.getEnvironment() === 'production' ? {
                     require: true,
                     rejectUnauthorized: false,
-                },
-            };
-        }
+                } : undefined,
+            },
+        };
         this.sequelize = new Sequelize(Environment.getDatabaseUrl(), options);
     }
 
@@ -181,7 +178,13 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         let cached = this.cache.caughtSpindas.get(userId);
         if (cached === undefined) {
             const found = await this.getCaughtSpindaModels(userId);
-            cached = found.map(model => model.get());
+            cached = found.map(model => {
+                const data = model.get();
+                return {
+                    ...data,
+                    features: BigInt(data.features),
+                }
+            });
             this.cache.caughtSpindas.set(userId, cached);
             return cached;
         }

@@ -93,7 +93,7 @@ export class Spinda {
     }
 
     public setColor(color: SpindaColorChange): void {
-        this.data.features |= BigInt(color << 7) & SpindaFeatureBitMask[SpindaFeature.Color];
+        this.data.features |= (BigInt(color) << 7n) & SpindaFeatureBitMask[SpindaFeature.Color];
     }
 
     public getCustomColor(): RGBAColor {
@@ -101,6 +101,6 @@ export class Spinda {
     }
 
     public setCustomColor(color: RGBAColor) {
-        this.data.features |= BigInt(color.hex << 12) & SpindaFeatureBitMask[SpindaFeature.CustomColor];
+        this.data.features |= (BigInt(color.hex) << 12n) & SpindaFeatureBitMask[SpindaFeature.CustomColor];
     }
 }
