@@ -59,7 +59,7 @@ export class CaughtSpinda
             },
             {
                 sequelize,
-                tableName: 'caughtspindas2',
+                tableName: 'caughtspindas',
             },
         );
     }
