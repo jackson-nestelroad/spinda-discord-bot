@@ -8,7 +8,7 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 import { MessageAttachment } from 'discord.js';
-import { SpindaColorChange } from '../../../data/model/caught-spinda';
+import { SpindaColorChange } from './util/spinda';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
@@ -74,13 +74,14 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             embed.setThumbnail('attachment://thumbnail.png');
 
             embed.setTitle(`${src.author.username}'s Spinda`);
-            embed.addField('PID', result.info.pid.toString(), true);
+            embed.addField('PID', result.spinda.pid.toString(), true);
 
-            if (result.info.colorChange !== SpindaColorChange.None) {
-                embed.addField('Classification', this.classifications[result.info.colorChange], true);
+            const color = result.spinda.getColor();
+            if (color !== SpindaColorChange.None) {
+                embed.addField('Classification', this.classifications[color], true);
             }
 
-            embed.addField('Generated At', result.info.generatedAt.toLocaleString(), true);
+            embed.addField('Generated At', result.spinda.generatedAt.toLocaleString(), true);
 
             await src.send({ embeds: [embed], files: [attachment] });
         }

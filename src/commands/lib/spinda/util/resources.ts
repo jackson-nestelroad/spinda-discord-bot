@@ -3,6 +3,7 @@ import { Image, loadImage } from 'canvas';
 
 import { Point } from './point';
 import { SpindaDiscordBot } from '../../../../bot';
+import { SpindaGeneration } from './spinda';
 
 export enum SpotLocation {
     Start = 0,
@@ -63,18 +64,10 @@ export interface SpindaGenerationConfig {
 type Resources = Resource | ResourceMap;
 export interface ResourceMap extends Record<string | symbol | number, Resources> { }
 
-export enum SpindaGeneration {
-    Mixed = -1,
-    Normal = 0b000,
-    Gen3 = 0b001,
-    Gen4 = 0b010,
-    Gen5 = 0b011,
-}
-
 interface SpindaGenerationMetadataInterface {
     width: number,
     height: number,
-    gens: Record<Exclude<SpindaGeneration, SpindaGeneration.Mixed>, SpindaGenerationConfig>,
+    gens: Record<Exclude<SpindaGeneration, SpindaGeneration.Random>, SpindaGenerationConfig>,
 }
 
 export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {

@@ -1,8 +1,8 @@
-import { MessageAttachment } from 'discord.js';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { CommandParameters, SimpleCommand } from 'panda-discord';
 
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { SpindaColorChange } from '../../../data/model/caught-spinda';
+import { MessageAttachment } from 'discord.js';
+import { SpindaColorChange } from './util/spinda';
 import { SpindaCommandNames } from './command-names';
 
 export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
@@ -27,7 +27,7 @@ export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
         const result = await bot.spindaGeneratorService.generate();
 
         // Save it as the last Spinda generated in the channel
-        bot.spindaGeneratorService.pushToChannelHistory(src.channel.id, result.info);
+        bot.spindaGeneratorService.pushToChannelHistory(src.channel.id, result.spinda);
 
         // Send the image
         const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
@@ -36,7 +36,7 @@ export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
             throw new Error('Command reply did not produce a message.');
         }
 
-        if (result.info.colorChange === SpindaColorChange.Shiny) {
+        if (result.spinda.getColor() === SpindaColorChange.Shiny) {
             await sent.message.react('\u{2728}');
         }
     }

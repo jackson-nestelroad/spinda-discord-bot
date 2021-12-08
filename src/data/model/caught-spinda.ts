@@ -1,48 +1,16 @@
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 
+import { GeneratedSpindaData } from '../../commands/lib/spinda/util/spinda';
 import { Snowflake } from 'discord.js';
 
-export enum SpindaColorChange {
-    Random = -1,
-    None = 0,
-    Shiny = 1,
-    Retro = 2,
-    Gold = 3,
-    Green = 4,
-    Blue = 5,
-    Purple = 6,
-    Pink = 7,
-    Gray = 8,
-    Custom = 9,
-    Rainbow = 10,
-}
-
-export enum SpindaFeatures {
-    Random = -1,
-    None = 0,
-    SmallSpots = 1 << 0,
-    Heart = 1 << 1,
-    Star = 1 << 2,
-    Inverted = 1 << 3,
-    Generation = 0b111 << 4,
-}
-
-export interface GeneratedSpinda {
-    pid: number;
-    generatedAt: Date;
-    colorChange: SpindaColorChange;
-    features: number;
-    customColor: number;
-}
-
-export interface CaughtSpindaAttributes extends Readonly<GeneratedSpinda> {
+export interface CaughtSpindaAttributes extends Readonly<GeneratedSpindaData> {
     readonly id: number;
     readonly userId: Snowflake;
     readonly position: number;
 }
 
 interface CaughtSpindaCreationAttributes
-    extends Optional<CaughtSpindaAttributes, 'id' | 'colorChange' | 'features' | 'customColor'> { }
+    extends Optional<CaughtSpindaAttributes, 'id' | 'features'> { }
 
 export class CaughtSpinda
     extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
@@ -52,9 +20,7 @@ export class CaughtSpinda
     public readonly position: number;
     public readonly generatedAt: Date;
     public readonly pid: number;
-    public readonly colorChange: SpindaColorChange;
     public readonly features: number;
-    public readonly customColor: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -86,25 +52,14 @@ export class CaughtSpinda
                     type: DataTypes.BIGINT,
                     allowNull: false,
                 },
-                colorChange: {
-                    type: DataTypes.INTEGER,
-                    allowNull: false,
-                    defaultValue: SpindaColorChange.None,
-                },
                 features: {
-                    type: DataTypes.INTEGER,
+                    type: DataTypes.BIGINT,
                     allowNull: false,
-                    defaultValue: SpindaFeatures.None,
-                },
-                customColor: {
-                    type: DataTypes.INTEGER,
-                    allowNull: true,
-                    defaultValue: null,
                 },
             },
             {
                 sequelize,
-                tableName: 'caughtspindas',
+                tableName: 'caughtspindas2',
             },
         );
     }

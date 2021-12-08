@@ -1,8 +1,8 @@
-import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas, loadImage } from 'canvas';
+import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
 import { Color, RGBAColor } from '../../../util/color';
-import { GeneratedSpinda, SpindaColorChange, SpindaFeatures } from '../../../data/model/caught-spinda';
+import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { Resource, ResourceMap, SpindaGeneration, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
+import { Resource, ResourceMap, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
 
 import { BaseService } from 'panda-discord';
@@ -82,12 +82,12 @@ export class CanvasBundle {
 
 interface SpindaGenerationResult {
     readonly buffer: Buffer;
-    readonly info: GeneratedSpinda;
+    readonly spinda: Spinda;
 }
 
 interface HordeGenerationResult {
     readonly buffer: Buffer;
-    readonly info: Array<GeneratedSpinda>;
+    readonly horde: Array<Spinda>;
 }
 
 export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
@@ -110,15 +110,15 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         ],
         features: [
             // [SpindaFeatures.SmallSpots, 25],
-            [SpindaFeatures.Heart, 50],
-            [SpindaFeatures.Star, 50],
-            [SpindaFeatures.Inverted, 30],
+            [SpindaFeature.Heart, 50],
+            [SpindaFeature.Star, 50],
+            [SpindaFeature.Inverted, 30],
         ],
         gens: [
             [SpindaGeneration.Gen3, 10],
             [SpindaGeneration.Gen4, 10],
             [SpindaGeneration.Gen5, 10],
-            [SpindaGeneration.Mixed, 10],
+            [SpindaGeneration.Random, 10],
             [SpindaGeneration.Normal, 1],
         ],
     } as const;
@@ -135,7 +135,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     public static readonly historySize: number = 5;
     public static readonly partySize: number = 8;
 
-    private readonly history: Map<string, CircularBuffer<GeneratedSpinda>> = new Map();
+    private readonly history: Map<string, CircularBuffer<Spinda>> = new Map();
 
     private todaysGen: SpindaGeneration = undefined;
 
@@ -186,19 +186,32 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         return Math.floor(Math.random() * 0x100000000);
     }
 
-    private getGeneration(spinda: GeneratedSpinda): SpindaGeneration {
-        return (spinda.features & SpindaFeatures.Generation) >>> 4;
-    }
+    private rollFeatures(spinda: Spinda) {
+        if (spinda.isRandom()) {
+            spinda.resetFeatures();
 
-    private rollFeatures(spinda: GeneratedSpinda) {
-        if (spinda.features === SpindaFeatures.Random) {
-            spinda.features = SpindaFeatures.None;
-
-            // Merge all features together as a bit string
+            // Roll independent features
             for (const [feature, odds] of this.odds.features) {
                 if (Math.floor(Math.random() * odds) === 0) {
-                    spinda.features |= feature;
+                    spinda.setFeature(feature);
                 }
+            }
+
+            // Roll color
+            for (const [color, odds] of this.odds.colors) {
+                if (Math.floor(Math.random() * odds) === 0) {
+                    spinda.setColor(color);
+                    break;
+                }
+            }
+
+            if (spinda.getColor() === SpindaColorChange.Custom) {
+                spinda.setCustomColor(Color.HSV(
+                    Math.random(),
+                    Math.random(),
+                    // Limited value range, so the spots aren't too dark
+                    Math.random() * 0.4 + 0.6,
+                ).toRGB());
             }
 
             // Generation is based on a value generated once per day
@@ -211,37 +224,13 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                 }
             }
 
-            if (this.todaysGen !== SpindaGeneration.Mixed) {
-                spinda.features |= this.todaysGen << 4;
+            // Set generation
+            if (this.todaysGen !== SpindaGeneration.Random) {
+                spinda.setGeneration(this.todaysGen);
 
             } else {
-                spinda.features |= Math.floor(Math.random() * 4) << 4;
+                spinda.setGeneration(Math.floor(Math.random() * 4));
             }
-        }
-    }
-
-    private rollColorChange(spinda: GeneratedSpinda) {
-        if (spinda.colorChange === SpindaColorChange.Random) {
-            spinda.colorChange = SpindaColorChange.None;
-
-            // Select first color that meets the odds
-            for (const [color, odds] of this.odds.colors) {
-                if (Math.floor(Math.random() * odds) === 0) {
-                    spinda.colorChange = color;
-                    break;
-                }
-            }
-        }
-    }
-
-    private rollCustomColor(spinda: GeneratedSpinda) {
-        if (spinda.colorChange === SpindaColorChange.Custom && spinda.customColor === null) {
-            spinda.customColor = Color.HSV(
-                Math.random(),
-                Math.random(),
-                // Limited value range, so the spots aren't too dark
-                Math.random() * 0.4 + 0.6,
-            ).toRGB().hex;
         }
     }
 
@@ -261,23 +250,23 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
-    private getSpots(features: SpindaFeatures, resources: SpindaResourceConfig): SpotData<Spot> {
+    private getSpots(spinda: Spinda, resources: SpindaResourceConfig): SpotData<Spot> {
         let spots: SpotData<Spot> = { ...resources.spots };
 
         // Use heart in bottom left
-        if (features & SpindaFeatures.Heart) {
+        if (spinda.getFeature(SpindaFeature.Heart)) {
             spots[SpotLocation.BottomLeft] = resources.specialSpots.heart;
         }
 
         // Use star in bottom right
-        if (features & SpindaFeatures.Star) {
+        if (spinda.getFeature(SpindaFeature.Star)) {
             spots[SpotLocation.BottomRight] = resources.specialSpots.star;
         }
 
         return spots as SpotData<Spot>;
     }
 
-    private getChannelHistory(id: Snowflake): CircularBuffer<GeneratedSpinda> {
+    private getChannelHistory(id: Snowflake): CircularBuffer<Spinda> {
         let buffer = this.history.get(id);
         if (!buffer) {
             buffer = new CircularBuffer(SpindaGeneratorService.historySize);
@@ -286,17 +275,17 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         return buffer;
     }
 
-    public pushToChannelHistory(id: Snowflake, spinda: GeneratedSpinda) {
+    public pushToChannelHistory(id: Snowflake, spinda: Spinda) {
         const buffer = this.getChannelHistory(id);
         buffer.push(spinda);
     }
 
-    public getFromChannelHistory(id: Snowflake, offset: number = 0): GeneratedSpinda | undefined {
+    public getFromChannelHistory(id: Snowflake, offset: number = 0): Spinda | undefined {
         const buffer = this.getChannelHistory(id);
         return buffer.get(offset);
     }
 
-    public setChannelHistory(id: Snowflake, spinda: Array<GeneratedSpinda>) {
+    public setChannelHistory(id: Snowflake, spinda: Array<Spinda>) {
         const buffer = this.getChannelHistory(id);
         buffer.set(spinda);
     }
@@ -307,7 +296,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     }
 
     public async generate(
-        spinda: GeneratedSpinda = this.newSpinda(),
+        spindaData: GeneratedSpindaData = this.newSpinda(),
         scale: boolean = true,
     ): Promise<SpindaGenerationResult> {
         if (this.canvases.length < this.numCanvases) {
@@ -325,13 +314,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const secondCanvas = this.canvases[1];
         const thirdCanvas = this.canvases[2];
 
-        // Roll all random features
+        const spinda = new Spinda(spindaData);
         this.rollFeatures(spinda);
-        this.rollColorChange(spinda);
-        this.rollCustomColor(spinda);
 
         // Resources used for drawing depends on the generation
-        const gen = this.getGeneration(spinda);
+        const gen = spinda.getGeneration();
         const generationData = SpindaGenerationMetadata.gens[gen];
 
         // Create outline polygon
@@ -350,7 +337,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         this.drawComponent(secondCanvas, 'source-over', generationData.resources.components.red);
 
         // Draw red spots into primary canvas
-        const spots = this.getSpots(spinda.features, generationData.resources);
+        const spots = this.getSpots(spinda, generationData.resources);
         for (let i = SpotLocation.Start; i < SpotLocation.Count; ++i) {
             const spot: Spot = spots[i];
             const origin: Point = spot.anchor.translate(
@@ -365,10 +352,10 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         this.drawComponent(thirdCanvas, 'source-over', generationData.resources.components.tan);
 
         // Inverted, so tan body is actually colored and spots are actually tan
-        if (spinda.features & SpindaFeatures.Inverted) {
+        if (spinda.getFeature(SpindaFeature.Inverted)) {
             secondCanvas.fillColor('source-in', generationData.baseColor);
             thirdCanvas.drawCanvas('source-in', firstCanvas);
-        } else if (spinda.colorChange !== SpindaColorChange.None) {
+        } else if (spinda.getColor() !== SpindaColorChange.None) {
             secondCanvas.drawCanvas('source-in', firstCanvas);
         }
 
@@ -390,11 +377,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         // Send image to Discord
         return {
             buffer: firstCanvas.canvas.toBuffer(),
-            info: spinda,
+            spinda: spinda,
         };
     }
 
-    public async horde(spindaCollection?: Readonly<Array<GeneratedSpinda>>): Promise<HordeGenerationResult> {
+    public async horde(spindaCollection?: Readonly<Array<GeneratedSpindaData>>): Promise<HordeGenerationResult> {
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
                 ? [...new Array(SpindaGeneratorService.historySize)].map(
@@ -435,21 +422,19 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
         return {
             buffer: hordeCanvas.canvas.toBuffer(),
-            info: generated.map(res => res.info),
+            horde: generated.map(res => res.spinda),
         };
     }
 
-    public async generateAndSend(msg: Message, spinda: GeneratedSpinda): Promise<void> {
+    public async generateAndSend(msg: Message, spinda: GeneratedSpindaData): Promise<void> {
         await msg.channel.send({ files: [new MessageAttachment((await this.generate(spinda)).buffer)] });
     }
 
-    public newSpinda(): GeneratedSpinda {
+    public newSpinda(): GeneratedSpindaData {
         return {
             pid: this.getRandomPID(),
             generatedAt: new Date(),
-            colorChange: SpindaColorChange.Random,
-            features: SpindaFeatures.Random,
-            customColor: null,
+            features: SpindaFeature.Random,
         };
     }
 

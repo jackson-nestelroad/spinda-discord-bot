@@ -1,5 +1,5 @@
 import { Color, RGBAColor } from '../../../../util/color';
-import { GeneratedSpinda, SpindaColorChange } from '../../../../data/model/caught-spinda';
+import { Spinda, SpindaColorChange } from './spinda';
 
 import { CanvasBundle } from '../generator';
 
@@ -95,20 +95,21 @@ export namespace SpindaColorMask {
         };
     })();
 
-    export function draw(spinda: GeneratedSpinda, bundle: CanvasBundle) {
-        const predefinedColor = SpindaColorChanges[spinda.colorChange];
+    export function draw(spinda: Spinda, bundle: CanvasBundle) {
+        const color = spinda.getColor();
+        const predefinedColor = SpindaColorChanges[color];
         if (predefinedColor) {
             solidColor(predefinedColor, bundle);
         } else {
-            switch (spinda.colorChange) {
+            switch (color) {
                 case SpindaColorChange.Custom:
-                    solidColor(Color.Hex(spinda.customColor), bundle);
+                    solidColor(spinda.getCustomColor(), bundle);
                     break;
                 case SpindaColorChange.Rainbow:
                     rainbow(spinda.pid, bundle);
                     break;
                 default:
-                    throw new Error(`Unknown Spinda color change: \`${spinda.colorChange}\``);
+                    throw new Error(`Unknown Spinda color change: \`${color}\``);
             }
         }
     }

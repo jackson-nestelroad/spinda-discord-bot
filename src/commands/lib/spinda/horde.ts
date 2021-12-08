@@ -1,8 +1,8 @@
-import { MessageAttachment } from 'discord.js';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { CommandParameters, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { SpindaColorChange } from '../../../data/model/caught-spinda';
+import { MessageAttachment } from 'discord.js';
+import { SpindaColorChange } from './util/spinda';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
@@ -21,7 +21,7 @@ export class HordeCommand extends SimpleCommand<SpindaDiscordBot> {
         const result = await bot.spindaGeneratorService.horde();
 
         // Save it as the last Spinda generated in the channel
-        bot.spindaGeneratorService.setChannelHistory(src.channel.id, result.info);
+        bot.spindaGeneratorService.setChannelHistory(src.channel.id, result.horde);
 
         // Send the image
         const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
@@ -31,8 +31,8 @@ export class HordeCommand extends SimpleCommand<SpindaDiscordBot> {
             throw new Error('Command reply did not produce a message.');
         }
 
-        for (let i = 0; i < result.info.length; ++i) {
-            if (result.info[i].colorChange === SpindaColorChange.Shiny) {
+        for (let i = 0; i < result.horde.length; ++i) {
+            if (result.horde[i].getColor() === SpindaColorChange.Shiny) {
                 const sentMsg = sent.message;
                 await sentMsg.react('\u{2728}');
                 await sentMsg.react(`${String.fromCharCode(0x31 + i)}\u{20E3}`);
