@@ -433,8 +433,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     public newSpinda(): GeneratedSpindaData {
         return {
             pid: this.getRandomPID(),
-            generatedAt: new Date(),
             features: SpindaFeature.Random,
+            generatedAt: new Date(),
         };
     }
 

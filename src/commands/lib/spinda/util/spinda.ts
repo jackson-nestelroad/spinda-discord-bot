@@ -2,8 +2,8 @@ import { Color, RGBAColor } from '../../../../util/color';
 
 export interface GeneratedSpindaData {
     pid: number;
-    generatedAt: Date;
     features: bigint;
+    generatedAt: Date;
 }
 
 export const SpindaFeature = {

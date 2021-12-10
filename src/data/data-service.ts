@@ -174,20 +174,12 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         return await this.caughtSpindas.findAll({ where: { userId }, order: [['position', 'ASC']] });
     }
 
-    private spindaModelToData(model: CaughtSpinda): CaughtSpindaAttributes {
-        const data = model.get();
-        return {
-            ...data,
-            features: BigInt(data.features),
-        }
-    }
-
     private async assureCaughtSpindaCache(userId: Snowflake): Promise<Array<CaughtSpindaAttributes>> {
         let cached = this.cache.caughtSpindas.get(userId);
         if (cached === undefined) {
             const found = await this.getCaughtSpindaModels(userId);
             cached = found.map(model => {
-                return this.spindaModelToData(model);
+                return CaughtSpinda.deserializeAttributes(model.get());
             });
             this.cache.caughtSpindas.set(userId, cached);
             return cached;
@@ -248,7 +240,7 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             }
         }
 
-        const cached = goodModels.map(model => model.get()).sort((a, b) => a.position - b.position);
+        const cached = goodModels.map(model => CaughtSpinda.deserializeAttributes(model.get())).sort((a, b) => a.position - b.position);
         this.cache.caughtSpindas.set(userId, cached);
     }
 
@@ -273,8 +265,8 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         const newFirst = await secondModels[0].update({ position: first });
 
         const collection = await this.assureCaughtSpindaCache(userId);
-        collection[first] = newFirst.get();
-        collection[second] = newSecond.get();
+        collection[first] = CaughtSpinda.deserializeAttributes(newFirst.get());
+        collection[second] = CaughtSpinda.deserializeAttributes(newSecond.get());
     }
 
     public async releaseCaughtSpinda(userId: Snowflake, pos: number) {
@@ -298,9 +290,9 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             pos = collection.length;
             ++collection.length;
 
-            model = await this.caughtSpindas.create({ userId, position: pos, ...spinda });
+            model = await this.caughtSpindas.create(CaughtSpinda.serializeAttributes({ userId, position: pos, ...spinda }));
         } else {
-            const [numUpdated, updated] = await this.caughtSpindas.update(spinda, {
+            const [numUpdated, updated] = await this.caughtSpindas.update(CaughtSpinda.serializeAttributes(spinda), {
                 where: { userId, position: pos },
                 returning: true,
             });
@@ -333,6 +325,6 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         }
 
         // Update cache at the given position
-        collection[pos] = this.spindaModelToData(model);
+        collection[pos] = CaughtSpinda.deserializeAttributes(model.get());
     }
 }

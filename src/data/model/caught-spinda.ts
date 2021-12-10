@@ -3,27 +3,56 @@ import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 import { GeneratedSpindaData } from '../../commands/lib/spinda/util/spinda';
 import { Snowflake } from 'discord.js';
 
-export interface CaughtSpindaAttributes extends Readonly<GeneratedSpindaData> {
-    readonly id: number;
-    readonly userId: Snowflake;
-    readonly position: number;
+type SerializedGeneratedSpindaData = Omit<GeneratedSpindaData, 'pid' | 'features'> & { pid: string, features: string };
+
+interface CaughtSpindaData {
+    id: number;
+    userId: Snowflake;
+    position: number;
 }
 
+export interface SerializedCaughtSpindaAttributes extends Readonly<CaughtSpindaData>, Readonly<SerializedGeneratedSpindaData> { }
+
+export interface CaughtSpindaAttributes extends Readonly<CaughtSpindaData>, Readonly<GeneratedSpindaData> { }
+
+interface SerializedCaughtSpindaCreationAttributes
+    extends Optional<SerializedCaughtSpindaAttributes, 'id'> { }
+
 interface CaughtSpindaCreationAttributes
-    extends Optional<CaughtSpindaAttributes, 'id' | 'features'> { }
+    extends Optional<CaughtSpindaAttributes, 'id'> { }
 
 export class CaughtSpinda
-    extends Model<CaughtSpindaAttributes, CaughtSpindaCreationAttributes>
-    implements CaughtSpindaAttributes {
+    extends Model<SerializedCaughtSpindaAttributes, SerializedCaughtSpindaCreationAttributes>
+    implements SerializedCaughtSpindaAttributes {
     public readonly id: number;
     public readonly userId: Snowflake;
     public readonly position: number;
     public readonly generatedAt: Date;
-    public readonly pid: number;
-    public readonly features: bigint;
+    public readonly pid: string;
+    public readonly features: string;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    public static serializeAttributes(attrs: CaughtSpindaAttributes): SerializedCaughtSpindaAttributes;
+    public static serializeAttributes(attrs: GeneratedSpindaData): SerializedGeneratedSpindaData;
+    public static serializeAttributes(attrs: CaughtSpindaCreationAttributes): SerializedCaughtSpindaCreationAttributes;
+
+    public static serializeAttributes<T extends GeneratedSpindaData>(attrs: T): object {
+        return {
+            ...attrs,
+            pid: attrs.pid.toString(),
+            features: attrs.features.toString(),
+        };
+    }
+
+    static deserializeAttributes(attrs: SerializedCaughtSpindaAttributes): CaughtSpindaAttributes {
+        return {
+            ...attrs,
+            pid: Number(attrs.pid),
+            features: BigInt(attrs.features),
+        };
+    }
 
     static initialize(sequelize: Sequelize) {
         CaughtSpinda.init(
