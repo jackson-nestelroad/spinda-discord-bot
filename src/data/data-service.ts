@@ -174,16 +174,20 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         return await this.caughtSpindas.findAll({ where: { userId }, order: [['position', 'ASC']] });
     }
 
+    private spindaModelToData(model: CaughtSpinda): CaughtSpindaAttributes {
+        const data = model.get();
+        return {
+            ...data,
+            features: BigInt(data.features),
+        }
+    }
+
     private async assureCaughtSpindaCache(userId: Snowflake): Promise<Array<CaughtSpindaAttributes>> {
         let cached = this.cache.caughtSpindas.get(userId);
         if (cached === undefined) {
             const found = await this.getCaughtSpindaModels(userId);
             cached = found.map(model => {
-                const data = model.get();
-                return {
-                    ...data,
-                    features: BigInt(data.features),
-                }
+                return this.spindaModelToData(model);
             });
             this.cache.caughtSpindas.set(userId, cached);
             return cached;
@@ -329,6 +333,6 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         }
 
         // Update cache at the given position
-        collection[pos] = model.get();
+        collection[pos] = this.spindaModelToData(model);
     }
 }
