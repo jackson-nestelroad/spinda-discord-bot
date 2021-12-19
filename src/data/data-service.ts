@@ -213,12 +213,13 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         }
 
         // Max position is too large, redefine good and bad models based on position number
-        if (maxPositionSeen + 1 > allSavedModels.length) {
-            maxPositionSeen -= maxPositionSeen + 1 - allSavedModels.length;
+        const maxAllowedPosition = allSavedModels.length - 1;
+        if (maxPositionSeen > maxAllowedPosition) {
+            maxPositionSeen = maxAllowedPosition;
             goodModels = [];
             badModels = [];
             for (const model of allSavedModels) {
-                if (model.position <= maxPositionSeen) {
+                if (model.position <= maxAllowedPosition) {
                     goodModels.push(model);
                 } else {
                     badModels.push(model);
