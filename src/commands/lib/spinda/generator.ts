@@ -115,10 +115,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             [SpindaFeature.Inverted, 30],
         ],
         gens: [
-            [SpindaGeneration.Gen3, 10],
-            [SpindaGeneration.Gen4, 10],
-            [SpindaGeneration.Gen5, 10],
-            [SpindaGeneration.Random, 10],
+            [SpindaGeneration.Gen3, 8],
+            [SpindaGeneration.Gen4, 8],
+            [SpindaGeneration.Gen5, 8],
+            [SpindaGeneration.Retro, 8],
+            [SpindaGeneration.Random, 8],
             [SpindaGeneration.Normal, 1],
         ],
     } as const;
@@ -229,7 +230,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                 spinda.setGeneration(this.todaysGen);
 
             } else {
-                spinda.setGeneration(Math.floor(Math.random() * 4));
+                spinda.setGeneration(Math.floor(Math.random() * 5));
             }
         }
     }
@@ -367,7 +368,9 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         this.drawOutline(firstCanvas, gen);
         firstCanvas.drawCanvas('source-over', thirdCanvas);
         this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.black);
-        this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.mouth);
+        if (generationData.resources.components.mouth) {
+            this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.mouth);
+        }
         this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.shading);
 
         if (scale) {

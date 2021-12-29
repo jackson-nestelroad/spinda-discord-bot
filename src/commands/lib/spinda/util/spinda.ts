@@ -34,6 +34,7 @@ export enum SpindaGeneration {
     Gen3 = 0b001,
     Gen4 = 0b010,
     Gen5 = 0b011,
+    Retro = 0b100,
     Random = 0b111,
 }
 

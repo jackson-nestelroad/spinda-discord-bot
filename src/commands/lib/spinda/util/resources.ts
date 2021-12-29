@@ -46,7 +46,7 @@ export interface SpindaResourceConfig {
         red: Resource,
         tan: Resource,
         black: Resource,
-        mouth: Resource,
+        mouth?: Resource,
         shading: Resource,
     },
     spots: SpotData<Spot>,
@@ -169,6 +169,28 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                 specialSpots: {
                     heart: new Spot('spinda/gen4/special/bottom_left_heart.png', new Point(0, 10)),
                     star: new Spot('spinda/gen4/special/bottom_right_star.png', new Point(12, 11)),
+                },
+            },
+        },
+        [SpindaGeneration.Retro]: {
+            baseColor: Color.Hex(0xffffff),
+            resources: {
+                base: new Resource('spinda/retro/base.png'),
+                components: {
+                    red: new Resource('spinda/retro/components/red.png'),
+                    tan: new Resource('spinda/retro/components/tan.png'),
+                    black: new Resource('spinda/retro/components/black.png'),
+                    shading: new Resource('spinda/retro/components/shading.png'),
+                },
+                spots: {
+                    [SpotLocation.TopLeft]: new Spot('spinda/retro/normal/top_left_spot.png', new Point(-1, -4)),
+                    [SpotLocation.TopRight]: new Spot('spinda/retro/normal/top_right_spot.png', new Point(19, -3)),
+                    [SpotLocation.BottomLeft]: new Spot('spinda/retro/normal/bottom_left_spot.png', new Point(0, 10)),
+                    [SpotLocation.BottomRight]: new Spot('spinda/retro/normal/bottom_right_spot.png', new Point(12, 11)),
+                },
+                specialSpots: {
+                    heart: new Spot('spinda/retro/special/bottom_left_heart.png', new Point(0, 10)),
+                    star: new Spot('spinda/retro/special/bottom_right_star.png', new Point(12, 11)),
                 },
             },
         },
