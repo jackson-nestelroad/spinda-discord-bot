@@ -1,16 +1,25 @@
 import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
-import { Color, RGBAColor } from '../../../util/color';
-import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { Resource, ResourceMap, SpindaGenerationConfig, SpindaGenerationMetadata, SpindaResourceConfig, Spot, SpotData, SpotLocation } from './util/resources';
-import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
-
 import { BaseService } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../../../bot';
 import { CircularBuffer } from '../../../util/circular-buffer';
+import { Color, RGBAColor } from '../../../util/color';
 import { NumberUtil } from '../../../util/number';
 import { OutlineDrawer } from './util/outline';
 import { Point } from './util/point';
-import { SpindaDiscordBot } from '../../../bot';
+import {
+    Resource,
+    ResourceMap,
+    SpindaGenerationConfig,
+    SpindaGenerationMetadata,
+    SpindaResourceConfig,
+    Spot,
+    SpotData,
+    SpotLocation,
+} from './util/resources';
+import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
+import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
 
 type CanvasGlobalCompositeOperation = typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
 
@@ -79,6 +88,23 @@ export class CanvasBundle {
     }
 }
 
+export interface GenerateOptions {
+    scale: boolean;
+    genOverride: SpindaGeneration | undefined;
+}
+
+const DefaultGenerateOptions: GenerateOptions = {
+    scale: true,
+    genOverride: undefined,
+};
+
+function makeGenerateOptions(options: Partial<GenerateOptions>): GenerateOptions {
+    const result: Partial<GenerateOptions> = {};
+    for (const key in DefaultGenerateOptions) {
+        result[key] = options[key] ?? DefaultGenerateOptions[key];
+    }
+    return result as GenerateOptions;
+}
 
 interface SpindaGenerationResult {
     readonly buffer: Buffer;
@@ -207,12 +233,14 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             }
 
             if (spinda.getColor() === SpindaColorChange.Custom) {
-                spinda.setCustomColor(Color.HSV(
-                    Math.random(),
-                    Math.random(),
-                    // Limited value range, so the spots aren't too dark
-                    Math.random() * 0.4 + 0.6,
-                ).toRGB());
+                spinda.setCustomColor(
+                    Color.HSV(
+                        Math.random(),
+                        Math.random(),
+                        // Limited value range, so the spots aren't too dark
+                        Math.random() * 0.4 + 0.6,
+                    ).toRGB(),
+                );
             }
 
             // Generation is based on a value generated once per day
@@ -228,7 +256,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             // Set generation
             if (this.todaysGen !== SpindaGeneration.Random) {
                 spinda.setGeneration(this.todaysGen);
-
             } else {
                 spinda.setGeneration(Math.floor(Math.random() * 5));
             }
@@ -298,8 +325,10 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
     public async generate(
         spindaData: GeneratedSpindaData = this.newSpinda(),
-        scale: boolean = true,
+        options: Partial<GenerateOptions> = {},
     ): Promise<SpindaGenerationResult> {
+        options = makeGenerateOptions(options);
+
         if (this.canvases.length < this.numCanvases) {
             for (let i = this.canvases.length; i < this.numCanvases; ++i) {
                 this.canvases.push(new CanvasBundle());
@@ -319,7 +348,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         this.rollFeatures(spinda);
 
         // Resources used for drawing depends on the generation
-        const gen = spinda.getGeneration();
+        const gen = options.genOverride ?? spinda.getGeneration();
         const generationData: SpindaGenerationConfig = SpindaGenerationMetadata.gens[gen];
 
         // Create outline polygon
@@ -373,7 +402,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
         this.drawComponent(firstCanvas, 'source-over', generationData.resources.components.shading);
 
-        if (scale) {
+        if (options.scale) {
             firstCanvas.scale(this.scale, secondCanvas);
         }
 
@@ -384,25 +413,31 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         };
     }
 
-    public async horde(spindaCollection?: Readonly<Array<GeneratedSpindaData>>): Promise<HordeGenerationResult> {
+    public async horde(
+        spindaCollection?: Readonly<Array<GeneratedSpindaData>>,
+        options: Partial<GenerateOptions> = {},
+    ): Promise<HordeGenerationResult> {
+        options = makeGenerateOptions(options);
+        const individualOptions = { ...options, scale: false };
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
                 ? [...new Array(SpindaGeneratorService.historySize)].map(
-                    async () => await this.generate(this.newSpinda(), false),
-                )
-                : spindaCollection.map(async spinda => await this.generate(spinda, false)),
+                      async () => await this.generate(this.newSpinda(), individualOptions),
+                  )
+                : spindaCollection.map(async spinda => await this.generate(spinda, individualOptions)),
         );
 
         const width = this.getSpindaWidth();
         const height = this.getSpindaHeight();
 
         // Reset canvas
+        const scale = options.scale ? this.scale : 1;
         const hordeCanvas = this.canvases[0];
-        hordeCanvas.resize(width * generated.length * this.scale, height * this.scale);
+        hordeCanvas.resize(width * generated.length * scale, height * scale);
         hordeCanvas.clear();
 
-        const scaledWidth = width * this.scale;
-        const scaledHeight = height * this.scale;
+        const scaledWidth = width * scale;
+        const scaledHeight = height * scale;
         for (let i = 0; i < generated.length; ++i) {
             const spinda = generated[i];
 

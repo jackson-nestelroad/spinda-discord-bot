@@ -1,19 +1,14 @@
-import {
-    ArgumentType,
-    ArgumentsConfig,
-    CommandParameters,
-    ComplexCommand,
-    StandardCooldowns,
-} from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-
 import { MessageAttachment } from 'discord.js';
-import { SpindaColorChange } from './util/spinda';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaColorChange, SpindaGeneration } from './util/spinda';
 
 interface MySpindaArgs {
     position?: number;
+    generation?: SpindaGeneration;
 }
 
 export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaArgs> {
@@ -28,6 +23,18 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             description: 'Position to regenerate. If none is given, your entire party will be generated.',
             type: ArgumentType.Integer,
             required: false,
+        },
+        generation: {
+            description: 'Generation style. Displays your Spinda in a different style than what it was caught in.',
+            type: ArgumentType.Integer,
+            required: false,
+            choices: [
+                { name: 'Modern', value: SpindaGeneration.Normal },
+                { name: 'Hoenn', value: SpindaGeneration.Gen3 },
+                { name: 'Sinnoh', value: SpindaGeneration.Gen4 },
+                { name: 'Unova', value: SpindaGeneration.Gen5 },
+                { name: 'Retro', value: SpindaGeneration.Retro },
+            ],
         },
     };
 
@@ -56,7 +63,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
         }
 
         if (args.position === undefined) {
-            const result = await bot.spindaGeneratorService.horde(caughtSpinda);
+            const result = await bot.spindaGeneratorService.horde(caughtSpinda, { genOverride: args.generation });
             await src.send({ files: [new MessageAttachment(result.buffer)] });
         } else {
             if (args.position <= 0) {
@@ -67,7 +74,9 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
                 throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
             }
 
-            const result = await bot.spindaGeneratorService.generate(caughtSpinda[args.position - 1]);
+            const result = await bot.spindaGeneratorService.generate(caughtSpinda[args.position - 1], {
+                genOverride: args.generation,
+            });
 
             const embed = bot.createEmbed();
             const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
