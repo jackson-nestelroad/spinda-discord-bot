@@ -1,7 +1,6 @@
 import { Color, RGBAColor } from '../../../../util/color';
-import { Spinda, SpindaColorChange } from './spinda';
-
 import { CanvasBundle } from '../generator';
+import { Spinda, SpindaColorChange } from './spinda';
 
 export interface SpindaColorPalette {
     readonly base: RGBAColor;

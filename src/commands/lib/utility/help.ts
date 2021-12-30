@@ -119,7 +119,9 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
             else if (CommandCategory.Custom.localeCompare(query, undefined, { sensitivity: 'base' }) === 0) {
                 embed.setTitle(`${CommandCategory.Custom} Commands for ${src.guild.name}`);
                 const customCommands = await bot.dataService.getCustomCommands(src.guild.id);
-                const commandsString = Object.values(customCommands).map(data => `\`${prefix}${data.name}\``).join(', ');
+                const commandsString = Object.values(customCommands)
+                    .map(data => `\`${prefix}${data.name}\``)
+                    .join(', ');
                 embed.setDescription(commandsString);
             }
             // Query is some global command.

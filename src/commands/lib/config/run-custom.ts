@@ -1,10 +1,4 @@
-import {
-    ArgumentsConfig,
-    ArgumentType,
-    CommandParameters,
-    ComplexCommand,
-    SplitArgumentArray,
-} from 'panda-discord';
+import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, SplitArgumentArray } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 

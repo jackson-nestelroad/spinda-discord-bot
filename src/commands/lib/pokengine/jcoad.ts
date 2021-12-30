@@ -1,11 +1,5 @@
 import axios from 'axios';
-import {
-    ArgumentsConfig,
-    ArgumentType,
-    CommandParameters,
-    ComplexCommand,
-    StandardCooldowns,
-} from 'panda-discord';
+import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 

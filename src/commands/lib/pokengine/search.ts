@@ -181,22 +181,27 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         },
     };
 
-    private handleDexBlock(results: cheerio.CheerioAPI, embed: MessageEmbed): [cheerio.Cheerio<cheerio.Element>, boolean] {
+    private handleDexBlock(
+        results: cheerio.CheerioAPI,
+        embed: MessageEmbed,
+    ): [cheerio.Cheerio<cheerio.Element>, boolean] {
         const firstDexBlock = results('.dex-block').first();
         if (firstDexBlock.length > 0) {
             if (firstDexBlock.text() === 'Private') {
                 PokengineUtil.embedPrivate(embed);
                 return [firstDexBlock, false];
             }
-        }
-        else {
+        } else {
             embed.setTitle('Failed to find dex block.');
             return [firstDexBlock, false];
         }
         return [firstDexBlock, true];
     }
 
-    private handleSearchTable(results: cheerio.CheerioAPI, embed: MessageEmbed): [cheerio.Cheerio<cheerio.Element>, boolean] {
+    private handleSearchTable(
+        results: cheerio.CheerioAPI,
+        embed: MessageEmbed,
+    ): [cheerio.Cheerio<cheerio.Element>, boolean] {
         const firstTableRow = results('.search-table tr').first();
         if (firstTableRow.length > 0) {
             return [firstTableRow.children(), true];

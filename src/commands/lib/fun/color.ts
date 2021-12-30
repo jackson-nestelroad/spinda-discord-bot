@@ -1,12 +1,6 @@
 import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
 import { MessageAttachment } from 'discord.js';
-import {
-    ArgumentsConfig,
-    ArgumentType,
-    CommandParameters,
-    ComplexCommand,
-    StandardCooldowns,
-} from 'panda-discord';
+import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { Color, RGBAColor } from '../../../util/color';

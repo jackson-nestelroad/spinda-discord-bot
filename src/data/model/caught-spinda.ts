@@ -1,9 +1,9 @@
+import { Snowflake } from 'discord.js';
 import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 
 import { GeneratedSpindaData } from '../../commands/lib/spinda/util/spinda';
-import { Snowflake } from 'discord.js';
 
-type SerializedGeneratedSpindaData = Omit<GeneratedSpindaData, 'pid' | 'features'> & { pid: string, features: string };
+type SerializedGeneratedSpindaData = Omit<GeneratedSpindaData, 'pid' | 'features'> & { pid: string; features: string };
 
 interface CaughtSpindaData {
     id: number;
@@ -11,19 +11,20 @@ interface CaughtSpindaData {
     position: number;
 }
 
-export interface SerializedCaughtSpindaAttributes extends Readonly<CaughtSpindaData>, Readonly<SerializedGeneratedSpindaData> { }
+export interface SerializedCaughtSpindaAttributes
+    extends Readonly<CaughtSpindaData>,
+        Readonly<SerializedGeneratedSpindaData> {}
 
-export interface CaughtSpindaAttributes extends Readonly<CaughtSpindaData>, Readonly<GeneratedSpindaData> { }
+export interface CaughtSpindaAttributes extends Readonly<CaughtSpindaData>, Readonly<GeneratedSpindaData> {}
 
-interface SerializedCaughtSpindaCreationAttributes
-    extends Optional<SerializedCaughtSpindaAttributes, 'id'> { }
+interface SerializedCaughtSpindaCreationAttributes extends Optional<SerializedCaughtSpindaAttributes, 'id'> {}
 
-interface CaughtSpindaCreationAttributes
-    extends Optional<CaughtSpindaAttributes, 'id'> { }
+interface CaughtSpindaCreationAttributes extends Optional<CaughtSpindaAttributes, 'id'> {}
 
 export class CaughtSpinda
     extends Model<SerializedCaughtSpindaAttributes, SerializedCaughtSpindaCreationAttributes>
-    implements SerializedCaughtSpindaAttributes {
+    implements SerializedCaughtSpindaAttributes
+{
     public readonly id: number;
     public readonly userId: Snowflake;
     public readonly position: number;

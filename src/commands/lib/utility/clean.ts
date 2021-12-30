@@ -1,11 +1,5 @@
 import { DiscordAPIError } from 'discord.js';
-import {
-    ArgumentsConfig,
-    ArgumentType,
-    CommandParameters,
-    ComplexCommand,
-    StandardCooldowns,
-} from 'panda-discord';
+import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 

@@ -1,15 +1,15 @@
+import { Snowflake } from 'discord.js';
+import { BaseService } from 'panda-discord';
+import { exit } from 'process';
+import { Options, Sequelize } from 'sequelize';
+
+import { SpindaDiscordBot } from '../bot';
+import { GeneratedSpindaData } from '../commands/lib/spinda/util/spinda';
+import { Environment } from './environment';
+import { BlocklistEntry } from './model/blocklist';
 import { CaughtSpinda, CaughtSpindaAttributes } from './model/caught-spinda';
 import { CustomCommand, CustomCommandData } from './model/custom-command';
 import { Guild, GuildAttributes } from './model/guild';
-import { Options, Sequelize } from 'sequelize';
-
-import { BaseService } from 'panda-discord';
-import { BlocklistEntry } from './model/blocklist';
-import { Environment } from './environment';
-import { GeneratedSpindaData } from '../commands/lib/spinda/util/spinda';
-import { Snowflake } from 'discord.js';
-import { SpindaDiscordBot } from '../bot';
-import { exit } from 'process';
 
 export class DataService extends BaseService<SpindaDiscordBot> {
     public static readonly defaultPrefix: string = '>';
@@ -33,10 +33,13 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         const options: Options = {
             logging: false,
             dialectOptions: {
-                ssl: Environment.getEnvironment() === 'production' ? {
-                    require: true,
-                    rejectUnauthorized: false,
-                } : undefined,
+                ssl:
+                    Environment.getEnvironment() === 'production'
+                        ? {
+                              require: true,
+                              rejectUnauthorized: false,
+                          }
+                        : undefined,
             },
         };
         this.sequelize = new Sequelize(Environment.getDatabaseUrl(), options);
@@ -241,7 +244,9 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             }
         }
 
-        const cached = goodModels.map(model => CaughtSpinda.deserializeAttributes(model.get())).sort((a, b) => a.position - b.position);
+        const cached = goodModels
+            .map(model => CaughtSpinda.deserializeAttributes(model.get()))
+            .sort((a, b) => a.position - b.position);
         this.cache.caughtSpindas.set(userId, cached);
     }
 
@@ -291,7 +296,9 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             pos = collection.length;
             ++collection.length;
 
-            model = await this.caughtSpindas.create(CaughtSpinda.serializeAttributes({ userId, position: pos, ...spinda }));
+            model = await this.caughtSpindas.create(
+                CaughtSpinda.serializeAttributes({ userId, position: pos, ...spinda }),
+            );
         } else {
             const [numUpdated, updated] = await this.caughtSpindas.update(CaughtSpinda.serializeAttributes(spinda), {
                 where: { userId, position: pos },

@@ -1,12 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import {
-    ArgumentsConfig,
-    ArgumentType,
-    CommandParameters,
-    ComplexCommand,
-    StandardCooldowns,
-} from 'panda-discord';
+import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';

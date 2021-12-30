@@ -1,8 +1,8 @@
-import { Color, RGBAColor } from '../../../../util/color';
 import { Image, loadImage } from 'canvas';
 
-import { Point } from './point';
 import { SpindaDiscordBot } from '../../../../bot';
+import { Color, RGBAColor } from '../../../../util/color';
+import { Point } from './point';
 import { SpindaGeneration } from './spinda';
 
 export enum SpotLocation {
@@ -19,7 +19,7 @@ export type SpotData<T> = Record<Exclude<SpotLocation, SpotLocation.Count>, T>;
 export class Resource {
     private imageData: Image = null;
 
-    public constructor(private readonly path: string) { }
+    public constructor(private readonly path: string) {}
 
     public get image(): Image {
         return this.imageData;
@@ -41,33 +41,33 @@ export class Spot extends Resource {
 }
 
 export interface SpindaResourceConfig {
-    base: Resource,
+    base: Resource;
     components: {
-        red: Resource,
-        tan: Resource,
-        black: Resource,
-        mouth?: Resource,
-        shading: Resource,
-    },
-    spots: SpotData<Spot>,
+        red: Resource;
+        tan: Resource;
+        black: Resource;
+        mouth?: Resource;
+        shading: Resource;
+    };
+    spots: SpotData<Spot>;
     specialSpots: {
-        heart: Spot,
-        star: Spot,
-    },
+        heart: Spot;
+        star: Spot;
+    };
 }
 
 export interface SpindaGenerationConfig {
-    baseColor: RGBAColor,
-    resources: SpindaResourceConfig,
+    baseColor: RGBAColor;
+    resources: SpindaResourceConfig;
 }
 
 type Resources = Resource | ResourceMap;
-export interface ResourceMap extends Record<string | symbol | number, Resources> { }
+export interface ResourceMap extends Record<string | symbol | number, Resources> {}
 
 interface SpindaGenerationMetadataInterface {
-    width: number,
-    height: number,
-    gens: Record<Exclude<SpindaGeneration, SpindaGeneration.Random>, SpindaGenerationConfig>,
+    width: number;
+    height: number;
+    gens: Record<Exclude<SpindaGeneration, SpindaGeneration.Random>, SpindaGenerationConfig>;
 }
 
 export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
@@ -89,7 +89,10 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                     [SpotLocation.TopLeft]: new Spot('spinda/default/normal/top_left_spot.png', new Point(-2, -4)),
                     [SpotLocation.TopRight]: new Spot('spinda/default/normal/top_right_spot.png', new Point(19, 2)),
                     [SpotLocation.BottomLeft]: new Spot('spinda/default/normal/bottom_left_spot.png', new Point(2, 10)),
-                    [SpotLocation.BottomRight]: new Spot('spinda/default/normal/bottom_right_spot.png', new Point(13, 14)),
+                    [SpotLocation.BottomRight]: new Spot(
+                        'spinda/default/normal/bottom_right_spot.png',
+                        new Point(13, 14),
+                    ),
                 },
                 specialSpots: {
                     heart: new Spot('spinda/default/special/bottom_left_heart.png', new Point(2, 10)),
@@ -186,7 +189,10 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                     [SpotLocation.TopLeft]: new Spot('spinda/retro/normal/top_left_spot.png', new Point(-1, -4)),
                     [SpotLocation.TopRight]: new Spot('spinda/retro/normal/top_right_spot.png', new Point(19, -3)),
                     [SpotLocation.BottomLeft]: new Spot('spinda/retro/normal/bottom_left_spot.png', new Point(0, 10)),
-                    [SpotLocation.BottomRight]: new Spot('spinda/retro/normal/bottom_right_spot.png', new Point(12, 11)),
+                    [SpotLocation.BottomRight]: new Spot(
+                        'spinda/retro/normal/bottom_right_spot.png',
+                        new Point(12, 11),
+                    ),
                 },
                 specialSpots: {
                     heart: new Spot('spinda/retro/special/bottom_left_heart.png', new Point(0, 10)),

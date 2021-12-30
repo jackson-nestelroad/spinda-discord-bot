@@ -16,7 +16,7 @@ export const SpindaFeature = {
     Generation: 5,
     Color: 6,
     CustomColor: 7,
-}
+};
 
 const SpindaFeatureBitMask: Record<number, bigint> = {
     [SpindaFeature.SmallSpots]: 1n << 0n,
@@ -54,7 +54,7 @@ export enum SpindaColorChange {
 }
 
 export class Spinda {
-    constructor(public readonly data: GeneratedSpindaData) { }
+    constructor(public readonly data: GeneratedSpindaData) {}
 
     public get pid(): number {
         return this.data.pid;
@@ -74,7 +74,7 @@ export class Spinda {
 
     public getFeature(feature: number): boolean {
         const bitMask = SpindaFeatureBitMask[feature];
-        return bitMask && ((this.data.features & BigInt(bitMask)) !== 0n);
+        return bitMask && (this.data.features & BigInt(bitMask)) !== 0n;
     }
 
     public setFeature(feature: number): void {

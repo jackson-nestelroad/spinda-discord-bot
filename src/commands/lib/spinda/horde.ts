@@ -1,10 +1,10 @@
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { MessageAttachment } from 'discord.js';
 import { CommandParameters, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
-import { MessageAttachment } from 'discord.js';
-import { SpindaColorChange } from './util/spinda';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaColorChange } from './util/spinda';
 
 export class HordeCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = SpindaCommandNames.Horde;

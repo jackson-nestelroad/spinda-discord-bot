@@ -1,5 +1,6 @@
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { CommandParameters, SimpleCommand } from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 export class RefreshCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = 'refresh';

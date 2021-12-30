@@ -92,7 +92,7 @@ class ViewBlocklistPageSubCommand extends ComplexCommand<SpindaDiscordBot, ViewB
                         result.error = 'Invalid page number.';
                     }
                 },
-            }
+            },
         },
     };
 

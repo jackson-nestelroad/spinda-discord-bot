@@ -6,12 +6,12 @@ import {
     EmbedTemplates,
     StandardCooldowns,
 } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 
-export class GotAwayError extends Error { }
+export class GotAwayError extends Error {}
 
 interface CatchArgs {
     position?: number;
@@ -115,7 +115,8 @@ export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
         const prefix = bot.dataService.getCachedGuild(guildId).prefix;
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription(
-            `Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${prefix}${SpindaCommandNames.View
+            `Successfully caught! The other Spinda ran away. You can regenerate your Spinda at any time using \`${prefix}${
+                SpindaCommandNames.View
             } ${pos + 1}\`. You have ${remaining} party slot${remaining === 1 ? '' : 's'} remaining.`,
         );
         await src.send({ embeds: [embed] });
