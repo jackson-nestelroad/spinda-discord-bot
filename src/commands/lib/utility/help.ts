@@ -1,6 +1,6 @@
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandCategoryUtil,
     CommandMap,
     CommandParameters,
@@ -145,10 +145,9 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
                         true,
                     );
                     if (cmd.args) {
-                        const argumentsField: string[] = [];
-                        for (const [name, data] of Object.entries(cmd.args)) {
-                            argumentsField.push(`\`${name}\` - ${data.description}`);
-                        }
+                        const argumentsField: string[] = Object.entries(cmd.args)
+                            .filter(([name, data]) => !data.hidden)
+                            .map(([name, data]) => `\`${name}\` - ${data.description}`);
                         embed.addField('Arguments', argumentsField.join('\n'), true);
                     }
                     if (cmd.addHelpFields) {
