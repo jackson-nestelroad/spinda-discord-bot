@@ -1,10 +1,10 @@
-import { MessageAttachment } from 'discord.js';
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { SpindaColorChange, SpindaGeneration } from './util/spinda';
+
+import { MessageAttachment } from 'discord.js';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
-import { SpindaColorChange, SpindaGeneration } from './util/spinda';
 
 interface MySpindaArgs {
     position?: number;
@@ -28,6 +28,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             description: 'Generation style. Displays your Spinda in a different style than what it was caught in.',
             type: ArgumentType.Integer,
             required: false,
+            hidden: true,
             choices: [
                 { name: 'Modern', value: SpindaGeneration.Normal },
                 { name: 'Hoenn', value: SpindaGeneration.Gen3 },

@@ -1,4 +1,3 @@
-import { Snowflake, MessageAttachment } from 'discord.js';
 import {
     CommandPermissionValidatorConfig,
     CommandSource,
@@ -8,13 +7,14 @@ import {
     PandaDiscordBot,
     TimeoutService,
 } from 'panda-discord';
+import { MessageAttachment, Snowflake } from 'discord.js';
 
-import { SpindaGeneratorService } from './commands/lib/spinda/generator';
-import { SpindaColors } from './commands/lib/spinda/util/spinda-colors';
 import { CustomCommandService } from './custom-commands/custom-command-service';
 import { DataService } from './data/data-service';
 import { MediaWikiService } from './services/media-wiki';
 import { ResourceService } from './services/resources';
+import { SpindaColors } from './commands/lib/spinda/util/spinda-colors';
+import { SpindaGeneratorService } from './commands/lib/spinda/generator';
 
 export const CommandCategory = {
     ...DefaultCommandCategory,
@@ -43,6 +43,8 @@ export class SpindaDiscordBot extends PandaDiscordBot {
     }
 
     public readonly color = SpindaColors.spot.hexString();
+
+    public readonly namedArgsPattern = { prefix: '--', separator: '=' };
 
     public readonly timeoutService: TimeoutService = new TimeoutService(this);
     public readonly memberListService: MemberListService = new MemberListService(this);
