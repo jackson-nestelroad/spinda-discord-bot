@@ -1,8 +1,8 @@
-import { Interaction } from 'discord.js';
 import { BaseEvent, CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
 import { CustomCommandFlag } from '../data/model/custom-command';
+import { Interaction } from 'discord.js';
+import { SpindaDiscordBot } from '../bot';
 
 export class InteractionCreateEvent extends BaseEvent<'interactionCreate', SpindaDiscordBot> {
     constructor(bot: SpindaDiscordBot) {
@@ -40,6 +40,7 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
                 src: new CommandSource(interaction),
                 options: interaction.options,
                 guildId: guild.id,
+                extraArgs: {},
             };
 
             try {
@@ -60,6 +61,7 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
                     bot: this.bot,
                     src: new CommandSource(interaction),
                     guildId: guild.id,
+                    extraArgs: {},
                 };
                 try {
                     const content =

@@ -1,16 +1,14 @@
 import * as DiscordJS from 'discord.js';
+
 import {
-    ArgumentsConfig,
     ArgumentType,
-    ChatCommandParameters,
+    ArgumentsConfig,
     CommandParameters,
+    ComplexCommand,
     DiscordUtil,
     EvalUtil,
-    LegacyCommand,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { Environment } from '../../../data/environment';
 
 interface EvalArgs {
     code: string;
@@ -18,7 +16,7 @@ interface EvalArgs {
 }
 
 // This command is heavily unsafe, use at your own risk
-export class EvalCommand extends LegacyCommand<SpindaDiscordBot, EvalArgs> {
+export class EvalCommand extends ComplexCommand<SpindaDiscordBot, EvalArgs> {
     public name = 'eval';
     public description = 'Executes arbitrary JavaScript and returns the result. Be careful!';
     public category = CommandCategory.Secret;
@@ -27,55 +25,32 @@ export class EvalCommand extends LegacyCommand<SpindaDiscordBot, EvalArgs> {
     public disableSlash = true;
 
     public args: ArgumentsConfig<EvalArgs> = {
-        silent: {
-            description: 'Silence result output?',
-            type: ArgumentType.Boolean,
-            required: true,
-        },
         code: {
             description: 'Code to run. May be put in a code line or code block.',
             type: ArgumentType.RestOfContent,
             required: true,
         },
+        silent: {
+            description: 'Silence result output?',
+            type: ArgumentType.Boolean,
+            required: false,
+            named: true,
+            default: false,
+        },
     };
 
-    public argsString(): string {
-        return '(silent?) code';
-    }
-
-    public readonly silentArg = 'silent';
     public readonly maxLength = 1900;
     public sensitivePattern: RegExp = null;
 
-    constructor() {
-        super();
-        this.createSensitivePattern();
-    }
+    public async run(params: CommandParameters, args: EvalArgs) {
+        const { bot, src } = params;
 
-    private createSensitivePattern() {
-        this.sensitivePattern = new RegExp(`${Environment.getDiscordToken()}`, 'g');
-    }
-
-    public parseChatArgs({ args, content }: ChatCommandParameters<SpindaDiscordBot>): EvalArgs {
-        const parsed: Partial<EvalArgs> = {};
-
-        if (args[0] === this.silentArg) {
-            parsed.silent = true;
-            parsed.code = content.substr(this.silentArg.length).trimLeft();
-        } else {
-            parsed.silent = false;
-            parsed.code = content;
+        if (!this.sensitivePattern) {
+            this.sensitivePattern = new RegExp(`${bot.client.token}`, 'g');
         }
 
-        return parsed as EvalArgs;
-    }
-
-    public async run(params: CommandParameters<SpindaDiscordBot>, args: EvalArgs) {
-        let { bot, src } = params;
-
         // Parse code from code blocks/lines
-        const match = DiscordUtil.getCodeBlockOrLine(args.code);
-        const code = match.match ? match.result.content : args.code;
+        const code = DiscordUtil.getCodeBlockOrLine(args.code)?.result?.content ?? args.code;
 
         let res = await EvalUtil.runCodeToString(code, {
             params,

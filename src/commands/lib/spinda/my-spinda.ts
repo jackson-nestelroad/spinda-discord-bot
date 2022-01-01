@@ -13,7 +13,7 @@ interface MySpindaArgs {
 
 export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaArgs> {
     public name = SpindaCommandNames.View;
-    public description = `Regenerates one, or all, of the Spinda you have previously caught.`;
+    public description = 'Regenerates one, or all, of the Spinda you have previously caught.';
     public category = CommandCategory.Spinda;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
@@ -28,6 +28,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             description: 'Generation style. Displays your Spinda in a different style than what it was caught in.',
             type: ArgumentType.Integer,
             required: false,
+            named: true,
             hidden: true,
             choices: [
                 { name: 'Modern', value: SpindaGeneration.Normal },

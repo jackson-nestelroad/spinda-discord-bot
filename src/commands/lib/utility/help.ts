@@ -8,10 +8,10 @@ import {
     ExpireAgeConversion,
     StandardCooldowns,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { CustomCommandEngine } from '../../../custom-commands/custom-command-engine';
 import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
+
+import { CustomCommandEngine } from '../../../custom-commands/custom-command-engine';
 
 interface HelpArgs {
     query?: string;
@@ -45,11 +45,11 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
     // Key is a lowercase, normalized version of the category name.
     private commandListByCategory: Map<string, Map<string, string>> = null;
 
-    private addCommandsToCommandListByCategory(map: CommandMap<string>, nameChain: string[] = []): void {
+    private addCommandsToCommandListByCategory(bot: SpindaDiscordBot, map: CommandMap<string>, nameChain: string[] = []): void {
         map.forEach((cmd, name) => {
             if (cmd.isNested && !cmd.flattenHelpForSubCommands) {
                 nameChain.push(name);
-                this.addCommandsToCommandListByCategory(cmd.subcommandMap, nameChain);
+                this.addCommandsToCommandListByCategory(bot, cmd.subcommandMap, nameChain);
                 nameChain.pop();
             } else {
                 if (CommandCategoryUtil.isPublic(cmd.category)) {
@@ -58,7 +58,7 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
                         this.commandListByCategory.set(categoryName, new Map());
                     }
                     const fullName = (nameChain.length > 0 ? nameChain.join(' ') + ' ' : '') + name;
-                    this.commandListByCategory.get(categoryName).set(fullName, `${fullName} ${cmd.argsString()}`);
+                    this.commandListByCategory.get(categoryName).set(fullName, `${fullName} ${cmd.argsString(bot)}`);
                 }
             }
         });
@@ -80,7 +80,7 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
         // Organize commands by category only once, since category shouldn't ever change.
         if (!this.commandListByCategory) {
             this.commandListByCategory = new Map();
-            this.addCommandsToCommandListByCategory(bot.commands);
+            this.addCommandsToCommandListByCategory(bot, bot.commands);
         }
 
         // Blank, give all public command categories.
@@ -135,7 +135,7 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
 
                 const fullName = queryList.slice(0, i).join(' ');
                 if (cmd) {
-                    embed.setTitle(`${prefix}${fullName} ${cmd.argsString()}`);
+                    embed.setTitle(`${prefix}${fullName} ${cmd.argsString(bot)}`);
                     embed.addField('Description', cmd.fullDescription());
                     embed.addField('Category', CommandCategoryUtil.realName(cmd.category), true);
                     embed.addField('Permission', cmd.permission, true);
@@ -145,10 +145,13 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
                         true,
                     );
                     if (cmd.args) {
-                        const argumentsField: string[] = Object.entries(cmd.args)
-                            .filter(([name, data]) => !data.hidden)
-                            .map(([name, data]) => `\`${name}\` - ${data.description}`);
-                        embed.addField('Arguments', argumentsField.join('\n'), true);
+                        const argsEntries = Object.entries(cmd.args);
+                        const argumentsField: string[] = argsEntries
+                            .filter(([name, config]) => !config.hidden)
+                            .map(([name, config]) => `\`${bot.argString(name, config)}\` - ${config.description}`);
+                        if (argumentsField.length > 0) {
+                            embed.addField('Arguments', argumentsField.join('\n'), true);
+                        }
                     }
                     if (cmd.addHelpFields) {
                         cmd.addHelpFields(embed);

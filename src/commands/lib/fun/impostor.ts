@@ -1,12 +1,14 @@
-import { GuildMember } from 'discord.js';
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
-
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+import { GuildMember } from 'discord.js';
 
 type WeightedDistribution<T> = Array<{ value: T; weight: number }>;
 
 interface ImpostorArgs {
     user: GuildMember;
+    force: boolean;
+    identity: string;
 }
 
 export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorArgs> {
@@ -22,12 +24,27 @@ export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorAr
             type: ArgumentType.User,
             required: false,
         },
+        force: {
+            description: 'Force the member to be an impostor.',
+            type: ArgumentType.Boolean,
+            required: false,
+            named: true,
+            hidden: true,
+            default: false,
+        },
+        identity: {
+            description: 'Identity to check.',
+            type: ArgumentType.String,
+            required: false,
+            named: true,
+            hidden: true,
+            default: 'An Impostor',
+        },
     };
 
     private readonly impostor = '\u{D9E}';
     private readonly chanceForImpostor = 0.1;
     private readonly linePadding = 3;
-    private readonly identity = 'An Impostor';
 
     private readonly stars: WeightedDistribution<string[] | string> = [
         { weight: 800, value: ' ' },
@@ -73,7 +90,8 @@ export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorAr
         return line;
     }
 
-    public generateText(subject: string, identity: string, isIdentity: boolean = this.isImpostor()): string {
+    public generateText(subject: string, identity: string, isIdentity: boolean): string {
+        isIdentity ??= this.isImpostor();
         // Calculate line lengths
         const revealMsg = `${subject} was ${isIdentity ? '' : 'not '}${identity}`;
         const lineLength = revealMsg.length + this.linePadding * 2 + (revealMsg.length % 2 === 0 ? 1 : 0);
@@ -96,6 +114,6 @@ export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorAr
             args.user?.user.username ??
             (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
 
-        await src.send(this.generateText(name, this.identity));
+        await src.send(this.generateText(name, args.identity, args.force));
     }
 }

@@ -1,14 +1,13 @@
-import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
     SplitArgumentArray,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 
 interface RunUniversalArgs {
     code: string;
@@ -35,7 +34,7 @@ export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUni
         },
     };
 
-    public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: RunUniversalArgs) {
+    public async run({ bot, src, guildId, extraArgs }: CommandParameters<SpindaDiscordBot>, args: RunUniversalArgs) {
         const members = await bot.memberListService.getMemberListForGuild(guildId);
         const otherAdmins = members.filter(member => member.permissions.has('ADMINISTRATOR') && !member.user.bot);
         otherAdmins.delete(src.author.id);
@@ -83,7 +82,7 @@ export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUni
         }
 
         await bot.customCommandService.runUniversal(args.code, {
-            params: { bot, src, guildId },
+            params: { bot, src, guildId, extraArgs },
             content: 'content',
             args: SplitArgumentArray.Empty(),
         });

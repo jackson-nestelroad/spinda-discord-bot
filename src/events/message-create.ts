@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
-import { BaseEvent, ChatCommandParameters, CommandSource } from 'panda-discord';
+import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
+import { Message } from 'discord.js';
+import { SpindaDiscordBot } from '../bot';
 
 export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
     private forbiddenMentionRegex = /@(everyone|here)/g;
@@ -23,6 +23,7 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
             args,
             content,
             guildId: guild.id,
+            extraArgs: {},
         };
 
         // Global command
@@ -41,10 +42,19 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
             const customCommands = await this.bot.dataService.getCustomCommands(params.src.guild.id);
             if (customCommands[cmd]) {
                 try {
+                    if (this.bot.options.namedArgs === NamedArgsOption.Always) {
+                        const { named, unnamed } = this.bot.extractNamedArgs(params.args);
+                        console.log(named, unnamed);
+                        params.extraArgs = named.reduce((obj, { name, value }) => {
+                            obj[name] = value;
+                            return obj;
+                        }, {});
+                        params.args = unnamed;
+                    }
                     await this.bot.customCommandService.run(customCommands[cmd].message, {
                         params,
                         content,
-                        args,
+                        args: params.args,
                     });
                 } catch (error) {
                     await this.bot.sendError(params.src, error);

@@ -1,10 +1,11 @@
-import { User, GuildMember, Guild, Channel, Snowflake } from 'discord.js';
 import * as mathjs from 'mathjs';
-import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
-import { DataService } from '../data/data-service';
+import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
+import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
+
+import { DataService } from '../data/data-service';
+import { SpindaDiscordBot } from '../bot';
 
 export interface CustomCommandEngineOptions {
     silent?: boolean;
@@ -133,6 +134,10 @@ export class CustomCommandEngine {
             this.context.options = {
                 silent: false,
             };
+        }
+
+        for (const [name, value] of Object.entries(this.context.params.extraArgs)) {
+            this.vars.set(name, value);
         }
     }
 
@@ -343,7 +348,7 @@ export class CustomCommandEngine {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? this.context.args.get(argIndex - 1) : undefined;
         } else if (name === CustomCommandEngine.specialVars.allArguments) {
-            return this.context.content;
+            return this.context.args.restore(0);
         } else if (name === CustomCommandEngine.specialVars.argCount) {
             return this.context.args.length.toString();
         } else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
@@ -482,12 +487,14 @@ export class CustomCommandEngine {
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';
                     }
+
                     await command.executeChat({
                         bot: this.context.params.bot,
                         src: this.context.params.src,
                         guildId: this.context.params.guildId,
                         content: args,
                         args: this.context.params.bot.splitIntoArgs(args),
+                        extraArgs: {},
                     });
                 }
             }
@@ -901,7 +908,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) ===
-                                                0;
+                                            0;
                                         break;
                                     case '!~=':
                                         localResult =
@@ -909,7 +916,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !==
-                                                0;
+                                            0;
                                         break;
                                     default:
                                         localResult = false;
@@ -930,8 +937,8 @@ export class CustomCommandEngine {
                             ? this.parse(then)
                             : CustomCommandEngine.trueVar
                         : other
-                        ? this.parse(other)
-                        : '';
+                            ? this.parse(other)
+                            : '';
                 }
                 break;
             case 'repeat':

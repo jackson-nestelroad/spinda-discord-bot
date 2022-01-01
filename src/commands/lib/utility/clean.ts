@@ -1,6 +1,4 @@
-import { DiscordAPIError } from 'discord.js';
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
-
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface CleanArgs {

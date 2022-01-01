@@ -44,8 +44,6 @@ export class SpindaDiscordBot extends PandaDiscordBot {
 
     public readonly color = SpindaColors.spot.hexString();
 
-    public readonly namedArgsPattern = { prefix: '--', separator: '=' };
-
     public readonly timeoutService: TimeoutService = new TimeoutService(this);
     public readonly memberListService: MemberListService = new MemberListService(this);
 
