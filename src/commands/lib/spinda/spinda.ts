@@ -1,15 +1,15 @@
-import { MessageAttachment } from 'discord.js';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { CommandParameters, SimpleCommand } from 'panda-discord';
 
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { SpindaCommandNames } from './command-names';
+import { MessageAttachment } from 'discord.js';
 import { SpindaColorChange } from './util/spinda';
+import { SpindaCommandNames } from './command-names';
 
 export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = SpindaCommandNames.Generate;
     public description = 'Generates a random Spinda pattern.';
     public moreDescription = [
-        `There are ${(0xffffffff)
+        `There are ${(0x100000000)
             .toString()
             .replace(
                 /\B(?=(\d{3})+(?!\d))/g,
