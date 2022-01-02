@@ -1,17 +1,18 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { MessageEmbed } from 'discord.js';
+
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     CommandSource,
     ComplexCommand,
     StandardCooldowns,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+import { MessageEmbed } from 'discord.js';
 import { PokengineUtil } from './util';
+import axios from 'axios';
 
 enum SearchTabs {
     'Mons',
@@ -29,9 +30,11 @@ type SearchTab = keyof typeof SearchTabs;
 
 interface SearchArgs {
     query: string;
+    n: number;
+    page: number;
 }
 
-type SearchTabHandler = (results: cheerio.CheerioAPI, embed: MessageEmbed) => void;
+type SearchTabHandler = (i: number, results: cheerio.CheerioAPI, embed: MessageEmbed) => void;
 
 export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> {
     public readonly searchPath: string = '/search';
@@ -51,24 +54,54 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             type: ArgumentType.RestOfContent,
             required: true,
         },
+        n: {
+            description: 'Search result index to show. Default is 1 (first).',
+            type: ArgumentType.Integer,
+            required: false,
+            named: true,
+            default: 1,
+            transformers: {
+                any: (value, result) => {
+                    if (value <= 0) {
+                        result.error = 'N must be a positive integer.';
+                    }
+                    result.value = value;
+                }
+            }
+        },
+        page: {
+            description: 'Page offset. Default is 1 (first).',
+            type: ArgumentType.Integer,
+            required: false,
+            named: true,
+            default: 1,
+            transformers: {
+                any: (value, result) => {
+                    if (value <= 0) {
+                        result.error = 'Page must be a positive integer.';
+                    }
+                    result.value = value;
+                }
+            }
+        }
     };
 
     public tabNamesToUpperCase: Map<SearchTabs, string> = null;
 
     public searchTabHandlers: { [tab in SearchTabs]: SearchTabHandler } = {
-        [SearchTabs.Mons]: (results, embed) => {
-            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+        [SearchTabs.Mons]: (i, results, embed) => {
+            const [dexBlock, handle] = this.handleDexBlock(i, results, embed);
             if (handle) {
                 PokengineUtil.embedDexBlock(embed, {
-                    num: parseInt(firstDexBlock.attr('data-id')),
-                    name: firstDexBlock.attr('title'),
-                    pagePath: firstDexBlock.attr('href'),
-                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                    num: parseInt(dexBlock.attr('data-id')),
+                    name: dexBlock.attr('title'),
+                    pagePath: dexBlock.attr('href'),
+                    imagePath: dexBlock.find('img').attr('data-src'),
                 });
             }
         },
-        [SearchTabs.Auction]: (results, embed) => {
-            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+        [SearchTabs.Auction]: (i, results, embed) => {
+            const [firstDexBlock, handle] = this.handleDexBlock(i, results, embed);
             if (handle) {
                 const levelMatch = firstDexBlock.text().match(/^Lv\.(\d+)/);
                 const level = levelMatch ? levelMatch[1] : '???';
@@ -89,8 +122,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 }
             }
         },
-        [SearchTabs.Trainers]: (results, embed) => {
-            const [firstDexBlock, handle] = this.handleDexBlock(results, embed);
+        [SearchTabs.Trainers]: (i, results, embed) => {
+            const [firstDexBlock, handle] = this.handleDexBlock(i, results, embed);
             if (handle) {
                 PokengineUtil.embedDexBlock(embed, {
                     name: firstDexBlock.text(),
@@ -99,8 +132,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Moves]: (results, embed) => {
-            const [cols, handle] = this.handleSearchTable(results, embed);
+        [SearchTabs.Moves]: (i, results, embed) => {
+            const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMove(embed, {
                     num: parseInt(cols.eq(0).text().substr(1)),
@@ -112,8 +145,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Items]: (results, embed) => {
-            const [cols, handle] = this.handleSearchTable(results, embed);
+        [SearchTabs.Items]: (i, results, embed) => {
+            const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedItem(embed, {
                     num: parseInt(cols.eq(0).text().substr(1)),
@@ -124,8 +157,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Abilities]: (results, embed) => {
-            const [cols, handle] = this.handleSearchTable(results, embed);
+        [SearchTabs.Abilities]: (i, results, embed) => {
+            const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedAbility(embed, {
                     num: parseInt(cols.eq(0).text().substr(1)),
@@ -135,8 +168,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Players]: (results, embed) => {
-            const [cols, handle] = this.handleSearchTable(results, embed);
+        [SearchTabs.Players]: (i, results, embed) => {
+            const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedPlayer(embed, {
                     num: parseInt(cols.eq(0).text().substr(1)),
@@ -148,8 +181,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Maps]: (results, embed) => {
-            const [cols, handle] = this.handleSearchTable(results, embed);
+        [SearchTabs.Maps]: (i, results, embed) => {
+            const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMap(embed, {
                     num: parseInt(cols.eq(0).text().substr(1)),
@@ -165,8 +198,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
             }
         },
-        [SearchTabs.Forums]: (results, embed) => {
-            const firstForumPost = results('.content.below .content-inner.forum').first();
+        [SearchTabs.Forums]: (i, results, embed) => {
+            const firstForumPost = results('.content.below .content-inner.forum').eq(i);
             if (firstForumPost.length > 0) {
                 const origin = firstForumPost.find('.time').find('a');
                 PokengineUtil.embedPost(embed, {
@@ -182,10 +215,11 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     };
 
     private handleDexBlock(
+        i: number,
         results: cheerio.CheerioAPI,
         embed: MessageEmbed,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
-        const firstDexBlock = results('.dex-block').first();
+        const firstDexBlock = results('.dex-block').eq(i);
         if (firstDexBlock.length > 0) {
             if (firstDexBlock.text() === 'Private') {
                 PokengineUtil.embedPrivate(embed);
@@ -199,19 +233,20 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     }
 
     private handleSearchTable(
+        i: number,
         results: cheerio.CheerioAPI,
         embed: MessageEmbed,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
-        const firstTableRow = results('.search-table tr').first();
+        const firstTableRow = results('.search-table tr').eq(i);
         if (firstTableRow.length > 0) {
             return [firstTableRow.children(), true];
         }
         return [null, false];
     }
 
-    private searchFor(query: string): string {
+    private searchFor(query: string, page: number = 1): string {
         // Encode #, because they are used in searching
-        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query).replace(
+        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query + '&page=' + page).replace(
             /#/g,
             '%23',
         );
@@ -236,7 +271,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                 });
         }
 
-        const searchUrl = this.searchFor(args.query);
+        const searchUrl = this.searchFor(args.query, args.page);
         const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
         const searchResults = cheerio.load(searchResponse.data);
 
@@ -263,15 +298,18 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             return this.sendEmbed(src, embed, searchUrl);
         }
 
-        const title = searchResults('#content .content.above').last();
+        const mainContent = searchResults('#content');
+        const title = mainContent.find('.content.above').last();
         const titleText = title.text();
-        embed.setAuthor(titleText ? `First result for "${titleText}"` : '(No title)');
+        const page = mainContent.find('.content .pages > span').first().text();
+
+        embed.setAuthor(titleText ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${args.page === 1 ? '' : `on page ${page} `}for "${titleText}"` : '(No title)');
 
         const handler = this.searchTabHandlers[tab];
         if (!handler) {
             embed.setTitle('Could not parse results.');
         } else {
-            handler(searchResults, embed);
+            handler(args.n - 1, searchResults, embed);
         }
         this.sendEmbed(src, embed, searchUrl);
     }
