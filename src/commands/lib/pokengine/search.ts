@@ -1,6 +1,5 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { MessageEmbed } from 'discord.js';
+
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -9,9 +8,11 @@ import {
     ComplexCommand,
     StandardCooldowns,
 } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+
+import { MessageEmbed } from 'discord.js';
 import { PokengineUtil } from './util';
+import axios from 'axios';
 
 enum SearchTabs {
     'Mons',
@@ -100,16 +101,16 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             }
         },
         [SearchTabs.Auction]: (i, results, embed) => {
-            const [firstDexBlock, handle] = this.handleDexBlock(i, results, embed);
+            const [dexBlock, handle] = this.handleDexBlock(i, results, embed);
             if (handle) {
-                const levelMatch = firstDexBlock.text().match(/^Lv\.(\d+)/);
+                const levelMatch = dexBlock.text().match(/^Lv\.(\d+)/);
                 const level = levelMatch ? levelMatch[1] : '???';
                 PokengineUtil.embedDexBlock(embed, {
-                    name: `Lv. ${level} ${firstDexBlock.attr('title')}`,
-                    pagePath: firstDexBlock.attr('href'),
-                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                    name: `Lv. ${level} ${dexBlock.attr('title')}`,
+                    pagePath: dexBlock.attr('href'),
+                    imagePath: dexBlock.find('img').attr('data-src'),
                 });
-                const bottomEntryNodes = firstDexBlock.find('span.time').contents();
+                const bottomEntryNodes = dexBlock.find('span.time').contents();
                 for (let i = 0; i < bottomEntryNodes.length; ++i) {
                     const nodeText = bottomEntryNodes.eq(i).text();
                     if (nodeText) {
@@ -122,12 +123,12 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             }
         },
         [SearchTabs.Trainers]: (i, results, embed) => {
-            const [firstDexBlock, handle] = this.handleDexBlock(i, results, embed);
+            const [dexBlock, handle] = this.handleDexBlock(i, results, embed);
             if (handle) {
                 PokengineUtil.embedDexBlock(embed, {
-                    name: firstDexBlock.text(),
-                    pagePath: firstDexBlock.attr('href'),
-                    imagePath: firstDexBlock.find('img').attr('data-src'),
+                    name: dexBlock.text(),
+                    pagePath: dexBlock.attr('href'),
+                    imagePath: dexBlock.find('img').attr('data-src'),
                 });
             }
         },
@@ -198,17 +199,17 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             }
         },
         [SearchTabs.Forums]: (i, results, embed) => {
-            const firstForumPost = results('.content.below .content-inner.forum').eq(i);
-            if (firstForumPost.length > 0) {
-                const origin = firstForumPost.find('.time').find('a');
+            const forumPost = results('.content.below .content-inner.forum').eq(i);
+            if (forumPost.length > 0) {
+                const origin = forumPost.find('.time').find('a');
                 PokengineUtil.embedPost(embed, {
-                    title: firstForumPost.find('.title').text(),
+                    title: forumPost.find('.title').text(),
                     author: origin.eq(0).text(),
                     posted: origin.eq(1).text(),
                     pagePath: origin.eq(1).attr('href'),
                 });
             } else {
-                embed.setTitle('Failed to parse forum post.');
+                embed.setTitle('Index is too large!');
             }
         },
     };
@@ -218,17 +219,17 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         results: cheerio.CheerioAPI,
         embed: MessageEmbed,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
-        const firstDexBlock = results('.dex-block').eq(i);
-        if (firstDexBlock.length > 0) {
-            if (firstDexBlock.text() === 'Private') {
+        const dexBlock = results('.dex-block').eq(i);
+        if (dexBlock.length > 0) {
+            if (dexBlock.text() === 'Private') {
                 PokengineUtil.embedPrivate(embed);
-                return [firstDexBlock, false];
+                return [dexBlock, false];
             }
         } else {
-            embed.setTitle('Failed to find dex block.');
-            return [firstDexBlock, false];
+            embed.setTitle('Index is too large!');
+            return [dexBlock, false];
         }
-        return [firstDexBlock, true];
+        return [dexBlock, true];
     }
 
     private handleSearchTable(
@@ -236,11 +237,13 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         results: cheerio.CheerioAPI,
         embed: MessageEmbed,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
-        const firstTableRow = results('.search-table tr').eq(i);
-        if (firstTableRow.length > 0) {
-            return [firstTableRow.children(), true];
+        const tableRow = results('.search-table tr').eq(i);
+        if (tableRow.length > 0) {
+            return [tableRow.children(), true];
+        } else {
+            embed.setTitle('Index is too large!');
+            return [null, false];
         }
-        return [null, false];
     }
 
     private searchFor(query: string, page: number = 1): string {
@@ -301,13 +304,10 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         const titleText = title.text();
         const page = mainContent.find('.content .pages > span').first().text();
 
-        embed.setAuthor(
-            titleText
-                ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${
-                      args.page === 1 ? '' : `on page ${page} `
-                  }for "${titleText}"`
-                : '(No title)',
-        );
+        embed.setAuthor(titleText
+            ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${args.page === 1 ? '' : `on page ${page} `
+            }for "${titleText}"`
+            : '(No title)');
 
         const handler = this.searchTabHandlers[tab];
         if (!handler) {
