@@ -1,9 +1,10 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { WebScrapedPokedex, WebScrapedDexBlock, PokengineUtil } from './util';
+import { PokengineUtil, WebScrapedDexBlock, WebScrapedPokedex } from './util';
+
+import axios from 'axios';
 
 interface CertifiedArgs {
     dex?: string;
@@ -104,7 +105,7 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
         let chosenMon: WebScrapedDexBlock = null;
         if (args.mon !== undefined) {
             // User gave a dex number
-            let dexNum = parseInt(args[1]);
+            let dexNum = parseInt(args.mon);
             if (!isNaN(dexNum)) {
                 chosenMon = mons.find(mon => mon.num === dexNum);
                 if (!chosenMon) {
