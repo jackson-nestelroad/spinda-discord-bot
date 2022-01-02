@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
-import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption } from 'panda-discord';
+import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
+import { Message } from 'discord.js';
+import { SpindaDiscordBot } from '../bot';
 
 export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
     private forbiddenMentionRegex = /@(everyone|here)/g;
@@ -12,10 +12,18 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
     }
 
     private async runCommand(content: string, msg: Message, guild: GuildAttributes) {
-        const args = this.bot.splitIntoArgs(content);
+        content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
+
+        const src = new CommandSource(msg);
+        let args: SplitArgumentArray;
+        try {
+            args = this.bot.splitIntoArgs(content);
+        } catch (error) {
+            await this.bot.sendError(src, error);
+            return;
+        }
         const cmd = args.shift();
         content = content.substr(cmd.length).trim();
-        content = content.replace(this.forbiddenMentionRegex, '@\u{200b}$1');
 
         const params: ChatCommandParameters<SpindaDiscordBot> = {
             bot: this.bot,
@@ -44,7 +52,6 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                 try {
                     if (this.bot.options.namedArgs === NamedArgsOption.Always) {
                         const { named, unnamed } = this.bot.extractNamedArgs(params.args);
-                        console.log(named, unnamed);
                         params.extraArgs = named.reduce((obj, { name, value }) => {
                             obj[name] = value;
                             return obj;
