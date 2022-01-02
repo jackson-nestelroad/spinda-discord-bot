@@ -41,9 +41,9 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
 
     public name = 'search';
     public description = `Searches the Pok\u{00E9}ngine website with a given query and returns the first result only.`;
-    public moreDescription = `If you can't find what you're looking for, be more specific!\n\nSee ${this.searchFor(
+    public moreDescription = `If you can't find what you're looking for, be more specific!\n\nSee [this page](${this.searchFor(
         'help',
-    )}.`;
+    )}) for help.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
