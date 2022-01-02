@@ -1,5 +1,6 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
-
+import { MessageEmbed } from 'discord.js';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -8,11 +9,9 @@ import {
     ComplexCommand,
     StandardCooldowns,
 } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
-import { MessageEmbed } from 'discord.js';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { PokengineUtil } from './util';
-import axios from 'axios';
 
 enum SearchTabs {
     'Mons',
@@ -302,12 +301,19 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         const mainContent = searchResults('#content');
         const title = mainContent.find('.content.above').last();
         const titleText = title.text();
-        const page = mainContent.find('.content .pages > span').first().text();
+        const page = mainContent.find('.content .pages > span');
+        let pageText = '1';
+        if (page.length > 0) {
+            pageText = page.first().text();
+        }
 
-        embed.setAuthor(titleText
-            ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${args.page === 1 ? '' : `on page ${page} `
-            }for "${titleText}"`
-            : '(No title)');
+        embed.setAuthor(
+            titleText
+                ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${
+                      args.page === 1 ? '' : `on page ${pageText} `
+                  }for "${titleText}"`
+                : '(No title)',
+        );
 
         const handler = this.searchTabHandlers[tab];
         if (!handler) {
