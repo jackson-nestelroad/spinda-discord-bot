@@ -1,5 +1,6 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
-
+import { MessageEmbed } from 'discord.js';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -8,11 +9,9 @@ import {
     ComplexCommand,
     StandardCooldowns,
 } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
-import { MessageEmbed } from 'discord.js';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { PokengineUtil } from './util';
-import axios from 'axios';
 
 enum SearchTabs {
     'Mons',
@@ -66,8 +65,8 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                         result.error = 'N must be a positive integer.';
                     }
                     result.value = value;
-                }
-            }
+                },
+            },
         },
         page: {
             description: 'Page offset. Default is 1 (first).',
@@ -81,9 +80,9 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                         result.error = 'Page must be a positive integer.';
                     }
                     result.value = value;
-                }
-            }
-        }
+                },
+            },
+        },
     };
 
     public tabNamesToUpperCase: Map<SearchTabs, string> = null;
@@ -246,10 +245,9 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
 
     private searchFor(query: string, page: number = 1): string {
         // Encode #, because they are used in searching
-        return PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.searchPath + '?query=' + query + '&page=' + page).replace(
-            /#/g,
-            '%23',
-        );
+        return PokengineUtil.encodeURI(
+            PokengineUtil.baseUrl + this.searchPath + '?query=' + query + '&page=' + page,
+        ).replace(/#/g, '%23');
     }
 
     private async sendEmbed(src: CommandSource, embed: MessageEmbed, searchUrl: string) {
@@ -303,7 +301,13 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         const titleText = title.text();
         const page = mainContent.find('.content .pages > span').first().text();
 
-        embed.setAuthor(titleText ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${args.page === 1 ? '' : `on page ${page} `}for "${titleText}"` : '(No title)');
+        embed.setAuthor(
+            titleText
+                ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${
+                      args.page === 1 ? '' : `on page ${page} `
+                  }for "${titleText}"`
+                : '(No title)',
+        );
 
         const handler = this.searchTabHandlers[tab];
         if (!handler) {

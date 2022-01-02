@@ -1,7 +1,7 @@
-import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-
 import { GuildMember } from 'discord.js';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 type WeightedDistribution<T> = Array<{ value: T; weight: number }>;
 

@@ -1,8 +1,8 @@
+import { Message } from 'discord.js';
 import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption } from 'panda-discord';
 
-import { GuildAttributes } from '../data/model/guild';
-import { Message } from 'discord.js';
 import { SpindaDiscordBot } from '../bot';
+import { GuildAttributes } from '../data/model/guild';
 
 export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
     private forbiddenMentionRegex = /@(everyone|here)/g;

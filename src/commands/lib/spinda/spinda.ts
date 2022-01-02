@@ -1,9 +1,9 @@
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { MessageAttachment } from 'discord.js';
 import { CommandParameters, SimpleCommand } from 'panda-discord';
 
-import { MessageAttachment } from 'discord.js';
-import { SpindaColorChange } from './util/spinda';
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
+import { SpindaColorChange } from './util/spinda';
 
 export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
     public name = SpindaCommandNames.Generate;

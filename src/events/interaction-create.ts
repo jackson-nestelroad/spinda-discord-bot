@@ -1,8 +1,8 @@
+import { Interaction } from 'discord.js';
 import { BaseEvent, CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
 
-import { CustomCommandFlag } from '../data/model/custom-command';
-import { Interaction } from 'discord.js';
 import { SpindaDiscordBot } from '../bot';
+import { CustomCommandFlag } from '../data/model/custom-command';
 
 export class InteractionCreateEvent extends BaseEvent<'interactionCreate', SpindaDiscordBot> {
     constructor(bot: SpindaDiscordBot) {

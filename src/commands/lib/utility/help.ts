@@ -8,10 +8,10 @@ import {
     ExpireAgeConversion,
     StandardCooldowns,
 } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { CustomCommandEngine } from '../../../custom-commands/custom-command-engine';
+import { CustomCommandData, CustomCommandFlag } from '../../../data/model/custom-command';
 
 interface HelpArgs {
     query?: string;
@@ -45,7 +45,11 @@ export class HelpCommand extends ComplexCommand<SpindaDiscordBot, HelpArgs> {
     // Key is a lowercase, normalized version of the category name.
     private commandListByCategory: Map<string, Map<string, string>> = null;
 
-    private addCommandsToCommandListByCategory(bot: SpindaDiscordBot, map: CommandMap<string>, nameChain: string[] = []): void {
+    private addCommandsToCommandListByCategory(
+        bot: SpindaDiscordBot,
+        map: CommandMap<string>,
+        nameChain: string[] = [],
+    ): void {
         map.forEach((cmd, name) => {
             if (cmd.isNested && !cmd.flattenHelpForSubCommands) {
                 nameChain.push(name);

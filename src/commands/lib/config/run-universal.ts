@@ -1,3 +1,4 @@
+import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -6,8 +7,8 @@ import {
     EmbedTemplates,
     SplitArgumentArray,
 } from 'panda-discord';
+
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 
 interface RunUniversalArgs {
     code: string;

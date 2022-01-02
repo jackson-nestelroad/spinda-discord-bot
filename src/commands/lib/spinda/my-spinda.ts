@@ -1,10 +1,10 @@
-import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { SpindaColorChange, SpindaGeneration } from './util/spinda';
-
 import { MessageAttachment } from 'discord.js';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaColorChange, SpindaGeneration } from './util/spinda';
 
 interface MySpindaArgs {
     position?: number;

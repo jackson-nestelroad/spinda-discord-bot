@@ -1,13 +1,6 @@
 import * as DiscordJS from 'discord.js';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, DiscordUtil, EvalUtil } from 'panda-discord';
 
-import {
-    ArgumentType,
-    ArgumentsConfig,
-    CommandParameters,
-    ComplexCommand,
-    DiscordUtil,
-    EvalUtil,
-} from 'panda-discord';
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface EvalArgs {

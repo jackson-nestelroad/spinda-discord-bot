@@ -1,4 +1,5 @@
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, SplitArgumentArray } from 'panda-discord';
+
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RunCustomArgs {
@@ -24,7 +25,10 @@ export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustom
     public async run({ bot, src, guildId, extraArgs }: CommandParameters<SpindaDiscordBot>, args: RunCustomArgs) {
         await bot.customCommandService.run(args.code, {
             params: {
-                bot, src, guildId, extraArgs,
+                bot,
+                src,
+                guildId,
+                extraArgs,
             },
             content: 'content',
             args: SplitArgumentArray.Empty(),

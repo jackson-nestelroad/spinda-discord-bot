@@ -1,10 +1,9 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
-
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { PokengineUtil, WebScrapedDexBlock, WebScrapedPokedex } from './util';
-
-import axios from 'axios';
 
 interface CertifiedArgs {
     dex?: string;
