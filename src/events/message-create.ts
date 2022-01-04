@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
 import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
+import { Message } from 'discord.js';
+import { SpindaDiscordBot } from '../bot';
 
 export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
     private forbiddenMentionRegex = /@(everyone|here)/g;
@@ -22,6 +22,12 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
             await this.bot.sendError(src, error);
             return;
         }
+
+        // No command
+        if (args.length === 0) {
+            return;
+        }
+
         const cmd = args.shift();
         content = content.substr(cmd.length).trim();
 
