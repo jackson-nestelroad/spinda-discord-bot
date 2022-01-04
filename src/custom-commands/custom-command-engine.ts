@@ -1,10 +1,11 @@
-import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
 import * as mathjs from 'mathjs';
-import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
-import { DataService } from '../data/data-service';
+import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
+import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
+
+import { DataService } from '../data/data-service';
+import { SpindaDiscordBot } from '../bot';
 
 export interface CustomCommandEngineOptions {
     silent?: boolean;
@@ -287,6 +288,10 @@ export class CustomCommandEngine {
                 code = code.substring(0, i - 1) + code.substring(metadataEnd);
                 // Do not update i, because the whole metadata portion was removed
                 // We begin searching for the next metadata at the same index!
+            } else {
+                // Found the metadata char, but it's not immediately wrapped in a function.
+                // This is not actually metadata, move on.
+                ++i;
             }
         }
         result.code = code.trim();
@@ -910,7 +915,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) ===
-                                                0;
+                                            0;
                                         break;
                                     case '!~=':
                                         localResult =
@@ -918,7 +923,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !==
-                                                0;
+                                            0;
                                         break;
                                     default:
                                         localResult = false;
@@ -939,8 +944,8 @@ export class CustomCommandEngine {
                             ? this.parse(then)
                             : CustomCommandEngine.trueVar
                         : other
-                        ? this.parse(other)
-                        : '';
+                            ? this.parse(other)
+                            : '';
                 }
                 break;
             case 'repeat':
