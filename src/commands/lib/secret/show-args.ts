@@ -7,6 +7,7 @@ import {
     SplitArgumentArray,
     StandardCooldowns,
 } from 'panda-discord';
+
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface ShowArgsArgs {

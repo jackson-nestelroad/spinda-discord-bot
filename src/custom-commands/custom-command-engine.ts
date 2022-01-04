@@ -1,11 +1,10 @@
-import * as mathjs from 'mathjs';
-
 import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
+import * as mathjs from 'mathjs';
 import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
-import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
 
-import { DataService } from '../data/data-service';
 import { SpindaDiscordBot } from '../bot';
+import { DataService } from '../data/data-service';
+import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
 
 export interface CustomCommandEngineOptions {
     silent?: boolean;
@@ -915,7 +914,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) ===
-                                            0;
+                                                0;
                                         break;
                                     case '!~=':
                                         localResult =
@@ -923,7 +922,7 @@ export class CustomCommandEngine {
                                             a
                                                 .toString()
                                                 .localeCompare(b.toString(), undefined, { sensitivity: 'accent' }) !==
-                                            0;
+                                                0;
                                         break;
                                     default:
                                         localResult = false;
@@ -944,8 +943,8 @@ export class CustomCommandEngine {
                             ? this.parse(then)
                             : CustomCommandEngine.trueVar
                         : other
-                            ? this.parse(other)
-                            : '';
+                        ? this.parse(other)
+                        : '';
                 }
                 break;
             case 'repeat':

@@ -1,4 +1,5 @@
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, SplitArgumentArray } from 'panda-discord';
+
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RunCustomArgs {
@@ -25,7 +26,7 @@ export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustom
             type: ArgumentType.RestOfContent,
             required: false,
             named: true,
-            default: ''
+            default: '',
         },
     };
 
