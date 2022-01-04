@@ -1,7 +1,7 @@
 import { ApplicationCommandData, MessageEmbed } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -25,6 +25,8 @@ export class SetCommandCommand extends ComplexCommand<SpindaDiscordBot, SetComma
     public category = CommandCategory.Config;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.High;
+
+    public disableNamedArgs = true;
 
     public args: ArgumentsConfig<SetCommandArgs> = {
         command: {
