@@ -1,4 +1,4 @@
-import { ClientEvents, Channel, MessageEmbed, User, Snowflake } from 'discord.js';
+import { AnyChannel, ClientEvents, MessageEmbed, Snowflake, User } from 'discord.js';
 import { BaseEvent } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -17,7 +17,7 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
         embed.setAuthor(this.getUserString(user), user.avatarURL());
     }
 
-    public async getDestination(guildId: Snowflake): Promise<Channel | null> {
+    public async getDestination(guildId: Snowflake): Promise<AnyChannel | null> {
         if (!guildId) {
             return null;
         }

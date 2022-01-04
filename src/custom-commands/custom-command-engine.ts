@@ -481,7 +481,10 @@ export class CustomCommandEngine {
             const cmd = name.substr(1);
             if (this.context.params.bot.commands.has(cmd)) {
                 const command = this.context.params.bot.commands.get(cmd);
-                if (!command.disableInCustomCommand && this.context.params.bot.validate(this.context.params, command)) {
+                if (
+                    !command['disableInCustomCommand'] &&
+                    this.context.params.bot.validate(this.context.params, command)
+                ) {
                     args = args.trim();
                     if (args === CustomCommandEngine.undefinedVar) {
                         args = '';

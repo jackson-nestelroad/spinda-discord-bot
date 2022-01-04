@@ -20,19 +20,18 @@ import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { PokengineCommands } from './lib/pokengine';
 import { EvalCommand } from './lib/secret/eval';
-import { MessageListenerCommand } from './lib/secret/message-listener';
 import { RefreshCommand } from './lib/secret/refresh';
 import { SayCommand } from './lib/secret/say';
 import { SpindaCommands } from './lib/spinda';
 import { CleanCommand } from './lib/utility/clean';
-import { HelpCommand } from './lib/utility/help';
+import { SpindaHelpCommand } from './lib/utility/help';
 import { MemoryCommand } from './lib/utility/memory';
 import { PingCommand } from './lib/utility/ping';
 import { UptimeCommand } from './lib/utility/uptime';
 
 export const CommandTypes: CommandTypeArray = [
     PingCommand,
-    HelpCommand,
+    SpindaHelpCommand,
     CleanCommand,
     UptimeCommand,
     MemoryCommand,
@@ -55,7 +54,6 @@ export const CommandTypes: CommandTypeArray = [
     EvalCommand,
     RefreshCommand,
     SayCommand,
-    MessageListenerCommand,
 
     PrefixCommand,
     LogsCommand,
