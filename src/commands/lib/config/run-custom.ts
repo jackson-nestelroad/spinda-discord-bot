@@ -1,9 +1,9 @@
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, SplitArgumentArray } from 'panda-discord';
-
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface RunCustomArgs {
     code: string;
+    content: string;
 }
 
 export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustomArgs> {
@@ -20,6 +20,13 @@ export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustom
             type: ArgumentType.RestOfContent,
             required: true,
         },
+        content: {
+            description: 'Content argument to run command with.',
+            type: ArgumentType.RestOfContent,
+            required: false,
+            named: true,
+            default: ''
+        },
     };
 
     public async run({ bot, src, guildId, extraArgs }: CommandParameters<SpindaDiscordBot>, args: RunCustomArgs) {
@@ -30,8 +37,8 @@ export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustom
                 guildId,
                 extraArgs,
             },
-            content: 'content',
-            args: SplitArgumentArray.Empty(),
+            content: args.content,
+            args: bot.splitIntoArgs(args.content),
         });
     }
 }
