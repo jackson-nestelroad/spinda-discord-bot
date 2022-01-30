@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
@@ -58,7 +58,7 @@ export class JcoadCommand extends ComplexCommand<SpindaDiscordBot, JcoadArgs> {
             const embed = bot.createEmbed();
             embed.setTitle('Pok\u00E9ngine jCoad Documentation');
             embed.setURL(this.docUrl);
-            embed.setAuthor(`Top results for "${args.query}"`);
+            embed.setAuthor({ name: `Top results for "${args.query}"` });
 
             if (results.length === 0) {
                 embed.setDescription('No results found!');

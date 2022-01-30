@@ -307,13 +307,13 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             pageText = page.first().text();
         }
 
-        embed.setAuthor(
-            titleText
+        embed.setAuthor({
+            name: titleText
                 ? `${args.n === 1 ? 'First result' : `Result ${args.n}`} ${
                       args.page === 1 ? '' : `on page ${pageText} `
                   }for "${titleText}"`
                 : '(No title)',
-        );
+        });
 
         const handler = this.searchTabHandlers[tab];
         if (!handler) {

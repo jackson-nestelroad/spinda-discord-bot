@@ -11,7 +11,7 @@ export class SpindaHelpCommand extends HelpCommand<SpindaDiscordBot> {
     private readonly customHelpQueries: Record<string, (embed: MessageEmbed) => void> = {
         panda: embed => {
             embed.setTitle('Panda Command Framework');
-            embed.setAuthor('');
+            embed.setAuthor(null);
             embed.setDescription(
                 `Spinda is built on Panda, an extensible framework for building bots with discord.js.
 Panda provides a strongly-typed class-based structure for writing complex commands.

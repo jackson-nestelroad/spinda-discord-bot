@@ -14,7 +14,7 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
     }
 
     protected setAuthor(embed: MessageEmbed, user: User) {
-        embed.setAuthor(this.getUserString(user), user.avatarURL());
+        embed.setAuthor({ name: this.getUserString(user), iconURL: user.avatarURL() });
     }
 
     public async getDestination(guildId: Snowflake): Promise<AnyChannel | null> {

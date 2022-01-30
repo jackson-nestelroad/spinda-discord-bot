@@ -131,7 +131,7 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
         // Send embed
         const embed = bot.createEmbed();
         PokengineUtil.embedDexBlock(embed, chosenMon);
-        embed.setAuthor(dex.name, dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined);
+        embed.setAuthor({ name: dex.name, iconURL: dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined });
 
         await src.send({ embeds: [embed] });
     }

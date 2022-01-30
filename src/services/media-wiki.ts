@@ -86,7 +86,7 @@ export class MediaWikiService extends BaseService {
         const embed = this.bot.createEmbed();
         embed.setTitle(entry.siteName);
         embed.setURL(entry.homePage);
-        embed.setAuthor(`Top results for "${response.data[0]}"`);
+        embed.setAuthor({ name: `Top results for "${response.data[0]}"` });
 
         if (response.data[1].length === 0) {
             embed.setDescription('No results found!');
