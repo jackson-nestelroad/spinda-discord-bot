@@ -44,7 +44,7 @@ interface VariableRuntimeData {
     end: number;
 }
 
-// Support metadata functions
+// Metadata functions
 export enum CustomCommandMetadata {
     Description = 'description',
     ContentName = 'content-name',
@@ -53,6 +53,13 @@ export enum CustomCommandMetadata {
     NoSlash = 'no-slash',
     ContentRequired = 'content-required',
 }
+
+// Metadata functions that do not need an explicit value
+const CustomCommandMetadataBoolean = new Set([
+    CustomCommandMetadata.NoContent,
+    CustomCommandMetadata.NoSlash,
+    CustomCommandMetadata.ContentRequired,
+]);
 
 // Result from parsing all metadata from custom command code
 interface ParseMetadataResult {
@@ -189,7 +196,14 @@ export class CustomCommandEngine {
             `\$${CustomCommandEngine.specialVars.regexMatchGroup}N (after regex)`,
             `\$${CustomCommandEngine.specialVars.functionArgument}N (in function call)`,
         ],
-        Metadata: [...Object.keys(CustomCommandMetadata).map(key => `{%${CustomCommandMetadata[key]} value}`)],
+        Metadata: [
+            ...Object.keys(CustomCommandMetadata).map((key: CustomCommandMetadata) => {
+                const name = CustomCommandMetadata[key];
+                return `{${SpecialChars.MetadataBegin}${name}${
+                    CustomCommandMetadataBoolean.has(name) ? '' : ' value'
+                }}`;
+            }),
+        ],
         'User Variables': [
             '{user}',
             ...Object.keys(CustomCommandEngine.userParams).map(key => `{user.${key}}`),
@@ -306,23 +320,21 @@ export class CustomCommandEngine {
 
         if (data.flags & CustomCommandFlag.DisableSlash) {
             code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoSlash));
+        }
+
+        if (data.flags & CustomCommandFlag.NoContent) {
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
         } else {
-            if (data.flags & CustomCommandFlag.NoContent) {
-                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoContent));
-            } else {
-                if (data.flags & CustomCommandFlag.ContentRequired) {
-                    code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentRequired));
-                }
-                code.push(
-                    CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName),
-                );
-                code.push(
-                    CustomCommandEngine.makeMetadataFunction(
-                        CustomCommandMetadata.ContentDescription,
-                        data.contentDescription,
-                    ),
-                );
+            if (data.flags & CustomCommandFlag.ContentRequired) {
+                code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentRequired));
             }
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.ContentName, data.contentName));
+            code.push(
+                CustomCommandEngine.makeMetadataFunction(
+                    CustomCommandMetadata.ContentDescription,
+                    data.contentDescription,
+                ),
+            );
         }
 
         code.push(data.message);
@@ -482,7 +494,7 @@ export class CustomCommandEngine {
         // Nested command call
         else if (name.startsWith(DataService.defaultPrefix)) {
             this.assertLimit(ExecutionLimit.Command, 1);
-            const cmd = name.substr(1);
+            const cmd = name.substring(1);
             if (this.context.params.bot.commands.has(cmd)) {
                 const command = this.context.params.bot.commands.get(cmd);
                 if (
