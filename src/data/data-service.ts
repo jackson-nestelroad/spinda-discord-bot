@@ -1,15 +1,15 @@
-import { Snowflake } from 'discord.js';
-import { BaseService } from 'panda-discord';
-import { exit } from 'process';
-import { Options, Sequelize } from 'sequelize';
-
-import { SpindaDiscordBot } from '../bot';
-import { GeneratedSpindaData } from '../commands/lib/spinda/util/spinda';
-import { Environment } from './environment';
-import { BlocklistEntry } from './model/blocklist';
 import { CaughtSpinda, CaughtSpindaAttributes } from './model/caught-spinda';
 import { CustomCommand, CustomCommandData } from './model/custom-command';
 import { Guild, GuildAttributes } from './model/guild';
+import { Options, Sequelize } from 'sequelize';
+
+import { BaseService } from 'panda-discord';
+import { BlocklistEntry } from './model/blocklist';
+import { Environment } from './environment';
+import { GeneratedSpindaData } from '../commands/lib/spinda/util/spinda';
+import { Snowflake } from 'discord.js';
+import { SpindaDiscordBot } from '../bot';
+import { exit } from 'process';
 
 export class DataService extends BaseService<SpindaDiscordBot> {
     public static readonly defaultPrefix: string = '>';
@@ -36,9 +36,9 @@ export class DataService extends BaseService<SpindaDiscordBot> {
                 ssl:
                     Environment.getEnvironment() === 'production'
                         ? {
-                              require: true,
-                              rejectUnauthorized: false,
-                          }
+                            require: true,
+                            rejectUnauthorized: false,
+                        }
                         : undefined,
             },
         };
