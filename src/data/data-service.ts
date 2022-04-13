@@ -185,7 +185,6 @@ export class DataService extends BaseService<SpindaDiscordBot> {
                 return CaughtSpinda.deserializeAttributes(model.get());
             });
             this.cache.caughtSpindas.set(userId, cached);
-            return cached;
         }
         return cached;
     }
@@ -286,19 +285,15 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         pos: number,
         allowCorrection: boolean = true,
     ): Promise<void> {
-        const collection = await this.assureCaughtSpindaCache(userId);
-
-        let model: CaughtSpinda;
+        let collection = await this.assureCaughtSpindaCache(userId);
 
         // Position exceeds current array
         // Add to end of array, and add new entry
         if (pos >= collection.length) {
-            pos = collection.length;
-            ++collection.length;
-
-            model = await this.caughtSpindas.create(
+            const model = await this.caughtSpindas.create(
                 CaughtSpinda.serializeAttributes({ userId, position: pos, ...spinda }),
             );
+            collection.push(CaughtSpinda.deserializeAttributes(model.get()));
         } else {
             const [numUpdated, updated] = await this.caughtSpindas.update(CaughtSpinda.serializeAttributes(spinda), {
                 where: { userId, position: pos },
@@ -308,6 +303,8 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             // numUpdated should be 1
             // If it isn't, something bad happened
             // The cache may have been corrupted, so we fix the cache and database, then try again
+
+            let model: CaughtSpinda;
 
             if (numUpdated !== 1) {
                 if (!allowCorrection) {
@@ -330,9 +327,11 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             } else {
                 model = updated[0];
             }
+
+            // Cache may have changed, so get updated cache
+            collection = this.cache.caughtSpindas.get(userId);
+            collection[pos] = CaughtSpinda.deserializeAttributes(model.get());
         }
 
-        // Update cache at the given position
-        collection[pos] = CaughtSpinda.deserializeAttributes(model.get());
     }
 }
