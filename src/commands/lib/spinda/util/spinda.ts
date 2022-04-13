@@ -54,7 +54,19 @@ export enum SpindaColorChange {
 }
 
 export class Spinda {
-    constructor(public readonly data: GeneratedSpindaData) {}
+    public readonly data: GeneratedSpindaData;
+
+    constructor(data: Partial<GeneratedSpindaData> = {}) {
+        this.data = {
+            pid: data.pid ?? Spinda.RandomPID(),
+            features: data.features ?? SpindaFeature.Random,
+            generatedAt: data.generatedAt ?? new Date(),
+        };
+    }
+
+    public static RandomPID(): number {
+        return Math.floor(Math.random() * 0x100000000);
+    }
 
     public get pid(): number {
         return this.data.pid;

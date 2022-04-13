@@ -1,13 +1,7 @@
 import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
-import { Message, MessageAttachment, Snowflake } from 'discord.js';
-import { BaseService } from 'panda-discord';
-
-import { SpindaDiscordBot } from '../../../bot';
-import { CircularBuffer } from '../../../util/circular-buffer';
 import { Color, RGBAColor } from '../../../util/color';
-import { NumberUtil } from '../../../util/number';
-import { OutlineDrawer } from './util/outline';
-import { Point } from './util/point';
+import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
+import { Message, MessageAttachment, Snowflake } from 'discord.js';
 import {
     Resource,
     ResourceMap,
@@ -18,8 +12,14 @@ import {
     SpotData,
     SpotLocation,
 } from './util/resources';
-import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
+
+import { BaseService } from 'panda-discord';
+import { CircularBuffer } from '../../../util/circular-buffer';
+import { NumberUtil } from '../../../util/number';
+import { OutlineDrawer } from './util/outline';
+import { Point } from './util/point';
+import { SpindaDiscordBot } from '../../../bot';
 
 type CanvasGlobalCompositeOperation = typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
 
@@ -209,10 +209,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
-    private getRandomPID(): number {
-        return Math.floor(Math.random() * 0x100000000);
-    }
-
     private rollFeatures(spinda: Spinda) {
         if (spinda.isRandom()) {
             spinda.resetFeatures();
@@ -324,7 +320,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     }
 
     public async generate(
-        spindaData: GeneratedSpindaData = this.newSpinda(),
+        spindaData: Partial<GeneratedSpindaData> = {},
         options: Partial<GenerateOptions> = {},
     ): Promise<SpindaGenerationResult> {
         options = makeGenerateOptions(options);
@@ -422,8 +418,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
                 ? [...new Array(SpindaGeneratorService.historySize)].map(
-                      async () => await this.generate(this.newSpinda(), individualOptions),
-                  )
+                    async () => await this.generate({}, individualOptions),
+                )
                 : spindaCollection.map(async spinda => await this.generate(spinda, individualOptions)),
         );
 
@@ -466,14 +462,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
     public async generateAndSend(msg: Message, spinda: GeneratedSpindaData): Promise<void> {
         await msg.channel.send({ files: [new MessageAttachment((await this.generate(spinda)).buffer)] });
-    }
-
-    public newSpinda(): GeneratedSpindaData {
-        return {
-            pid: this.getRandomPID(),
-            features: SpindaFeature.Random,
-            generatedAt: new Date(),
-        };
     }
 
     public restart() {
