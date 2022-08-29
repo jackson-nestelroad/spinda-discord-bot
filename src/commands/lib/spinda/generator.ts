@@ -1,7 +1,13 @@
 import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
-import { Color, RGBAColor } from '../../../util/color';
-import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { Message, MessageAttachment, Snowflake } from 'discord.js';
+import { BaseService } from 'panda-discord';
+
+import { SpindaDiscordBot } from '../../../bot';
+import { CircularBuffer } from '../../../util/circular-buffer';
+import { Color, RGBAColor } from '../../../util/color';
+import { NumberUtil } from '../../../util/number';
+import { OutlineDrawer } from './util/outline';
+import { Point } from './util/point';
 import {
     Resource,
     ResourceMap,
@@ -12,14 +18,8 @@ import {
     SpotData,
     SpotLocation,
 } from './util/resources';
+import { GeneratedSpindaData, Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from './util/spinda';
 import { SpindaColorMask, SpindaColors } from './util/spinda-colors';
-
-import { BaseService } from 'panda-discord';
-import { CircularBuffer } from '../../../util/circular-buffer';
-import { NumberUtil } from '../../../util/number';
-import { OutlineDrawer } from './util/outline';
-import { Point } from './util/point';
-import { SpindaDiscordBot } from '../../../bot';
 
 type CanvasGlobalCompositeOperation = typeof CanvasRenderingContext2D.prototype.globalCompositeOperation;
 
@@ -247,6 +247,12 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                         break;
                     }
                 }
+                // A bit of hack to make sure today's generation does not last
+                // more than a day. If the bot is preempted and restarted, then
+                // this counter resets
+                setTimeout(() => {
+                    this.todaysGen = undefined;
+                }, 1000 * 60 * 60 * 24);
             }
 
             // Set generation
@@ -418,8 +424,8 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         const generated = await Promise.all(
             spindaCollection === undefined || spindaCollection.length === 0
                 ? [...new Array(SpindaGeneratorService.historySize)].map(
-                    async () => await this.generate({}, individualOptions),
-                )
+                      async () => await this.generate({}, individualOptions),
+                  )
                 : spindaCollection.map(async spinda => await this.generate(spinda, individualOptions)),
         );
 

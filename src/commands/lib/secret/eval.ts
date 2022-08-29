@@ -1,10 +1,9 @@
 import * as DiscordJS from 'discord.js';
-
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, DiscordUtil, EvalUtil } from 'panda-discord';
-import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
-import { Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from '../spinda/util/spinda';
 
+import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { RGBAColor } from '../../../util/color';
+import { Spinda, SpindaColorChange, SpindaFeature, SpindaGeneration } from '../spinda/util/spinda';
 
 interface EvalArgs {
     code: string;

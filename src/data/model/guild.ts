@@ -1,6 +1,5 @@
-import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
-
 import { Snowflake } from 'discord.js';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 
 export enum LogOptionBit {
     None = -1,
@@ -22,7 +21,7 @@ export interface GuildAttributes {
     logOptions: number;
 }
 
-interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> { }
+interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
 
 export class Guild extends Model<GuildAttributes, GuildCreationAttributes> implements GuildAttributes {
     public readonly id!: Snowflake;
