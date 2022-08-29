@@ -1,5 +1,6 @@
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
+
 import { Snowflake } from 'discord.js';
-import { Model, Sequelize, DataTypes, Optional } from 'sequelize';
 
 export enum LogOptionBit {
     None = -1,
@@ -15,17 +16,15 @@ export enum LogOptionBit {
 }
 
 export interface GuildAttributes {
-    readonly internalId: number;
     readonly id: Snowflake;
     prefix: string;
     logChannelId?: Snowflake;
     logOptions: number;
 }
 
-interface GuildCreationAttributes extends Optional<GuildAttributes, 'internalId' | 'logOptions'> {}
+interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> { }
 
 export class Guild extends Model<GuildAttributes, GuildCreationAttributes> implements GuildAttributes {
-    public readonly internalId!: number;
     public readonly id!: Snowflake;
     public prefix!: string;
     public logChannelId?: Snowflake;
@@ -53,15 +52,10 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
     static initialize(sequelize: Sequelize) {
         Guild.init(
             {
-                internalId: {
-                    type: DataTypes.INTEGER,
-                    primaryKey: true,
-                    autoIncrement: true,
-                },
                 id: {
                     type: DataTypes.STRING,
                     allowNull: false,
-                    unique: true,
+                    primaryKey: true,
                 },
                 prefix: {
                     type: DataTypes.STRING,
