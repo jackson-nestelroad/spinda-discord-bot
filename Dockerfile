@@ -9,7 +9,7 @@ RUN npm install
 
 # Build the code.
 COPY . ./
-RUN npm build
+RUN npm run build
 
 # Start the bot.
 CMD ["npm", "start"]
