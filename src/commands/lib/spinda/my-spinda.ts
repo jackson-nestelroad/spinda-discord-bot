@@ -1,4 +1,4 @@
-import { MessageAttachment } from 'discord.js';
+import { AttachmentBuilder } from 'discord.js';
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
@@ -66,7 +66,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
 
         if (args.position === undefined) {
             const result = await bot.spindaGeneratorService.horde(caughtSpinda, { genOverride: args.generation });
-            await src.send({ files: [new MessageAttachment(result.buffer)] });
+            await src.send({ files: [new AttachmentBuilder(result.buffer)] });
         } else {
             if (args.position <= 0) {
                 throw new Error(`Position must be a positive integer.`);
@@ -81,18 +81,18 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             });
 
             const embed = bot.createEmbed();
-            const attachment = new MessageAttachment(result.buffer, 'thumbnail.png');
+            const attachment = new AttachmentBuilder(result.buffer, { name: 'thumbnail.png' });
             embed.setThumbnail('attachment://thumbnail.png');
 
             embed.setTitle(`${src.author.username}'s Spinda`);
-            embed.addField('PID', result.spinda.pid.toString(), true);
+            embed.addFields({ name: 'PID', value: result.spinda.pid.toString(), inline: true });
 
             const color = result.spinda.getColor();
             if (color !== SpindaColorChange.None) {
-                embed.addField('Classification', this.classifications[color], true);
+                embed.addFields({ name: 'Classification', value: this.classifications[color], inline: true });
             }
 
-            embed.addField('Generated At', result.spinda.generatedAt.toLocaleString(), true);
+            embed.addFields({ name: 'Generated At', value: result.spinda.generatedAt.toLocaleString(), inline: true });
 
             await src.send({ embeds: [embed], files: [attachment] });
         }

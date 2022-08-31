@@ -9,6 +9,8 @@ export class PingCommand extends SimpleCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public enableInDM = true;
+
     public async run({ src }: CommandParameters<SpindaDiscordBot>) {
         const start = new Date();
         const newMsg = await src.send('Pong!');

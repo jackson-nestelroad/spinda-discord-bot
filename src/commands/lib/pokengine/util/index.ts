@@ -1,4 +1,4 @@
-import { MessageEmbed } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 
 export enum PokemonTypes {
     Normal,
@@ -111,7 +111,7 @@ export namespace PokengineUtil {
         return global.decodeURI(uri).replace(/ /g, '+');
     }
 
-    export function embedDexBlock(embed: MessageEmbed, block: WebScrapedDexBlock) {
+    export function embedDexBlock(embed: EmbedBuilder, block: WebScrapedDexBlock) {
         if (block.num || block.num === 0) {
             embed.setTitle(`#${formatNum(block.num)} ${block.name}`);
         } else {
@@ -121,51 +121,59 @@ export namespace PokengineUtil {
         embed.setImage(baseUrl + block.imagePath);
     }
 
-    export function embedPrivate(embed: MessageEmbed) {
+    export function embedPrivate(embed: EmbedBuilder) {
         embed.setTitle('Private');
-        embed.addField('Error', 'This result cannot be viewed.');
+        embed.addFields({ name: 'Error', value: 'This result cannot be viewed.' });
     }
 
-    export function embedMove(embed: MessageEmbed, move: WebScrapedMove) {
+    export function embedMove(embed: EmbedBuilder, move: WebScrapedMove) {
         embed.setTitle(`#${move.num} ${move.name}`);
         embed.setURL(decodeURI(baseUrl + move.pagePath));
-        embed.addField('Description', move.description || noneString);
-        embed.addField('Type', move.type || noneString, true);
-        embed.addField('Category', move.category || noneString, true);
+        embed.addFields(
+            { name: 'Description', value: move.description || noneString },
+            { name: 'Type', value: move.type || noneString, inline: true },
+            { name: 'Category', value: move.category || noneString, inline: true },
+        );
     }
 
-    export function embedItem(embed: MessageEmbed, item: WebScrapedItem) {
+    export function embedItem(embed: EmbedBuilder, item: WebScrapedItem) {
         embed.setTitle(`#${item.num} ${item.name}`);
         embed.setURL(decodeURI(baseUrl + item.pagePath));
         embed.setThumbnail(baseUrl + item.imagePath);
-        embed.addField('Description', item.description || noneString);
+        embed.addFields({ name: 'Description', value: item.description || noneString });
     }
 
-    export function embedAbility(embed: MessageEmbed, ability: WebScrapedAbility) {
+    export function embedAbility(embed: EmbedBuilder, ability: WebScrapedAbility) {
         embed.setTitle(`#${ability.num} ${ability.name}`);
         embed.setURL(decodeURI(baseUrl + ability.pagePath));
-        embed.addField('Description', ability.description || noneString);
+        embed.addFields({ name: 'Description', value: ability.description || noneString });
     }
 
-    export function embedPlayer(embed: MessageEmbed, player: WebScrapedPlayer) {
+    export function embedPlayer(embed: EmbedBuilder, player: WebScrapedPlayer) {
         embed.setTitle(`#${player.num} ${player.name}`);
         embed.setURL(decodeURI(baseUrl + player.pagePath));
         embed.setThumbnail(baseUrl + player.imagePath);
-        embed.addField('Joined', player.joined || noneString, true);
-        embed.addField('Last Active', player.lastActive || noneString, true);
+        embed.addFields(
+            { name: 'Joined', value: player.joined || noneString, inline: true },
+            { name: 'Last Active', value: player.lastActive || noneString, inline: true },
+        );
     }
 
-    export function embedMap(embed: MessageEmbed, map: WebScrapedMap) {
+    export function embedMap(embed: EmbedBuilder, map: WebScrapedMap) {
         embed.setTitle(`#${map.num} ${map.name}`);
         embed.setURL(decodeURI(baseUrl + map.pagePath));
-        embed.addField('Owner', map.owner || noneString, true);
-        embed.addField('Region', map.region || noneString, true);
+        embed.addFields(
+            { name: 'Owner', value: map.owner || noneString, inline: true },
+            { name: 'Region', value: map.region || noneString, inline: true },
+        );
     }
 
-    export function embedPost(embed: MessageEmbed, post: WebScrapedPost) {
+    export function embedPost(embed: EmbedBuilder, post: WebScrapedPost) {
         embed.setTitle(post.title);
         embed.setURL(decodeURI(baseUrl + post.pagePath));
-        embed.addField('Author', post.author || noneString, true);
-        embed.addField('Posted', post.posted || noneString, true);
+        embed.addFields(
+            { name: 'Author', value: post.author || noneString, inline: true },
+            { name: 'Posted', value: post.posted || noneString, inline: true },
+        );
     }
 }

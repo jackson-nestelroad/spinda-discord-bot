@@ -1,7 +1,7 @@
 import { Interaction } from 'discord.js';
 import { BaseEvent, CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
+import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { CustomCommandFlag } from '../data/model/custom-command';
 
 export class InteractionCreateEvent extends BaseEvent<'interactionCreate', SpindaDiscordBot> {
@@ -10,13 +10,13 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
     }
 
     public async run(interaction: Interaction) {
-        // Only serve commands
-        if (!interaction.isCommand()) {
+        // Only serve chat input commands
+        if (!interaction.isChatInputCommand()) {
             return;
         }
 
         // User is a bot or in a direct message
-        if (interaction.user.bot || interaction.guild === null) {
+        if (interaction.user.bot) {
             return;
         }
 
@@ -25,13 +25,13 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
             return;
         }
 
-        // User is blocklisted in this guild
-        const blocklist = await this.bot.dataService.getBlocklist(interaction.guild.id);
-        if (blocklist.has(interaction.user.id)) {
-            return;
+        if (interaction.guildId) {
+            // User is blocklisted in this guild
+            const blocklist = await this.bot.dataService.getBlocklist(interaction.guildId);
+            if (blocklist.has(interaction.user.id)) {
+                return;
+            }
         }
-
-        const guild = await this.bot.dataService.getGuild(interaction.guild.id);
 
         // Global command
         if (this.bot.commands.has(interaction.commandName)) {
@@ -39,7 +39,7 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
                 bot: this.bot,
                 src: new CommandSource(interaction),
                 options: interaction.options,
-                guildId: guild.id,
+                guildId: interaction.guildId,
                 extraArgs: {},
             };
 
@@ -47,20 +47,22 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
                 const command = this.bot.commands.get(interaction.commandName);
                 if (this.bot.validate(params, command)) {
                     await command.executeSlash(params);
+                } else {
+                    await params.src.reply({ content: 'Permission denied', ephemeral: true });
                 }
             } catch (error) {
                 this.bot.sendError(params.src, error);
             }
         }
         // Could be a custom (guild) command
-        else {
-            const customCommands = await this.bot.dataService.getCustomCommands(interaction.guild.id);
+        else if (interaction.guildId) {
+            const customCommands = await this.bot.dataService.getCustomCommands(interaction.guildId);
             const customCommand = customCommands[interaction.commandName];
             if (customCommand) {
                 const params: CommandParameters<SpindaDiscordBot> = {
                     bot: this.bot,
                     src: new CommandSource(interaction),
-                    guildId: guild.id,
+                    guildId: interaction.guildId,
                     extraArgs: {},
                 };
                 try {
@@ -72,6 +74,7 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
                     await this.bot.customCommandService.run(customCommand.message, {
                         params,
                         content,
+                        permission: CommandPermission[customCommand.permission],
                     });
                 } catch (error) {
                     await this.bot.sendError(params.src, error);

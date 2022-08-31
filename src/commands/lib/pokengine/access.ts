@@ -1,9 +1,9 @@
 import axios, { AxiosResponse } from 'axios';
 import * as cheerio from 'cheerio';
-import { Role, TextChannel } from 'discord.js';
+import { GuildTextBasedChannel, Role } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -25,7 +25,7 @@ export class AccessCommand extends ComplexCommand<SpindaDiscordBot, AccessArgs> 
     private readonly nicknameFailMsg = 'Your nickname could not be updated. Please contact a staff member.';
 
     private accessRole: Role = null;
-    private accessChannel: TextChannel = null;
+    private accessChannel: GuildTextBasedChannel = null;
 
     public name = 'access';
     public description = `Requests access to the ${this.serverName}.`;
@@ -63,11 +63,13 @@ export class AccessCommand extends ComplexCommand<SpindaDiscordBot, AccessArgs> 
             // Make sure access channel exists and is a text channel
             if (!this.accessChannel) {
                 const id = Environment.Pokengine.getAccessChannelId();
-                this.accessChannel = src.guild.channels.cache.find(channel => channel.id === id) as TextChannel;
+                this.accessChannel = src.guild.channels.cache.find(
+                    channel => channel.id === id,
+                ) as GuildTextBasedChannel;
                 if (!this.accessChannel) {
                     throw new Error(`Channel id \`${id}\` does not exist in this server.`);
                 }
-                if (this.accessChannel.type !== 'GUILD_TEXT') {
+                if (!this.accessChannel.isTextBased() || this.accessChannel.isDMBased()) {
                     throw new Error(`Access channel must be a text channel.`);
                 }
             }

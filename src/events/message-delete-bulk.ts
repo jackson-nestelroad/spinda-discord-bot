@@ -1,4 +1,4 @@
-import { Message, TextChannel, Collection, Snowflake, MessageAttachment } from 'discord.js';
+import { AttachmentBuilder, Collection, GuildTextBasedChannel, Message, Snowflake, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -6,24 +6,20 @@ import { LogOptionBit } from '../data/model/guild';
 import { BaseLogEvent } from './log';
 
 export class MessageDeleteBulkEvent extends BaseLogEvent<'messageDeleteBulk'> {
-    private readonly noneText = 'None';
-
     constructor(bot: SpindaDiscordBot) {
         super(bot, 'messageDeleteBulk', LogOptionBit.BulkMessageDeletion);
     }
 
-    public async run(messages: Collection<Snowflake, Message>) {
+    public async run(messages: Collection<Snowflake, Message>, channel: GuildTextBasedChannel) {
         if (messages.size > 0) {
-            const firstMessage = messages.first();
-            const channel = await this.getDestination(firstMessage.guild?.id ?? null);
+            7;
+            const logChannel = await this.getDestination(channel.guild.id);
             if (channel) {
                 const embed = this.bot.createEmbed(EmbedTemplates.Log);
 
                 embed.setTitle('Bulk Message Deletion');
                 embed.setDescription(
-                    `${messages.size} message${
-                        messages.size === 1 ? '' : 's'
-                    } deleted in ${firstMessage.channel.toString()}.`,
+                    `${messages.size} message${messages.size === 1 ? '' : 's'} deleted in ${channel.toString()}.`,
                 );
 
                 let file = '';
@@ -33,8 +29,10 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<'messageDeleteBulk'> {
                     }\n\n`;
                 }
 
-                const attachment = new MessageAttachment(Buffer.from(file, 'utf16le'), `${embed.timestamp}.txt`);
-                await (channel as TextChannel).send({ embeds: [embed], files: [attachment] });
+                const attachment = new AttachmentBuilder(Buffer.from(file, 'utf16le'), {
+                    name: `${embed.data.timestamp}.txt`,
+                });
+                await logChannel.send({ embeds: [embed], files: [attachment] });
             }
         }
     }

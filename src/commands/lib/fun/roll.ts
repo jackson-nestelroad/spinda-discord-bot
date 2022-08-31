@@ -1,4 +1,4 @@
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
@@ -15,6 +15,8 @@ export class RollCommand extends ComplexCommand<SpindaDiscordBot, RollArgs> {
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public enableInDM = true;
 
     public args: ArgumentsConfig<RollArgs> = {
         roll: {
@@ -72,10 +74,10 @@ export class RollCommand extends ComplexCommand<SpindaDiscordBot, RollArgs> {
 
         const embed = bot.createEmbed();
         let [result, diceRollString] = this.roll(rolls, faces);
-        embed.addField('Initial Roll', diceRollString);
+        embed.addFields({ name: 'Initial Roll', value: diceRollString });
 
         while (true) {
-            roll = roll.substr(match.index + match[0].length);
+            roll = roll.substring(match.index + match[0].length);
             match = roll.match(this.operationRegex);
             if (!match) {
                 break;
@@ -116,10 +118,10 @@ export class RollCommand extends ComplexCommand<SpindaDiscordBot, RollArgs> {
                     break;
             }
 
-            embed.addField(
-                this.operations[operator],
-                `${oldResult} ${operator} ${nestedResultString} ${this.arrow} ${result}`,
-            );
+            embed.addFields({
+                name: this.operations[operator],
+                value: `${oldResult} ${operator} ${nestedResultString} ${this.arrow} ${result}`,
+            });
         }
 
         embed.setTitle(`:game_die: ${this.arrow} ${result}`);

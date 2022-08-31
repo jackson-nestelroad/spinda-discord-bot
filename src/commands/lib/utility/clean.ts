@@ -10,7 +10,7 @@ export class CleanCommand extends ComplexCommand<SpindaDiscordBot, CleanArgs> {
     public name = 'clean';
     public description = 'Cleans up the bot responses for the current channel.';
     public category = CommandCategory.Utility;
-    public permission = CommandPermission.Administrator;
+    public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Low;
 
     public readonly defaultNumberToDelete: number = 100;
@@ -28,6 +28,10 @@ export class CleanCommand extends ComplexCommand<SpindaDiscordBot, CleanArgs> {
 
         if (numberToDelete <= 0) {
             throw new Error('Number of messages to delete must be a positive integer.');
+        }
+
+        if (src.channel.isDMBased()) {
+            return;
         }
 
         const channelHistory = await src.channel.messages.fetch({ limit: 100 });

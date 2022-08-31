@@ -11,7 +11,7 @@ export class RunCustomCommand extends ComplexCommand<SpindaDiscordBot, RunCustom
     public name = 'run-custom';
     public description = 'Runs the custom command engine for the given message. All `$N` arguments will be undefined.';
     public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public permission = CommandPermission.Moderator;
 
     public disableInCustomCommand = true;
 

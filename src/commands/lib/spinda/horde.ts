@@ -1,4 +1,4 @@
-import { MessageAttachment } from 'discord.js';
+import { AttachmentBuilder } from 'discord.js';
 import { CommandParameters, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
@@ -24,7 +24,7 @@ export class HordeCommand extends SimpleCommand<SpindaDiscordBot> {
         bot.spindaGeneratorService.setChannelHistory(src.channel.id, result.horde);
 
         // Send the image
-        const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
+        const sent = await src.send({ files: [new AttachmentBuilder(result.buffer)] });
 
         // Interaction reply must be a message, because we didn't choose ephemeral
         if (!sent.isMessage()) {

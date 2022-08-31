@@ -1,6 +1,6 @@
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -17,7 +17,7 @@ export class RemoveCommandCommand extends ComplexCommand<SpindaDiscordBot, Remov
     public name = 'remove-command';
     public description = 'Removes a custom command that was previously set for the guild.';
     public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.High;
 
     public args: ArgumentsConfig<RemoveCommandArgs> = {
@@ -28,24 +28,31 @@ export class RemoveCommandCommand extends ComplexCommand<SpindaDiscordBot, Remov
         },
     };
 
-    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: RemoveCommandArgs) {
-        const command = args.command.toLowerCase();
+    public async run(params: CommandParameters<SpindaDiscordBot>, args: RemoveCommandArgs) {
+        const { bot, src, guildId } = params;
+
+        const commandName = args.command.toLowerCase();
+        const commands = await bot.dataService.getCustomCommands(guildId);
+        const customCommand = commands[commandName];
+        if (customCommand && !bot.meetsPermission(params, CommandPermission[customCommand.permission])) {
+            throw new Error('You may not delete a command you do not have permission to run.');
+        }
 
         // Remove slash command first
-        const slashCommand = src.guild.commands.cache.find(cmd => cmd.name === command);
+        const slashCommand = src.guild.commands.cache.find(cmd => cmd.name === commandName);
         if (slashCommand) {
             await src.guild.commands.delete(slashCommand);
         }
 
         // Remove from database second
         // If removing slash command fails, we still want the handler to exist
-        const removed = await bot.dataService.removeCustomCommand(src.guild.id, command);
+        const removed = await bot.dataService.removeCustomCommand(src.guild.id, commandName);
         if (!removed) {
-            throw new Error(`Command \`${command}\` does not exist.`);
+            throw new Error(`Command \`${commandName}\` does not exist.`);
         }
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
-        embed.setDescription(`Successfully removed command \`${command}\`.`);
+        embed.setDescription(`Successfully removed command \`${commandName}\`.`);
         await src.send({ embeds: [embed] });
     }
 }

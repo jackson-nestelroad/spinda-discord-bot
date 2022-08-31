@@ -64,7 +64,7 @@ export class EvalCommand extends ComplexCommand<SpindaDiscordBot, EvalArgs> {
             clearInterval,
         });
         if (res.length > this.maxLength) {
-            res = res.substr(0, this.maxLength) + '...';
+            res = res.substring(0, this.maxLength) + '...';
         }
         res = res.replace(this.sensitivePattern, '???');
         if (!args.silent) {

@@ -1,5 +1,5 @@
 import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
-import { Message, MessageAttachment, Snowflake } from 'discord.js';
+import { AttachmentBuilder, Message, Snowflake } from 'discord.js';
 import { BaseService } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../../../bot';
@@ -467,7 +467,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     }
 
     public async generateAndSend(msg: Message, spinda: GeneratedSpindaData): Promise<void> {
-        await msg.channel.send({ files: [new MessageAttachment((await this.generate(spinda)).buffer)] });
+        await msg.channel.send({ files: [new AttachmentBuilder((await this.generate(spinda)).buffer)] });
     }
 
     public restart() {

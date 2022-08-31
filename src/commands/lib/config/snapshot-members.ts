@@ -121,9 +121,9 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
 
         const embed = bot.createEmbed(EmbedTemplates.Success);
         embed.setDescription('Restored guild member snapshot.');
-        embed.addField(
-            'Stats',
-            [
+        embed.addFields({
+            name: 'Stats',
+            value: [
                 `Members Not Found: ${stats.memberNotFound}`,
                 `Invalid Snapshots: ${stats.invalidFormat}`,
                 `Nicknames Modified: ${stats.nicknamesModified}`,
@@ -131,7 +131,7 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
                 `Roles Modified: ${stats.rolesModified}`,
                 `Role Errors: ${stats.rolesErrors}`,
             ].join('\n'),
-        );
+        });
 
         await src.send({ embeds: [embed] });
     }
@@ -141,7 +141,7 @@ export class SnapshotMembersCommand extends NestedCommand<SpindaDiscordBot> {
     public name = 'snapshot-members';
     public description = 'Creates or restores a snaphot of the roles and nicknames of all guild members.';
     public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public permission = CommandPermission.Moderator;
 
     public disableSlash = true;
 

@@ -1,7 +1,7 @@
-import { TextChannel } from 'discord.js';
+import { PermissionFlagsBits } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -139,16 +139,16 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
                             if (!channel) {
                                 throw new Error(`Invalid channel: ${value} (\`${value}\`)`);
                             }
-                            if (channel.type !== 'GUILD_TEXT') {
+                            if (!channel.isTextBased() || channel.isDMBased()) {
                                 throw new Error('Log channel must be a text channel.');
                             }
-                            if ((channel as TextChannel).guild.id !== src.guild.id) {
+                            if (channel.guild.id !== src.guild.id) {
                                 throw new Error('Log channel must be in this guild.');
                             }
                             if (
                                 !(
-                                    (channel as TextChannel).viewable &&
-                                    (channel as TextChannel).permissionsFor(bot.client.user).has(['SEND_MESSAGES'])
+                                    channel.viewable &&
+                                    channel.permissionsFor(bot.client.user).has(PermissionFlagsBits.SendMessages)
                                 )
                             ) {
                                 throw new Error(`Bot is missing permissions for ${value}.`);

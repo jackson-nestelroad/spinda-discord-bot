@@ -9,6 +9,8 @@ export class MemoryCommand extends SimpleCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public enableInDM = true;
+
     private readonly precision = 2;
 
     public async run({ src }: CommandParameters<SpindaDiscordBot>) {

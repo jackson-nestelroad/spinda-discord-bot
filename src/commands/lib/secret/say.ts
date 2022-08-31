@@ -1,7 +1,7 @@
-import { Channel, TextChannel } from 'discord.js';
+import { GuildBasedChannel } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     ChatCommandParameters,
     CommandParameters,
     LegacyCommand,
@@ -11,7 +11,7 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
 interface SayArgs {
-    channel: Channel;
+    channel: GuildBasedChannel;
     message: string;
 }
 
@@ -41,7 +41,9 @@ export class SayCommand extends LegacyCommand<SpindaDiscordBot, SayArgs> {
 
     public parseChatArgs({ bot, src, args, content }: ChatCommandParameters<SpindaDiscordBot>): SayArgs {
         const parsed: Partial<SayArgs> = {};
-
+        if (src.channel.isDMBased()) {
+            throw new Error('Invalid channel.');
+        }
         parsed.channel = src.channel;
         // First argument may be a channel mention
         if (src.isMessage()) {
@@ -52,10 +54,12 @@ export class SayCommand extends LegacyCommand<SpindaDiscordBot, SayArgs> {
                 args.get(0) === msg.mentions.channels.first().toString()
             ) {
                 const channelMention = args.shift();
-                content = content.substr(channelMention.length).trimLeft();
-                parsed.channel = bot.getChannelFromString(channelMention, src.guild.id);
-                if (!parsed.channel) {
+                content = content.substring(channelMention.length).trimStart();
+                const channel = bot.getChannelFromString(channelMention, src.guild.id);
+                if (!channel) {
                     throw new Error(`Channel \`${channelMention}\` not found.`);
+                } else if (!channel.isTextBased() || channel.isDMBased()) {
+                    throw new Error('Invalid channel.');
                 }
             }
         }
@@ -70,11 +74,11 @@ export class SayCommand extends LegacyCommand<SpindaDiscordBot, SayArgs> {
     }
 
     public async run({ src }: CommandParameters<SpindaDiscordBot>, args: SayArgs) {
-        if (args.channel.type !== 'GUILD_TEXT') {
-            throw new Error(`Cannot send a message to a ${args.channel.type} channel.`);
+        if (!args.channel.isTextBased()) {
+            throw new Error(`Cannot send a message to that channel.`);
         }
 
-        await (args.channel as TextChannel).send(args.message);
+        await args.channel.send(args.message);
         if (src.deletable) {
             await src.delete();
         }

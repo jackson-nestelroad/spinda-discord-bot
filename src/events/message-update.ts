@@ -20,13 +20,15 @@ export class MessageUpdateEvent extends BaseLogEvent<'messageUpdate'> {
 
             this.setAuthor(embed, newMsg.author);
             embed.setTitle('Updated Message');
-            embed.addField('Before', oldMsg.content || this.noneText);
-            embed.addField('After', newMsg.content || this.noneText);
-            embed.addField('Channel', newMsg.channel.toString(), true);
-            embed.addField('Profile', newMsg.author.toString(), true);
-            embed.addField('Message ID', newMsg.id, true);
+            embed.addFields(
+                { name: 'Before', value: oldMsg.content || this.noneText },
+                { name: 'After', value: newMsg.content || this.noneText },
+                { name: 'Channel', value: newMsg.channel.toString(), inline: true },
+                { name: 'Profile', value: newMsg.author.toString(), inline: true },
+                { name: 'Message ID', value: newMsg.id, inline: true },
+            );
 
-            await (channel as TextChannel).send({ embeds: [embed] });
+            await channel.send({ embeds: [embed] });
         }
     }
 }

@@ -1,4 +1,4 @@
-import { AnyChannel, ClientEvents, MessageEmbed, Snowflake, User } from 'discord.js';
+import { ClientEvents, EmbedBuilder, Snowflake, TextBasedChannel, User } from 'discord.js';
 import { BaseEvent } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -13,11 +13,11 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
         return `${user.tag} (${user.id})`;
     }
 
-    protected setAuthor(embed: MessageEmbed, user: User) {
+    protected setAuthor(embed: EmbedBuilder, user: User) {
         embed.setAuthor({ name: this.getUserString(user), iconURL: user.avatarURL() });
     }
 
-    public async getDestination(guildId: Snowflake): Promise<AnyChannel | null> {
+    public async getDestination(guildId: Snowflake): Promise<TextBasedChannel | null> {
         if (!guildId) {
             return null;
         }
@@ -26,7 +26,7 @@ export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEve
 
         // Check that there is a log channel, logging is enabled, and this event is enabled
         if (guild.logChannelId && guild.logOptions & LogOptionBit.Enabled && guild.logOptions & this.logEvent) {
-            return this.bot.client.channels.cache.get(guild.logChannelId);
+            return this.bot.client.channels.cache.get(guild.logChannelId) as TextBasedChannel;
         }
         return null;
     }

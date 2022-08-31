@@ -80,7 +80,7 @@ export class JcoadCommand extends ComplexCommand<SpindaDiscordBot, JcoadArgs> {
 
                         // Found a code result
                         if (block.role && this.roles[block.role]) {
-                            const text = this.roles[block.role] + block.name.substr(block.name.indexOf('-') + 1);
+                            const text = this.roles[block.role] + block.name.substring(block.name.indexOf('-') + 1);
                             codeResults.push(`[${text}](${blockUrl})`);
                         }
                         // Other result, only add it if we will use it

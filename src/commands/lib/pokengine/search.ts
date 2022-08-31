@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { MessageEmbed } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -33,7 +33,7 @@ interface SearchArgs {
     page: number;
 }
 
-type SearchTabHandler = (i: number, results: cheerio.CheerioAPI, embed: MessageEmbed) => void;
+type SearchTabHandler = (i: number, results: cheerio.CheerioAPI, embed: EmbedBuilder) => void;
 
 export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> {
     public readonly searchPath: string = '/search';
@@ -115,7 +115,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                     if (nodeText) {
                         const field = nodeText.split(':');
                         if (field.length === 2) {
-                            embed.addField(field[0].trim(), field[1].trim(), true);
+                            embed.addFields({ name: field[0].trim(), value: field[1].trim(), inline: true });
                         }
                     }
                 }
@@ -135,7 +135,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMove(embed, {
-                    num: parseInt(cols.eq(0).text().substr(1)),
+                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(1).text(),
                     type: cols.eq(2).text() as any,
                     category: cols.eq(3).text() as any,
@@ -148,7 +148,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedItem(embed, {
-                    num: parseInt(cols.eq(0).text().substr(1)),
+                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(2).text(),
                     description: cols.eq(3).text(),
                     pagePath: cols.eq(2).find('a').attr('href'),
@@ -160,7 +160,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedAbility(embed, {
-                    num: parseInt(cols.eq(0).text().substr(1)),
+                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(1).text(),
                     description: cols.eq(2).text(),
                     pagePath: cols.eq(1).find('a').attr('href'),
@@ -171,7 +171,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedPlayer(embed, {
-                    num: parseInt(cols.eq(0).text().substr(1)),
+                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(2).text(),
                     joined: cols.eq(3).find('span').text(),
                     lastActive: cols.eq(4).find('span').text(),
@@ -184,7 +184,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMap(embed, {
-                    num: parseInt(cols.eq(0).text().substr(1)),
+                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(1).text() || 'Unnamed Map',
                     owner: cols.eq(2).find('a').text(),
                     region: (
@@ -216,7 +216,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     private handleDexBlock(
         i: number,
         results: cheerio.CheerioAPI,
-        embed: MessageEmbed,
+        embed: EmbedBuilder,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
         const dexBlock = results('.dex-block').eq(i);
         if (dexBlock.length > 0) {
@@ -234,7 +234,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     private handleSearchTable(
         i: number,
         results: cheerio.CheerioAPI,
-        embed: MessageEmbed,
+        embed: EmbedBuilder,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
         const tableRow = results('.search-table tr').eq(i);
         if (tableRow.length > 0) {
@@ -252,7 +252,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         ).replace(/#/g, '%23');
     }
 
-    private async sendEmbed(src: CommandSource, embed: MessageEmbed, searchUrl: string) {
+    private async sendEmbed(src: CommandSource, embed: EmbedBuilder, searchUrl: string) {
         embed.setDescription(`[See more results](${searchUrl})`);
         await src.send({ embeds: [embed] });
     }
@@ -290,7 +290,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             curr = mapIter.next();
         }
 
-        const embed: MessageEmbed = bot.createEmbed();
+        const embed: EmbedBuilder = bot.createEmbed();
 
         // No results
         if (tab < 0) {

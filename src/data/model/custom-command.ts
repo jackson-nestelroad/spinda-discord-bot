@@ -1,11 +1,13 @@
 import { Snowflake } from 'discord.js';
-import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
+
+import { CommandPermission } from '../../bot';
 
 export enum CustomCommandFlag {
     None = 0,
     NoContent = 1 << 0,
     ContentRequired = 1 << 1,
-    DisableSlash = 1 << 2,
+    EnableSlash = 1 << 2,
 }
 
 export interface CustomCommandData {
@@ -14,6 +16,7 @@ export interface CustomCommandData {
     description: string;
     contentName: string;
     contentDescription: string;
+    permission: keyof typeof CommandPermission;
     flags: number;
 }
 
@@ -35,6 +38,7 @@ export class CustomCommand
     public description: string;
     public contentName: string;
     public contentDescription: string;
+    public permission: keyof typeof CommandPermission;
     public flags: number;
 
     public readonly createdAt!: Date;
@@ -71,6 +75,11 @@ export class CustomCommand
                 contentDescription: {
                     type: DataTypes.TEXT,
                     allowNull: false,
+                },
+                permission: {
+                    type: DataTypes.TEXT,
+                    allowNull: false,
+                    defaultValue: 'Everyone',
                 },
                 flags: {
                     type: DataTypes.INTEGER,

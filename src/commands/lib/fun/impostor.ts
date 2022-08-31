@@ -101,7 +101,7 @@ export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorAr
 
         message.push(this.generateSpaceLine(lineLength));
         let line = this.generateSpaceLine(lineLength);
-        message.push(line.substr(0, halfLine) + this.impostor + line.substr(halfLine + 1));
+        message.push(line.substring(0, halfLine) + this.impostor + line.substring(halfLine + 1));
         message.push(' '.repeat(this.linePadding) + revealMsg + ' '.repeat(this.linePadding));
         message.push(this.generateSpaceLine(lineLength));
         message.push(this.generateSpaceLine(lineLength));

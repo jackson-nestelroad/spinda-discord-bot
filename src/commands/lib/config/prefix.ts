@@ -1,7 +1,7 @@
-import { MessageEmbed } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     DiscordUtil,
@@ -39,7 +39,7 @@ export class PrefixCommand extends ComplexCommand<SpindaDiscordBot, PrefixArgs> 
         }
 
         const guild = bot.dataService.getCachedGuild(guildId);
-        let embed: MessageEmbed;
+        let embed: EmbedBuilder;
         if (!newPrefix) {
             embed = bot.createEmbed(EmbedTemplates.Bare);
             embed.setDescription(`The prefix for this guild is \`${guild.prefix}\``);

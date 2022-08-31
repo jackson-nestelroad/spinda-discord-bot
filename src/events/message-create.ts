@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
+import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
 
 export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscordBot> {
@@ -29,7 +29,7 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
         }
 
         const cmd = args.shift();
-        content = content.substr(cmd.length).trim();
+        content = content.substring(cmd.length).trim();
 
         const params: ChatCommandParameters<SpindaDiscordBot> = {
             bot: this.bot,
@@ -54,7 +54,8 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
         // Could be a custom (guild) command
         else {
             const customCommands = await this.bot.dataService.getCustomCommands(params.src.guild.id);
-            if (customCommands[cmd]) {
+            const customCommand = customCommands[cmd];
+            if (customCommand) {
                 try {
                     if (this.bot.options.namedArgs === NamedArgsOption.Always) {
                         const { named, unnamed } = this.bot.extractNamedArgs(params.args);
@@ -64,10 +65,11 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                         }, {});
                         params.args = unnamed;
                     }
-                    await this.bot.customCommandService.run(customCommands[cmd].message, {
+                    await this.bot.customCommandService.run(customCommand.message, {
                         params,
                         content,
                         args: params.args,
+                        permission: CommandPermission[customCommand.permission],
                     });
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
@@ -108,12 +110,12 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                     msg.content[1] === '@' &&
                     msg.content[endOfMentionString] === '>'
                 ) {
-                    let content = msg.content.substr(endOfMentionString + 1).trim();
+                    let content = msg.content.substring(endOfMentionString + 1).trim();
                     await this.runCommand(content, msg, guild);
                 }
             }
         } else {
-            let content = msg.content.substr(prefix.length);
+            let content = msg.content.substring(prefix.length);
             await this.runCommand(content, msg, guild);
         }
     }

@@ -1,4 +1,10 @@
-import { MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
+import {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    MessageComponentInteraction,
+    PermissionFlagsBits,
+} from 'discord.js';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -37,20 +43,22 @@ export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUni
 
     public async run({ bot, src, guildId, extraArgs }: CommandParameters<SpindaDiscordBot>, args: RunUniversalArgs) {
         const members = await bot.memberListService.getMemberListForGuild(guildId);
-        const otherAdmins = members.filter(member => member.permissions.has('ADMINISTRATOR') && !member.user.bot);
+        const otherAdmins = members.filter(
+            member => member.permissions.has(PermissionFlagsBits.Administrator) && !member.user.bot,
+        );
         otherAdmins.delete(src.author.id);
 
         if (otherAdmins.size > 0) {
-            const button = new MessageButton();
+            const button = new ButtonBuilder();
             button.setCustomId('confirm');
             button.setLabel('Run Universal Command');
             button.setEmoji(`\u{2755}`);
-            button.setStyle('DANGER');
+            button.setStyle(ButtonStyle.Danger);
 
             let response = await src.reply({
                 content:
                     'Running a universal command is an extremely dangerous action. Please have another Administrator confirm this command.',
-                components: [new MessageActionRow().addComponents(button)],
+                components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)],
             });
 
             if (!response.isMessage()) {
@@ -59,7 +67,9 @@ export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUni
 
             const disableButton = async () => {
                 button.setDisabled(true);
-                return await response.edit({ components: [new MessageActionRow().addComponents(button)] });
+                return await response.edit({
+                    components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)],
+                });
             };
 
             let interaction: MessageComponentInteraction;

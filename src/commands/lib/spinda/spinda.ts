@@ -1,4 +1,4 @@
-import { MessageAttachment } from 'discord.js';
+import { AttachmentBuilder } from 'discord.js';
 import { CommandParameters, SimpleCommand } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
@@ -30,7 +30,7 @@ export class SpindaCommand extends SimpleCommand<SpindaDiscordBot> {
         bot.spindaGeneratorService.pushToChannelHistory(src.channel.id, result.spinda);
 
         // Send the image
-        const sent = await src.send({ files: [new MessageAttachment(result.buffer)] });
+        const sent = await src.send({ files: [new AttachmentBuilder(result.buffer)] });
 
         if (!sent.isMessage()) {
             throw new Error('Command reply did not produce a message.');

@@ -1,7 +1,7 @@
 import { Snowflake } from 'discord.js';
 import { BaseService, EmbedTemplates, ExpireAge, TimedCache } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
+import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { CustomCommandEngine, CustomCommandEngineExecutionContext } from './custom-command-engine';
 
 export class CustomCommandService extends BaseService<SpindaDiscordBot> {
@@ -13,6 +13,10 @@ export class CustomCommandService extends BaseService<SpindaDiscordBot> {
     }
 
     public async run(code: string, context: CustomCommandEngineExecutionContext) {
+        if (!this.bot.meetsPermission(context.params, context.permission ?? CommandPermission.Everyone)) {
+            return;
+        }
+
         if (await this.bot.handleCooldown(context.params.src, this.cooldownSet)) {
             const engine = new CustomCommandEngine(context);
             await engine.run(code);
@@ -20,6 +24,10 @@ export class CustomCommandService extends BaseService<SpindaDiscordBot> {
     }
 
     public async runUniversal(code: string, context: CustomCommandEngineExecutionContext) {
+        if (!this.bot.meetsPermission(context.params, context.permission ?? CommandPermission.Everyone)) {
+            return;
+        }
+
         const engine = new CustomCommandEngine(context);
         const results = await engine.runUniversal(code);
         const attachment = this.bot.createJSONAttachment(results, 'universal-results', context.params.src);

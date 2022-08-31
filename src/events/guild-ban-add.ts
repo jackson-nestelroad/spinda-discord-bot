@@ -1,4 +1,4 @@
-import { TextChannel, GuildBan } from 'discord.js';
+import { GuildBan, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -18,7 +18,7 @@ export class GuildBanAddEvent extends BaseLogEvent<'guildBanAdd'> {
             embed.setDescription(ban.user.toString());
             embed.setTitle('Member Banned');
 
-            embed.addField('Reason', ban.reason);
+            embed.addFields({ name: 'Reason', value: ban.reason });
 
             await (channel as TextChannel).send({ embeds: [embed] });
         }

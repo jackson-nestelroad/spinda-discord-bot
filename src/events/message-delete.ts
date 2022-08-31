@@ -20,13 +20,17 @@ export class MessageDeleteEvent extends BaseLogEvent<'messageDelete'> {
 
             this.setAuthor(embed, msg.author);
             embed.setTitle('Deleted Message');
-            embed.addField('Content', msg.content || this.noneText);
-            embed.addField('Channel', msg.channel.toString(), true);
-            embed.addField('Profile', msg.author.toString(), true);
-            embed.addField('Message ID', msg.id, true);
-            embed.addField(
-                'Attachments',
-                msg.attachments.map(attachment => attachment.proxyURL || attachment.url).join('\n') || this.noneText,
+            embed.addFields(
+                { name: 'Content', value: msg.content || this.noneText },
+                { name: 'Channel', value: msg.channel.toString(), inline: true },
+                { name: 'Profile', value: msg.author.toString(), inline: true },
+                { name: 'Message ID', value: msg.id, inline: true },
+                {
+                    name: 'Attachments',
+                    value:
+                        msg.attachments.map(attachment => attachment.proxyURL || attachment.url).join('\n') ||
+                        this.noneText,
+                },
             );
 
             if (msg.attachments.size !== 0) {

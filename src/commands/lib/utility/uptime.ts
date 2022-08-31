@@ -10,6 +10,8 @@ export class UptimeCommand extends SimpleCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public enableInDM = true;
+
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>) {
         const now = new Date();
         const diff = now.valueOf() - bot.startedAt.valueOf();

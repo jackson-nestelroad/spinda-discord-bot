@@ -1,6 +1,6 @@
-import { createCanvas, Canvas, CanvasRenderingContext2D } from 'canvas';
-import { MessageAttachment } from 'discord.js';
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import { Canvas, CanvasRenderingContext2D, createCanvas } from 'canvas';
+import { AttachmentBuilder } from 'discord.js';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { Color, RGBAColor } from '../../../util/color';
@@ -15,6 +15,8 @@ export class ColorCommand extends ComplexCommand<SpindaDiscordBot, ColorArgs> {
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
+
+    public enableInDM = true;
 
     public args: ArgumentsConfig<ColorArgs> = {
         color: {
@@ -55,9 +57,9 @@ export class ColorCommand extends ComplexCommand<SpindaDiscordBot, ColorArgs> {
                 if (args.color.length !== start + 6) {
                     throw new Error(this.errorMessage);
                 }
-                const r = parseInt(args.color.substr(start, 2), 16);
-                const g = parseInt(args.color.substr(start + 2, 2), 16);
-                const b = parseInt(args.color.substr(start + 4, 2), 16);
+                const r = parseInt(args.color.substring(start, start + 2), 16);
+                const g = parseInt(args.color.substring(start + 2, start + 4), 16);
+                const b = parseInt(args.color.substring(start + 4, 2), 16);
                 if (isNaN(r) || isNaN(g) || isNaN(b)) {
                     throw new Error(this.errorMessage);
                 }
@@ -69,15 +71,14 @@ export class ColorCommand extends ComplexCommand<SpindaDiscordBot, ColorArgs> {
         const hexString = color.hexString();
         const rgbString = color.rgb();
         embed.setColor(hexString);
-        embed.addField('Hex', hexString);
-        embed.addField('RGB', rgbString);
+        embed.addFields({ name: 'Hex', value: hexString }, { name: 'RGB', value: rgbString });
 
         // Generate image
         this.ctx.fillStyle = rgbString;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Attach generated file (.png extension is needed)
-        const attachment = new MessageAttachment(this.canvas.toBuffer(), 'thumbnail.png');
+        const attachment = new AttachmentBuilder(this.canvas.toBuffer(), { name: 'thumbnail.png' });
         embed.setThumbnail('attachment://thumbnail.png');
 
         await src.send({ embeds: [embed], files: [attachment] });

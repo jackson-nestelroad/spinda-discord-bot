@@ -1,6 +1,6 @@
-import { MessageAttachment, Snowflake } from 'discord.js';
+import { AttachmentBuilder, PermissionFlagsBits, Snowflake } from 'discord.js';
 import {
-    CommandPermissionValidatorConfig,
+    CommandPermissionOptions,
     CommandSource,
     DefaultCommandCategory,
     DefaultCommandPermission,
@@ -28,15 +28,23 @@ export const CommandCategory = {
 
 export const CommandPermission = {
     ...DefaultCommandPermission,
-    Administrator: 'Administrator',
+    Moderator: {
+        name: 'Moderator',
+        memberPermissions:
+            PermissionFlagsBits.ManageMessages |
+            PermissionFlagsBits.KickMembers |
+            PermissionFlagsBits.BanMembers |
+            PermissionFlagsBits.ModerateMembers,
+    } as CommandPermissionOptions,
+    Administrator: {
+        name: 'Administrator',
+        memberPermissions: PermissionFlagsBits.Administrator,
+    } as CommandPermissionOptions,
 } as const;
 
 export class SpindaDiscordBot extends PandaDiscordBot {
     public readonly commandCategories = Object.values(CommandCategory);
-
-    public readonly permissionValidators: CommandPermissionValidatorConfig<this> = {
-        [CommandPermission.Administrator]: params => params.src.member.permissions.has('ADMINISTRATOR'),
-    } as const;
+    public readonly commandPermissions = Object.values(CommandPermission);
 
     public async getPrefix(guildId: Snowflake): Promise<string> {
         return (await this.dataService.getGuild(guildId)).prefix;
@@ -53,11 +61,10 @@ export class SpindaDiscordBot extends PandaDiscordBot {
     public readonly spindaGeneratorService = new SpindaGeneratorService(this);
     public readonly customCommandService = new CustomCommandService(this);
 
-    public createJSONAttachment(data: object, name: string, src: CommandSource): MessageAttachment {
-        return new MessageAttachment(
-            Buffer.from(JSON.stringify(data)),
-            `${this.name.toLowerCase()}-${name}-${src.guild.id}-${new Date().valueOf()}.json`,
-        );
+    public createJSONAttachment(data: object, name: string, src: CommandSource): AttachmentBuilder {
+        return new AttachmentBuilder(Buffer.from(JSON.stringify(data)), {
+            name: `${this.name.toLowerCase()}-${name}-${src.guild.id}-${new Date().valueOf()}.json`,
+        });
     }
 
     public async initialize() {

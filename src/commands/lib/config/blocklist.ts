@@ -1,7 +1,7 @@
 import { GuildMember } from 'discord.js';
 import {
-    ArgumentsConfig,
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -126,7 +126,7 @@ export class BlocklistCommand extends NestedCommand<SpindaDiscordBot> {
     public description = "Adds or removes a member from the guild's blocklist.";
     public moreDescription = 'Blocklisted members will be unable to use bot commands in the guild.';
     public category = CommandCategory.Config;
-    public permission = CommandPermission.Administrator;
+    public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Medium;
 
     public initializeShared() {}

@@ -1,4 +1,4 @@
-import { PartialGuildMember, GuildMember, TextChannel } from 'discord.js';
+import { GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -19,15 +19,19 @@ export class GuildMemberUpdateEvent extends BaseLogEvent<'guildMemberUpdate'> {
             if (oldMember.nickname !== newMember.nickname) {
                 embed.setTitle('Nickname Updated');
                 embed.setDescription(newMember.toString());
-                embed.addField('Old', oldMember.nickname ?? 'None', true);
-                embed.addField('New', newMember.nickname ?? 'None', true);
+                embed.addFields(
+                    { name: 'Old', value: oldMember.nickname ?? 'None', inline: true },
+                    { name: 'New', value: newMember.nickname ?? 'None', inline: true },
+                );
             } else if (oldMember.roles.cache.size !== newMember.roles.cache.size) {
                 const added = newMember.roles.cache.size > oldMember.roles.cache.size;
                 const difference = newMember.roles.cache.difference(oldMember.roles.cache);
 
                 embed.setTitle(`Role ${added ? 'Added' : 'Removed'}`);
-                embed.addField('Roles', difference.map(role => role.toString()).join('\n'));
-                embed.addField('Profile', newMember.toString());
+                embed.addFields(
+                    { name: 'Roles', value: difference.map(role => role.toString()).join('\n') },
+                    { name: 'Profile', value: newMember.toString() },
+                );
             }
             // Unknown event, log nothing
             else {

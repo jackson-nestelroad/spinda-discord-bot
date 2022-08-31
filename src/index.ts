@@ -1,5 +1,6 @@
-import { Intents } from 'discord.js';
+import { GatewayIntentBits, Partials } from 'discord.js';
 import { config } from 'dotenv';
+import { EnabledCommandType } from 'panda-discord';
 
 import { SpindaDiscordBot } from './bot';
 import { CommandTypes } from './commands';
@@ -16,16 +17,20 @@ if (Environment.getEnvironment() !== 'production') {
     const bot = new SpindaDiscordBot({
         client: {
             intents: [
-                Intents.FLAGS.GUILDS,
-                Intents.FLAGS.GUILD_BANS,
-                Intents.FLAGS.GUILD_MEMBERS,
-                Intents.FLAGS.GUILD_MESSAGES,
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildBans,
+                GatewayIntentBits.GuildMembers,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.MessageContent,
+                GatewayIntentBits.DirectMessages,
             ],
+            partials: [Partials.Channel],
         },
         commands: CommandTypes,
         events: EventTypes,
         interactionEvent: InteractionCreateEvent,
         owner: Environment.getGlobalOwner(),
+        commandType: EnabledCommandType.Message | EnabledCommandType.Slash,
     });
     await bot.run(Environment.getDiscordToken());
 })().catch(error => {

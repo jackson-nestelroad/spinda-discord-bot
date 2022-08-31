@@ -1,4 +1,4 @@
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
@@ -14,6 +14,8 @@ export class ChooseCommand extends ComplexCommand<SpindaDiscordBot, ChooseArgs> 
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
+
+    public enableInDM = true;
 
     public args: ArgumentsConfig<ChooseArgs> = {
         choices: {

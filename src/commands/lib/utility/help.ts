@@ -67,18 +67,25 @@ You can find out more at the [GitHub repository](https://github.com/jackson-nest
         const customCommand = customCommands[query.toLowerCase()];
         if (customCommand) {
             embed.setTitle(this.customCommandString(customCommand, prefix));
-            embed.addField('Description', customCommand.description);
-            embed.addField('Category', CommandCategory.Custom, true);
-            embed.addField('Permission', CommandPermission[CommandPermission.Everyone], true);
-            embed.addField('Cooldown', ExpireAgeConversion.toString(bot.customCommandService.cooldownTime), true);
+            embed.addFields(
+                { name: 'Description', value: customCommand.description },
+                { name: 'Category', value: CommandCategory.Custom, inline: true },
+                { name: 'Permission', value: CommandPermission[customCommand.permission].name, inline: true },
+                {
+                    name: 'Cooldown',
+                    value: ExpireAgeConversion.toString(bot.customCommandService.cooldownTime),
+                    inline: true,
+                },
+            );
+
             if (!(customCommand.flags & CustomCommandFlag.NoContent)) {
-                embed.addField(
-                    'Arguments',
-                    `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`,
-                    true,
-                );
+                embed.addFields({
+                    name: 'Arguments',
+                    value: `\`${customCommand.contentName}\` - ${customCommand.contentDescription}`,
+                    inline: true,
+                });
             }
-            embed.addField('Code', `\`${CustomCommandEngine.addMetadata(customCommand)}\``);
+            embed.addFields({ name: 'Code', value: `\`${CustomCommandEngine.addMetadata(customCommand)}\`` });
             return true;
         }
         return false;

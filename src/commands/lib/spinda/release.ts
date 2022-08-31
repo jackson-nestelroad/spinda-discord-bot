@@ -1,7 +1,13 @@
-import { MessageActionRow, MessageAttachment, MessageButton, MessageComponentInteraction } from 'discord.js';
 import {
-    ArgumentsConfig,
+    ActionRowBuilder,
+    AttachmentBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    MessageComponentInteraction,
+} from 'discord.js';
+import {
     ArgumentType,
+    ArgumentsConfig,
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
@@ -42,18 +48,18 @@ export class ReleaseCommand extends ComplexCommand<SpindaDiscordBot, ReleaseArgs
             throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
         }
 
-        const yesButton = new MessageButton();
+        const yesButton = new ButtonBuilder();
         yesButton.setCustomId('confirm');
-        yesButton.setStyle('DANGER');
+        yesButton.setStyle(ButtonStyle.Danger);
         yesButton.setLabel('Release');
 
-        const noButton = new MessageButton();
+        const noButton = new ButtonBuilder();
         noButton.setCustomId('cancel');
-        noButton.setStyle('PRIMARY');
+        noButton.setStyle(ButtonStyle.Primary);
         noButton.setLabel('Cancel');
 
         const toRelease = await bot.spindaGeneratorService.generate(caughtSpinda[args.position - 1]);
-        const attachment = new MessageAttachment(toRelease.buffer, 'thumbnail.png');
+        const attachment = new AttachmentBuilder(toRelease.buffer, { name: 'thumbnail.png' });
 
         const confirmationEmbed = bot.createEmbed(EmbedTemplates.Bare);
         confirmationEmbed.setTitle('Release Spinda Confirmation');
@@ -63,7 +69,7 @@ export class ReleaseCommand extends ComplexCommand<SpindaDiscordBot, ReleaseArgs
         let response = await src.reply({
             embeds: [confirmationEmbed],
             files: [attachment],
-            components: [new MessageActionRow().addComponents(yesButton, noButton)],
+            components: [new ActionRowBuilder<ButtonBuilder>().addComponents(yesButton, noButton)],
         });
 
         if (!response.isMessage()) {
@@ -73,7 +79,9 @@ export class ReleaseCommand extends ComplexCommand<SpindaDiscordBot, ReleaseArgs
         const disableButtons = async () => {
             yesButton.setDisabled(true);
             noButton.setDisabled(true);
-            return await response.edit({ components: [new MessageActionRow().addComponents(yesButton, noButton)] });
+            return await response.edit({
+                components: [new ActionRowBuilder<ButtonBuilder>().addComponents(yesButton, noButton)],
+            });
         };
 
         let interaction: MessageComponentInteraction;

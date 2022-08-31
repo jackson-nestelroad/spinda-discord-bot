@@ -1,8 +1,8 @@
 import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
 import * as mathjs from 'mathjs';
-import { CommandParameters, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
+import { CommandParameters, CommandPermissionOptions, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 
-import { SpindaDiscordBot } from '../bot';
+import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { DataService } from '../data/data-service';
 import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
 
@@ -16,6 +16,7 @@ export interface CustomCommandEngineExecutionContext {
     args?: SplitArgumentArray;
     member?: GuildMember;
     options?: CustomCommandEngineOptions;
+    permission?: CommandPermissionOptions;
 }
 
 export interface UniversalCustomCommandResults {
@@ -50,14 +51,15 @@ export enum CustomCommandMetadata {
     ContentName = 'content-name',
     ContentDescription = 'content-description',
     NoContent = 'no-content',
-    NoSlash = 'no-slash',
+    Slash = 'slash',
     ContentRequired = 'content-required',
+    Permission = 'permission',
 }
 
 // Metadata functions that do not need an explicit value
 const CustomCommandMetadataBoolean = new Set([
     CustomCommandMetadata.NoContent,
-    CustomCommandMetadata.NoSlash,
+    CustomCommandMetadata.Slash,
     CustomCommandMetadata.ContentRequired,
 ]);
 
@@ -316,10 +318,13 @@ export class CustomCommandEngine {
     }
 
     public static addMetadata(data: CustomCommandData): string {
-        const code = [CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description)];
+        const code = [
+            CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Permission, data.permission),
+            CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Description, data.description),
+        ];
 
-        if (data.flags & CustomCommandFlag.DisableSlash) {
-            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.NoSlash));
+        if (data.flags & CustomCommandFlag.EnableSlash) {
+            code.push(CustomCommandEngine.makeMetadataFunction(CustomCommandMetadata.Slash));
         }
 
         if (data.flags & CustomCommandFlag.NoContent) {
@@ -346,7 +351,7 @@ export class CustomCommandEngine {
             this.limitProgress[name] = 0;
         }
         if (increase + this.limitProgress[name] > this.limits[name]) {
-            throw new Error(`${name[0].toUpperCase()}${name.substr(1)} limit (${this.limits[name]}) exceeded.`);
+            throw new Error(`${name[0].toUpperCase()}${name.substring(1)} limit (${this.limits[name]}) exceeded.`);
         }
         this.limitProgress[name] += increase;
     }
@@ -367,7 +372,7 @@ export class CustomCommandEngine {
         } else if (name === CustomCommandEngine.specialVars.argCount) {
             return this.context.args.length.toString();
         } else if (name.startsWith(CustomCommandEngine.specialVars.functionArgument)) {
-            const argNum = parseInt(name.substr(CustomCommandEngine.specialVars.functionArgument.length));
+            const argNum = parseInt(name.substring(CustomCommandEngine.specialVars.functionArgument.length));
             if (isNaN(argNum) || argNum < 1 || argNum > this.arguments.length) {
                 return CustomCommandEngine.undefinedVar;
             }
@@ -451,11 +456,11 @@ export class CustomCommandEngine {
     private async handleFunction(name: string, args: string): Promise<string | null> {
         // Variable function
         if (name.startsWith(SpecialChars.VarBegin)) {
-            const varName = name.substr(1);
+            const varName = name.substring(1);
 
             // Assignment
             if (args.startsWith(SpecialChars.VarAssign)) {
-                const rightSide = args.substr(SpecialChars.VarAssign.length);
+                const rightSide = args.substring(SpecialChars.VarAssign.length);
                 const potentialValues = rightSide.split(/\s+or\s+/).map(val => val.trim());
                 if (potentialValues.length > 1) {
                     // Pick first non-undefined value
@@ -474,7 +479,7 @@ export class CustomCommandEngine {
             }
             // Function assignment, which means no null coalescing
             if (args.startsWith(SpecialChars.FunctionAssign)) {
-                const rightSide = args.substr(SpecialChars.FunctionAssign.length);
+                const rightSide = args.substring(SpecialChars.FunctionAssign.length);
                 this.setVariable(varName, rightSide.trim());
                 return '';
             }
@@ -653,7 +658,7 @@ export class CustomCommandEngine {
                     break;
                 case 'capitalize':
                     {
-                        return args[0].toUpperCase() + args.substr(1);
+                        return args[0].toUpperCase() + args.substring(1);
                     }
                     break;
                 case 'lowercase':
@@ -669,15 +674,15 @@ export class CustomCommandEngine {
                 case 'substring':
                     {
                         const whitespace = args.match(/\s+/);
-                        let startIndex = parseInt(args.substr(0, whitespace.index));
-                        const str = args.substr(whitespace.index + whitespace.length);
+                        let startIndex = parseInt(args.substring(0, whitespace.index));
+                        const str = args.substring(whitespace.index + whitespace.length);
                         if (isNaN(startIndex)) {
                             throw new Error('Invalid value for substring.');
                         }
                         if (startIndex < 0) {
                             startIndex += str.length;
                         }
-                        return str.substr(startIndex);
+                        return str.substring(startIndex);
                     }
                     break;
                 case 'length':
@@ -783,7 +788,7 @@ export class CustomCommandEngine {
                 case 'user':
                     {
                         if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                            const attr = args.substr(1);
+                            const attr = args.substring(1);
                             if (CustomCommandEngine.userParams[attr]) {
                                 return CustomCommandEngine.userParams[attr](this.context.member.user);
                             } else if (CustomCommandEngine.memberParams[attr]) {
@@ -799,7 +804,7 @@ export class CustomCommandEngine {
                 case 'server':
                     {
                         if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                            const attr = args.substr(1);
+                            const attr = args.substring(1);
                             if (CustomCommandEngine.guildParams[attr]) {
                                 return CustomCommandEngine.guildParams[attr](this.context.params.src.guild);
                             }
@@ -812,7 +817,7 @@ export class CustomCommandEngine {
                 case 'channel':
                     {
                         if (args.startsWith(SpecialChars.AttributeSeparator)) {
-                            const attr = args.substr(1);
+                            const attr = args.substring(1);
                             if (CustomCommandEngine.channelParams[attr]) {
                                 return CustomCommandEngine.channelParams[attr](this.context.params.src.channel);
                             }

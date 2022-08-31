@@ -9,6 +9,8 @@ export class BotsnackCommand extends SimpleCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public enableInDM = true;
+
     public async run({ src }: CommandParameters<SpindaDiscordBot>) {
         await src.send('botsnack, mmmmmm...');
     }

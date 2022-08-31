@@ -1,4 +1,4 @@
-import { ArgumentsConfig, ArgumentType, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { FunUtil } from './util';
@@ -14,6 +14,8 @@ export class ConchCommand extends ComplexCommand<SpindaDiscordBot, ConchArgs> {
     public category = CommandCategory.Fun;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.High;
+
+    public enableInDM = true;
 
     public args: ArgumentsConfig<ConchArgs> = {
         question: {
