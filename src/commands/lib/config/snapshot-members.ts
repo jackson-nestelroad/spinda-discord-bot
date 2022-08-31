@@ -1,6 +1,15 @@
 import axios from 'axios';
-import { Snowflake } from 'discord.js';
-import { CommandParameters, EmbedTemplates, NestedCommand, SimpleCommand, StandardCooldowns } from 'panda-discord';
+import { Attachment, Snowflake } from 'discord.js';
+import {
+    ArgumentType,
+    ArgumentsConfig,
+    CommandParameters,
+    ComplexCommand,
+    EmbedTemplates,
+    NestedCommand,
+    SimpleCommand,
+    StandardCooldowns,
+} from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 
@@ -33,7 +42,11 @@ class SaveSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     }
 }
 
-class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
+interface RestoreFromSnapshotArgs {
+    snapshot: Attachment;
+}
+
+class RestoreFromSnapshotSubCommand extends ComplexCommand<SpindaDiscordBot, RestoreFromSnapshotArgs> {
     public name = 'restore';
     public description = 'Restores all guild members to the state described by an attached snapshot file.';
     public moreDescription = 'Attach the snapshot to the command message.';
@@ -41,19 +54,16 @@ class RestoreFromSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Inherit;
     public cooldown = { minutes: 5 };
 
-    public async run({ bot, src, guildId }: CommandParameters) {
-        if (!src.isMessage()) {
-            throw new Error(`This command must be run as a chat command.`);
-        }
+    public args: ArgumentsConfig<RestoreFromSnapshotArgs> = {
+        snapshot: {
+            description: 'Snapshot created from `/snapshot-members save`.',
+            type: ArgumentType.Attachment,
+            required: true,
+        },
+    };
 
-        const msg = src.message;
-        if (msg.attachments.size === 0) {
-            throw new Error(`Missing snapshot JSON file.`);
-        }
-
-        const snapshotAttachment = msg.attachments.first();
-
-        const response = await axios.get(snapshotAttachment.url, { transformResponse: null });
+    public async run({ bot, src, guildId }: CommandParameters, args: RestoreFromSnapshotArgs) {
+        const response = await axios.get(args.snapshot.url, { transformResponse: null });
 
         let guildSnapshot: any;
         try {
@@ -142,8 +152,6 @@ export class SnapshotMembersCommand extends NestedCommand<SpindaDiscordBot> {
     public description = 'Creates or restores a snaphot of the roles and nicknames of all guild members.';
     public category = CommandCategory.Config;
     public permission = CommandPermission.Moderator;
-
-    public disableSlash = true;
 
     public initializeShared() {}
 
