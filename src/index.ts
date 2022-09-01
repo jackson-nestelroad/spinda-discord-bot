@@ -1,12 +1,12 @@
 import { GatewayIntentBits, Partials } from 'discord.js';
-import { config } from 'dotenv';
-import { EnabledCommandType } from 'panda-discord';
 
-import { SpindaDiscordBot } from './bot';
 import { CommandTypes } from './commands';
+import { EnabledCommandType } from 'panda-discord';
 import { Environment } from './data/environment';
 import { EventTypes } from './events';
 import { InteractionCreateEvent } from './events/interaction-create';
+import { SpindaDiscordBot } from './bot';
+import { config } from 'dotenv';
 
 // Use local .env file
 if (Environment.getEnvironment() !== 'production') {
@@ -24,6 +24,7 @@ if (Environment.getEnvironment() !== 'production') {
                 GatewayIntentBits.MessageContent,
                 GatewayIntentBits.DirectMessages,
             ],
+            // For commands that run in DMs
             partials: [Partials.Channel],
         },
         commands: CommandTypes,
