@@ -250,7 +250,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                 // A bit of hack to make sure today's generation does not last
                 // more than a day. If the bot is preempted and restarted, then
                 // this counter resets
-                setTimeout(() => {
+                setInterval(() => {
                     this.todaysGen = undefined;
                 }, 1000 * 60 * 60 * 24);
             }
