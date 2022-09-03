@@ -44,6 +44,9 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
         if (this.bot.commands.has(cmd)) {
             try {
                 const command = this.bot.commands.get(cmd);
+                if (command.disableChat) {
+                    return;
+                }
                 if (this.bot.validate(params, command)) {
                     await command.executeChat(params);
                 }
