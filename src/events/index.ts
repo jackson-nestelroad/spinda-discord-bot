@@ -1,4 +1,4 @@
-import { DefaultReadyEvent, EventTypeArray } from 'panda-discord';
+import { DefaultReadyEvent, DefaultSharedResumeEvent, EventTypeArray } from 'panda-discord';
 
 import { GuildBanAddEvent } from './guild-ban-add';
 import { GuildBanRemoveEvent } from './guild-ban-remove';
@@ -12,6 +12,7 @@ import { MessageUpdateEvent } from './message-update';
 
 export const EventTypes: EventTypeArray = [
     DefaultReadyEvent,
+    DefaultSharedResumeEvent,
 
     MessageCreateEvent,
 
