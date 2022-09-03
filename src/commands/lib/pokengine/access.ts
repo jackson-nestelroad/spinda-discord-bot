@@ -1,174 +1,171 @@
-import axios, { AxiosResponse } from 'axios';
-import * as cheerio from 'cheerio';
-import { GuildTextBasedChannel, Role } from 'discord.js';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import {
-    ArgumentType,
-    ArgumentsConfig,
-    CommandParameters,
-    ComplexCommand,
-    EmbedTemplates,
-    StandardCooldowns,
-} from 'panda-discord';
+    ActionRowBuilder,
+    ModalBuilder,
+    ModalSubmitInteraction,
+    Role,
+    TextInputBuilder,
+    TextInputStyle,
+} from 'discord.js';
+import { CommandParameters, EmbedTemplates, SimpleCommand, StandardCooldowns } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { Environment } from '../../../data/environment';
 
-interface AccessArgs {
-    username?: string;
-}
-
-export class AccessCommand extends ComplexCommand<SpindaDiscordBot, AccessArgs> {
+export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
     private readonly serverName = 'Official Pok\u{00E9}ngine Discord Server';
-    private readonly site = 'http://pokengine.org';
-    private readonly playerPath = '/players/';
+    private readonly site = 'https://pokengine.org';
     private readonly successReact = '\u{2705}';
-    private readonly nicknameFailMsg = 'Your nickname could not be updated. Please contact a staff member.';
+    private readonly nicknameFailMsg =
+        'Your nickname in the Discord server could not be updated. Please contact a staff member to change your nickname.';
 
     private accessRole: Role = null;
-    private accessChannel: GuildTextBasedChannel = null;
 
     public name = 'access';
-    public description = `Requests access to the ${this.serverName}.`;
+    public description = `Requests access to the ${this.serverName} and the Pok\u{00E9}ngine MMO.`;
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Low;
 
+    public disableChat = true;
+    public disableInCustomCommand = true;
     public slashGuildId = Environment.Pokengine.getGuildId();
-    public suppressArgumentsError = true;
 
-    public args: ArgumentsConfig<AccessArgs> = {
-        username: {
-            description: 'Pok\u{00E9}ngine username.',
-            type: ArgumentType.RestOfContent,
-            required: true,
-        },
-    };
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>) {
+        if (!src.isInteraction()) {
+            return;
+        }
 
-    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: AccessArgs) {
-        if (src.guild.id !== Environment.Pokengine.getGuildId()) {
-            const embed = bot.createEmbed();
-            embed.setDescription(
-                `Access to the ${this.serverName} can only be granted in that server. Sign up for Pok\u00E9ngine and the Discord server at ${this.site}.`,
-            );
-            await src.send({ embeds: [embed] });
-        } else {
-            // Make sure the role we are granting exists
+        // Make sure the role we are granting exists
+        if (!this.accessRole) {
+            const id = Environment.Pokengine.getAccessRoleId();
+            this.accessRole = src.guild.roles.cache.find(role => role.id === id);
             if (!this.accessRole) {
-                const id = Environment.Pokengine.getAccessRoleId();
-                this.accessRole = src.guild.roles.cache.find(role => role.id === id);
-                if (!this.accessRole) {
-                    throw new Error(`Role id \`${id}\` does not exist in this server.`);
-                }
-            }
-            // Make sure access channel exists and is a text channel
-            if (!this.accessChannel) {
-                const id = Environment.Pokengine.getAccessChannelId();
-                this.accessChannel = src.guild.channels.cache.find(
-                    channel => channel.id === id,
-                ) as GuildTextBasedChannel;
-                if (!this.accessChannel) {
-                    throw new Error(`Channel id \`${id}\` does not exist in this server.`);
-                }
-                if (!this.accessChannel.isTextBased() || this.accessChannel.isDMBased()) {
-                    throw new Error(`Access channel must be a text channel.`);
-                }
-            }
-
-            // Ignore members that already have access
-            if (src.member.roles.cache.has(this.accessRole.id)) {
-                if (src.isInteraction()) {
-                    const embed = bot.createEmbed(EmbedTemplates.Error);
-                    embed.setDescription(`You already have access!`);
-                    await src.reply({ embeds: [embed], ephemeral: true });
-                } else {
-                    return;
-                }
-            } else {
-                if (src.channel.id !== this.accessChannel.id) {
-                    await src.reply({ content: `Please go to ${this.accessChannel.toString()}.`, ephemeral: true });
-                } else if (!args.username) {
-                    await src.reply({ content: 'Please provide your Pok\u00E9ngine username.', ephemeral: true });
-                } else {
-                    await src.deferReply();
-
-                    const username = args.username;
-                    const url = this.site + this.playerPath + username;
-                    let response: AxiosResponse;
-                    try {
-                        response = await axios.request({
-                            url: url,
-                            method: 'get',
-                            headers: {
-                                Cookie: Environment.Pokengine.getCookie(),
-                            },
-                        });
-                    } catch (error) {
-                        throw new Error(
-                            `Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`,
-                        );
-                    }
-
-                    const profile = cheerio.load(response.data)('.content-inner.profile');
-                    const siteName = profile.find('.scroll').eq(0).find('b').text();
-                    const betaNode = profile.find('.flavor.other').eq(1).find('a').eq(0);
-                    if (betaNode.text() === 'take it') {
-                        throw new Error(
-                            `${siteName} already has access. If you already have MMO access or are rejoining the server, please contact a staff member for access.`,
-                        );
-                    }
-
-                    // Update guild member
-                    let newMember = await src.member.roles.add(this.accessRole);
-
-                    let nicknameFailed = false;
-                    // Don't fail the operation if setting the nickname fails
-                    try {
-                        newMember = await newMember.setNickname(siteName);
-                    } catch (error) {
-                        nicknameFailed = true;
-                    }
-
-                    // Submit update to site
-                    try {
-                        await axios.request({
-                            url: url + betaNode.attr('href'),
-                            method: 'get',
-                            headers: {
-                                Cookie: Environment.Pokengine.getCookie(),
-                            },
-                        });
-                    } catch (error) {
-                        throw new Error(`Failed to give beta access to ${username}. Please contact a staff member.`);
-                    }
-
-                    const embed = bot.createEmbed();
-                    embed.setTitle(this.serverName);
-                    embed.setDescription(
-                        `You have been granted access to ${this.serverName}!\nYou may access all channels and our browser-based MMO.\n[Click here to access the MMO!](${this.site}/mmo)`,
-                    );
-
-                    if (nicknameFailed) {
-                        await src.reply(this.nicknameFailMsg);
-                    } else if (src.isMessage()) {
-                        await src.message.react(this.successReact);
-                    } else {
-                        await src.reply(this.successReact);
-                    }
-
-                    // We do this after so that there is at least one message of confirmation in the chat
-                    // that can be seen by other users
-
-                    // Try to send a DM
-                    // If it fails, add a reaction to signal the failure
-                    try {
-                        await src.sendDirect({ embeds: [embed] });
-                    } catch (error) {
-                        if (src.isMessage()) {
-                            await src.message.react('\u{1F614}');
-                        }
-                    }
-                }
+                throw new Error(`Role id \`${id}\` does not exist in this server.`);
             }
         }
+
+        // Ignore members that already have access
+        if (src.member.roles.cache.has(this.accessRole.id)) {
+            const embed = bot.createEmbed(EmbedTemplates.Error);
+            embed.setDescription(`You already have access!`);
+            await src.reply({ embeds: [embed], ephemeral: true });
+            return;
+        }
+
+        const modal = new ModalBuilder().setCustomId('accessModal').setTitle(`${this.serverName} Access`);
+
+        modal.addComponents(
+            new ActionRowBuilder<TextInputBuilder>().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('usernameInput')
+                    .setLabel('Pok\u{00E9}ngine Username')
+                    .setStyle(TextInputStyle.Short)
+                    .setRequired(),
+            ),
+            new ActionRowBuilder<TextInputBuilder>().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('passwordInput')
+                    .setLabel('Pok\u{00E9}ngine Password')
+                    .setStyle(TextInputStyle.Short)
+                    .setRequired(),
+            ),
+        );
+
+        await src.interaction.showModal(modal);
+
+        let modalSubmit: ModalSubmitInteraction;
+        try {
+            modalSubmit = await src.interaction.awaitModalSubmit({
+                filter: interaction => {
+                    return interaction.customId === 'accessModal' && interaction.user.id === src.author.id;
+                },
+                time: 5 * 60 * 1000,
+            });
+        } catch (error) {
+            throw new Error('You did not respond in time. Please try again.');
+        }
+
+        await modalSubmit.deferReply({ ephemeral: true });
+
+        await bot.sendErrorsToInteraction(modalSubmit, async () => {
+            const username = modalSubmit.fields.getTextInputValue('usernameInput');
+            const password = modalSubmit.fields.getTextInputValue('passwordInput');
+
+            let response: AxiosResponse;
+            try {
+                response = await axios.request({
+                    url: Environment.Pokengine.getSecretAccessLink(),
+                    method: 'post',
+                    headers: {
+                        Cookie: Environment.Pokengine.getCookie(),
+                    },
+                    data: {
+                        username,
+                        password,
+                    },
+                });
+            } catch (error) {
+                if (error.response) {
+                    const axiosError = error as AxiosError;
+                    switch (axiosError.response.status) {
+                        case 401:
+                            throw new Error('Invalid password!');
+                        case 404:
+                            throw new Error(
+                                `Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`,
+                            );
+                        default:
+                            throw new Error(
+                                `An unknown error occurred (status = ${axiosError.response.status}). Please contact a staff member for access.`,
+                            );
+                    }
+                } else {
+                    throw new Error('An unknown error occurred. Please contact a staff member for access.');
+                }
+            }
+
+            if (response.status !== 200) {
+                throw new Error(
+                    `Unexpected HTTP response code ${response.status}. Please contact a staff member for access.`,
+                );
+            }
+
+            const siteName = response.data as string;
+
+            // Update guild member
+            let newMember = await src.member.roles.add(this.accessRole);
+
+            let nicknameFailed = false;
+            // Don't fail the operation if setting the nickname fails
+            try {
+                newMember = await newMember.setNickname(siteName);
+            } catch (error) {
+                nicknameFailed = true;
+            }
+
+            const embed = bot.createEmbed();
+            embed.setTitle(this.serverName);
+            const description = [
+                `You have been granted access to ${this.serverName}!`,
+                'You may access all channels and our browser-based MMO.',
+                `[Click here to access the MMO!](${this.site}/mmo)`,
+            ];
+
+            if (nicknameFailed) {
+                description.push(this.nicknameFailMsg);
+            }
+
+            embed.setDescription(description.join('\n'));
+
+            await modalSubmit.followUp({ content: this.successReact, ephemeral: true });
+
+            // Try to send the embed in a direct message first.
+            try {
+                await modalSubmit.user.send({ embeds: [embed] });
+            } catch (error) {
+                await src.reply({ embeds: [embed], ephemeral: true });
+            }
+        });
     }
 }

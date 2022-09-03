@@ -26,12 +26,16 @@ export namespace Environment {
             return process.env.POKENGINE_GUILD_ID as Snowflake;
         }
 
-        export function getAccessChannelId(): Snowflake {
-            return process.env.POKENGINE_ACCESS_CHANNEL_ID as Snowflake;
-        }
-
         export function getAccessRoleId(): Snowflake {
             return process.env.POKENGINE_ACCESS_ROLE_ID as Snowflake;
+        }
+
+        export function getSecretAccessLink(): string {
+            return process.env.POKENGINE_SECRET_ACCESS_LINK;
+        }
+
+        export function getSecretPasswordLink(): string {
+            return process.env.POKENGINE_SECRET_PASSWORD_LINK;
         }
     }
 }
