@@ -10,6 +10,7 @@ import {
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { LogOptionBit } from '../../../data/model/guild';
+import { CommandOptions, OptionNameToTypes, OptionValueType } from '../../../util/command-options';
 
 enum LogCommandOption {
     Channel = 'channel',
@@ -18,12 +19,10 @@ enum LogCommandOption {
     Reset = 'reset',
 }
 
-enum LogOptionType {
-    Channel = 'channel',
-    Boolean = 'boolean',
-    Events = 'event1, event2, ...',
-    None = 'none',
-}
+const LogCommandOptionType = {
+    ...OptionValueType,
+    Events: 'event1, event2, ...',
+};
 
 const LogEvents: { [name: string]: LogOptionBit } = {
     'member-joined': LogOptionBit.MemberJoined,
@@ -36,24 +35,22 @@ const LogEvents: { [name: string]: LogOptionBit } = {
     'bulk-deleted': LogOptionBit.BulkMessageDeletion,
 } as const;
 
-type LogOptionMap = { [name: string]: LogOptionType[] };
-
 interface LogsArgs {
     options?: string;
 }
 
 export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
-    private readonly options: LogOptionMap = {
-        [LogCommandOption.Channel]: [LogOptionType.Channel],
-        [LogCommandOption.Enable]: [LogOptionType.None, LogOptionType.Events],
-        [LogCommandOption.Disable]: [LogOptionType.None, LogOptionType.Events],
-        [LogCommandOption.Reset]: [LogOptionType.None],
+    private readonly options: OptionNameToTypes = {
+        [LogCommandOption.Channel]: [LogCommandOptionType.Channel],
+        [LogCommandOption.Enable]: [LogCommandOptionType.None, LogCommandOptionType.Events],
+        [LogCommandOption.Disable]: [LogCommandOptionType.None, LogCommandOptionType.Events],
+        [LogCommandOption.Reset]: [LogCommandOptionType.None],
     };
 
     public name = 'logs';
     public description = "Manages the guild's logging configuration.";
     public moreDescription = [
-        `Available options: ${this.formatOptions()}`,
+        `Available options: ${CommandOptions.formatOptions(this.options)}`,
         `Available events: ${this.formatBitOptions()}`,
     ];
     public category = CommandCategory.Config;
@@ -67,22 +64,6 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
             required: false,
         },
     };
-
-    private formatOptions(): string {
-        return Object.entries(this.options)
-            .map(([key, val]) => {
-                const ways = [];
-                for (const type of val) {
-                    if (type === LogOptionType.None) {
-                        ways.push(`\`${key};\``);
-                    } else {
-                        ways.push(`\`${key} = [${type}];\``);
-                    }
-                }
-                return ways.join('\n');
-            })
-            .join('\n');
-    }
 
     private formatBitOptions(): string {
         return Object.keys(LogEvents)
@@ -110,26 +91,12 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
             embed.setDescription(fields.join('\n'));
             await src.send({ embeds: [embed] });
         } else {
-            const changes = args.options.split(';').map(val => val.trim());
-            for (const change of changes) {
-                const split = change.split('=').map(val => val.trim());
-
-                if (split.length > 2 || split.length === 0) {
-                    throw new Error(`Invalid format: \`${change}\``);
-                }
-
-                const option = split[0];
-                const value = split.length === 2 ? split[1] : null;
-                if (!option) {
-                    break;
-                }
+            const flags = CommandOptions.parseOptions(args.options, this.options);
+            for (const [option, value] of flags) {
                 if (!this.options[option]) {
                     throw new Error(
-                        `Invalid option \`${option}\`. Use \`${guild.prefix}help logs\` to see list of options.`,
+                        `Invalid flag \`${flags}\`. Use \`${guild.prefix}help logs\` to see list of options.`,
                     );
-                }
-                if (!value && !this.options[option].includes(LogOptionType.None)) {
-                    throw new Error(`Invalid format: \`${change}\``);
                 }
 
                 switch (option as LogCommandOption) {
