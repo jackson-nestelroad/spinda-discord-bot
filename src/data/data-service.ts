@@ -10,6 +10,7 @@ import { BlocklistEntry } from './model/blocklist';
 import { CaughtSpinda, CaughtSpindaAttributes } from './model/caught-spinda';
 import { CustomCommand, CustomCommandData } from './model/custom-command';
 import { Guild, GuildAttributes } from './model/guild';
+import { Warning, WarningAttributes } from './model/warning';
 
 export class DataService extends BaseService<SpindaDiscordBot> {
     public static readonly defaultPrefix: string = '>';
@@ -19,12 +20,14 @@ export class DataService extends BaseService<SpindaDiscordBot> {
     private customCommands = CustomCommand;
     private blocklist = BlocklistEntry;
     private caughtSpindas = CaughtSpinda;
+    private warnings = Warning;
 
     private cache = {
         guilds: new Map<Snowflake, GuildAttributes>(),
         customCommands: new Map<string, Dictionary<CustomCommandData>>(),
         blocklist: new Map<Snowflake, Set<Snowflake>>(),
         caughtSpindas: new Map<Snowflake, Array<CaughtSpindaAttributes>>(),
+        // Warnings are not cached
     } as const;
 
     constructor(bot: SpindaDiscordBot) {
@@ -57,6 +60,7 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         this.customCommands.initialize(this.sequelize);
         this.blocklist.initialize(this.sequelize);
         this.caughtSpindas.initialize(this.sequelize);
+        this.warnings.initialize(this.sequelize);
 
         // TODO: Set up migrations
         await this.sequelize.sync({ alter: true });
@@ -86,6 +90,10 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             this.cache.guilds.set(id, model.get());
         }
         return this.cache.guilds.get(id);
+    }
+
+    public hasGuildInCache(id: Snowflake): boolean {
+        return this.cache.guilds.has(id);
     }
 
     public getCachedGuild(id: Snowflake): GuildAttributes {
@@ -332,5 +340,36 @@ export class DataService extends BaseService<SpindaDiscordBot> {
             collection = this.cache.caughtSpindas.get(userId);
             collection[pos] = CaughtSpinda.deserializeAttributes(model.get());
         }
+    }
+
+    public async getWarnings(guildId: Snowflake, userId: Snowflake): Promise<WarningAttributes[]> {
+        const warnings = await this.warnings.findAll({ where: { guildId, userId }, order: [['id', 'ASC']] });
+        return warnings.map(warning => warning.get());
+    }
+
+    public async countWarnings(guildId: Snowflake, userId: Snowflake): Promise<number> {
+        return await this.warnings.count({ where: { guildId, userId } });
+    }
+
+    public async getWarning(id: number, guildId: Snowflake): Promise<WarningAttributes> {
+        return (await this.warnings.findOne({ where: { id, guildId } }))?.get();
+    }
+
+    public async deleteWarning(id: number, guildId: Snowflake): Promise<boolean> {
+        const deleted = await this.warnings.destroy({ where: { id, guildId } });
+        return deleted > 0;
+    }
+
+    public async clearWarnings(guildId: Snowflake, userId: Snowflake): Promise<number> {
+        return await this.warnings.destroy({ where: { guildId, userId } });
+    }
+
+    public async addWarning(
+        guildId: Snowflake,
+        userId: Snowflake,
+        issuerId: Snowflake,
+        reason: string,
+    ): Promise<WarningAttributes> {
+        return (await this.warnings.create({ guildId, userId, issuerId, reason, date: new Date() }))?.get();
     }
 }

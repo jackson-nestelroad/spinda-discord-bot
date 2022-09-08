@@ -1,4 +1,5 @@
 import { GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
+import moment from 'moment';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -32,9 +33,25 @@ export class GuildMemberUpdateEvent extends BaseLogEvent<'guildMemberUpdate'> {
                     { name: 'Roles', value: difference.map(role => role.toString()).join('\n') },
                     { name: 'Profile', value: newMember.toString() },
                 );
-            }
-            // Unknown event, log nothing
-            else {
+            } else if (oldMember.communicationDisabledUntil !== newMember.communicationDisabledUntil) {
+                embed.setDescription(newMember.toString());
+                if (newMember.communicationDisabledUntil) {
+                    embed.setTitle('Timeout Added');
+                    embed.addFields(
+                        { name: 'Ends At', value: newMember.communicationDisabledUntil.toLocaleString(), inline: true },
+                        {
+                            name: 'Ends In',
+                            value: moment
+                                .duration(newMember.communicationDisabledUntil.valueOf() - new Date().valueOf())
+                                .toISOString(),
+                            inline: true,
+                        },
+                    );
+                } else {
+                    embed.setTitle('Timeout Removed');
+                }
+            } else {
+                // Unknown event, log nothing
                 return;
             }
 

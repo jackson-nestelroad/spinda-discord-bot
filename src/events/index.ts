@@ -9,6 +9,7 @@ import { MessageCreateEvent } from './message-create';
 import { MessageDeleteEvent } from './message-delete';
 import { MessageDeleteBulkEvent } from './message-delete-bulk';
 import { MessageUpdateEvent } from './message-update';
+import { WarningEvent } from './warning';
 
 export const EventTypes: EventTypeArray = [
     DefaultReadyEvent,
@@ -25,4 +26,6 @@ export const EventTypes: EventTypeArray = [
     MessageDeleteBulkEvent,
     MessageDeleteEvent,
     MessageUpdateEvent,
+
+    WarningEvent,
 ];

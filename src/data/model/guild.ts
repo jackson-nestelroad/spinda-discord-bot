@@ -12,6 +12,7 @@ export enum LogOptionBit {
     MessageEdited = 1 << 6,
     MessageDeleted = 1 << 7,
     BulkMessageDeletion = 1 << 8,
+    Warning = 1 << 9,
 }
 
 export interface GuildAttributes {
@@ -19,6 +20,9 @@ export interface GuildAttributes {
     prefix: string;
     logChannelId?: Snowflake;
     logOptions: number;
+    timeoutPerWarning?: number;
+    warnsToBeginTimeouts?: number;
+    warnsToBan?: number;
 }
 
 interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
@@ -28,6 +32,7 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
     public prefix!: string;
     public logChannelId?: Snowflake;
     public logOptions: number;
+    public warnsToBan?: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -69,6 +74,21 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                     type: DataTypes.INTEGER,
                     allowNull: false,
                     defaultValue: 0,
+                },
+                timeoutPerWarning: {
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                warnsToBeginTimeouts: {
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                warnsToBan: {
+                    type: DataTypes.INTEGER,
+                    allowNull: true,
+                    defaultValue: 4,
                 },
             },
             {

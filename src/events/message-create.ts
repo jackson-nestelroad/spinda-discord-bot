@@ -98,7 +98,9 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
             return;
         }
 
-        const guild = await this.bot.dataService.getGuild(msg.guild.id);
+        const guild = this.bot.dataService.hasGuildInCache(msg.guild.id)
+            ? this.bot.dataService.getCachedGuild(msg.guild.id)
+            : await this.bot.dataService.getGuild(msg.guild.id);
         const prefix = guild.prefix;
 
         if (!msg.content.startsWith(prefix)) {

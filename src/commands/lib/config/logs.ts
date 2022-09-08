@@ -21,7 +21,7 @@ enum LogCommandOption {
 
 const LogCommandOptionType = {
     ...OptionValueType,
-    Events: 'event1, event2, ...',
+    Events: '[event1, event2, ...]',
 };
 
 const LogEvents: { [name: string]: LogOptionBit } = {
@@ -33,6 +33,7 @@ const LogEvents: { [name: string]: LogOptionBit } = {
     'message-edited': LogOptionBit.MessageEdited,
     'message-deleted': LogOptionBit.MessageDeleted,
     'bulk-deleted': LogOptionBit.BulkMessageDeletion,
+    warning: LogOptionBit.Warning,
 } as const;
 
 interface LogsArgs {
@@ -53,7 +54,7 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
         `Available options: ${CommandOptions.formatOptions(this.options)}`,
         `Available events: ${this.formatBitOptions()}`,
     ];
-    public category = CommandCategory.Config;
+    public category = CommandCategory.Moderation;
     public permission = CommandPermission.Administrator;
     public cooldown = StandardCooldowns.Medium;
 
@@ -76,7 +77,7 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
         if (!args.options) {
             const embed = bot.createEmbed();
             embed.setTitle(`Log Configuration for ${src.guild.name}`);
-            let fields = [];
+            const fields = [];
             fields.push(
                 `${LogCommandOption.Channel} = ${
                     guild.logChannelId
@@ -91,11 +92,11 @@ export class LogsCommand extends ComplexCommand<SpindaDiscordBot, LogsArgs> {
             embed.setDescription(fields.join('\n'));
             await src.send({ embeds: [embed] });
         } else {
-            const flags = CommandOptions.parseOptions(args.options, this.options);
-            for (const [option, value] of flags) {
+            const options = CommandOptions.parseOptions(args.options, this.options);
+            for (const [option, value] of options) {
                 if (!this.options[option]) {
                     throw new Error(
-                        `Invalid flag \`${flags}\`. Use \`${guild.prefix}help logs\` to see list of options.`,
+                        `Invalid option \`${option}\`. Use \`${guild.prefix}help logs\` to see list of options.`,
                     );
                 }
 

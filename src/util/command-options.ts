@@ -1,9 +1,9 @@
 export const OptionValueType = {
     None: 'none',
-    Boolean: 'boolean',
-    Number: 'number',
-    String: 'string',
-    Channel: 'channel',
+    Boolean: '[boolean]',
+    Number: '[number]',
+    String: '[string]',
+    Channel: '[channel]',
 };
 
 export type OptionNameToTypes = { [name: string]: string[] };
@@ -17,7 +17,7 @@ export module CommandOptions {
                     if (type === OptionValueType.None) {
                         ways.push(`\`${key};\``);
                     } else {
-                        ways.push(`\`${key} = [${type}];\``);
+                        ways.push(`\`${key} = ${type};\``);
                     }
                 }
                 return ways.join('\n');

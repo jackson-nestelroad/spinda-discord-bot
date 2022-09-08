@@ -19,6 +19,7 @@ import { ResourceService } from './services/resources';
 export const CommandCategory = {
     ...DefaultCommandCategory,
     Config: 'Config',
+    Moderation: 'Moderation',
     Fun: 'Fun',
     Spinda: 'Spinda',
     External: 'External',

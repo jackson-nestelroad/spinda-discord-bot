@@ -31,6 +31,10 @@ export class InteractionCreateEvent extends BaseEvent<'interactionCreate', Spind
             if (blocklist.has(interaction.user.id)) {
                 return;
             }
+
+            if (!this.bot.dataService.hasGuildInCache(interaction.guildId)) {
+                await this.bot.dataService.getGuild(interaction.guildId);
+            }
         }
 
         // Global command

@@ -1,10 +1,10 @@
-import { ClientEvents, EmbedBuilder, Snowflake, TextBasedChannel, User } from 'discord.js';
-import { BaseEvent } from 'panda-discord';
+import { EmbedBuilder, Snowflake, TextBasedChannel, User } from 'discord.js';
+import { BaseEvent, ExtendableClientEvents } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
 import { LogOptionBit } from '../data/model/guild';
 
-export abstract class BaseLogEvent<K extends keyof ClientEvents> extends BaseEvent<K, SpindaDiscordBot> {
+export abstract class BaseLogEvent<K extends keyof ExtendableClientEvents> extends BaseEvent<K, SpindaDiscordBot> {
     constructor(bot: SpindaDiscordBot, eventName: K, private logEvent: LogOptionBit) {
         super(bot, eventName);
     }
