@@ -125,7 +125,7 @@ export class MemberMessagesLeftSubCommand extends ComplexCommand<SpindaDiscordBo
             guild.memberLeftCode = code;
 
             if (args.test) {
-                await bot.customCommandService.run(guild.memberJoinedCode, {
+                await bot.customCommandService.run(guild.memberLeftCode, {
                     params: {
                         bot,
                         src,
