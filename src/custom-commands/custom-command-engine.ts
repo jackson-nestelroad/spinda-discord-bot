@@ -156,13 +156,10 @@ export class CustomCommandEngine {
         discriminator: user => user.discriminator,
         avatar: user => user.avatar,
         mention: user => user.toString(),
-        createdAt: user => user.createdAt.toLocaleDateString(),
     };
 
     private static readonly memberParams: ReadonlyDictionary<(member: GuildMember) => string> = {
-        status: member => member.presence.status,
         nickname: member => member.displayName,
-        joinedAt: member => member.joinedAt.toLocaleDateString(),
     };
 
     private static readonly guildParams: ReadonlyDictionary<(guild: Guild) => string> = {

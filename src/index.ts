@@ -24,8 +24,12 @@ if (Environment.getEnvironment() !== 'production') {
                 GatewayIntentBits.MessageContent,
                 GatewayIntentBits.DirectMessages,
             ],
-            // For commands that run in DMs
-            partials: [Partials.Channel],
+            partials: [
+                // For commands that run in DMs
+                Partials.Channel,
+                // For non-cached members who leave a guild
+                Partials.GuildMember,
+            ],
         },
         commands: CommandTypes,
         events: EventTypes,

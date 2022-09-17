@@ -12,7 +12,7 @@ export enum LogOptionBit {
     MessageEdited = 1 << 6,
     MessageDeleted = 1 << 7,
     BulkMessageDeletion = 1 << 8,
-    Warning = 1 << 9,
+    MemberWarned = 1 << 9,
 }
 
 export interface GuildAttributes {
@@ -20,9 +20,12 @@ export interface GuildAttributes {
     prefix: string;
     logChannelId?: Snowflake;
     logOptions: number;
-    timeoutPerWarning?: number;
+    timeoutSequence?: string;
     warnsToBeginTimeouts?: number;
     warnsToBan?: number;
+    memberJoinedCode?: string;
+    memberLeftCode?: string;
+    memberMessagesChannelId?: Snowflake;
 }
 
 interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
@@ -32,7 +35,11 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
     public prefix!: string;
     public logChannelId?: Snowflake;
     public logOptions: number;
+    public timeoutSequence?: string;
+    public warnsToBeginTimeouts?: number;
     public warnsToBan?: number;
+    public memberJoinedCode?: string;
+    public memberLeftCode?: string;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -75,8 +82,8 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                     allowNull: false,
                     defaultValue: 0,
                 },
-                timeoutPerWarning: {
-                    type: DataTypes.INTEGER,
+                timeoutSequence: {
+                    type: DataTypes.STRING,
                     allowNull: true,
                     defaultValue: null,
                 },
@@ -89,6 +96,21 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                     type: DataTypes.INTEGER,
                     allowNull: true,
                     defaultValue: 4,
+                },
+                memberJoinedCode: {
+                    type: DataTypes.TEXT,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                memberLeftCode: {
+                    type: DataTypes.TEXT,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                memberMessagesChannelId: {
+                    type: DataTypes.STRING,
+                    allowNull: true,
+                    defaultValue: null,
                 },
             },
             {

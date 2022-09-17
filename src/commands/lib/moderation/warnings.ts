@@ -1,4 +1,5 @@
 import { GuildMember } from 'discord.js';
+import moment from 'moment';
 import {
     ArgumentType,
     ArgumentsConfig,
@@ -13,13 +14,14 @@ import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../b
 import { CommandOptions, OptionNameToTypes, OptionValueType } from '../../../util/command-options';
 
 enum WarningConfigOption {
-    TimeoutPerWarning = 'timeout-length-hours',
+    TimeoutSequence = 'timeout-sequence',
     WarningsToTimeout = 'begin-timeouts-at',
     WarningsToBan = 'ban-at',
 }
 
 const WarningConfigOptionType = {
     ...OptionValueType,
+    TimeoutSequence: '1 hour,6 hours,7 days,...',
     Unset: 'unset',
 };
 
@@ -28,8 +30,10 @@ interface WarningConfigArgs {
 }
 
 export class WarningConfigSubCommand extends ComplexCommand<SpindaDiscordBot, WarningConfigArgs> {
+    static readonly timeoutSequenceSeparator: string = ',';
+
     private readonly options: OptionNameToTypes = {
-        [WarningConfigOption.TimeoutPerWarning]: [WarningConfigOptionType.Number, WarningConfigOptionType.Unset],
+        [WarningConfigOption.TimeoutSequence]: [WarningConfigOptionType.TimeoutSequence, WarningConfigOptionType.Unset],
         [WarningConfigOption.WarningsToTimeout]: [WarningConfigOptionType.Number, WarningConfigOptionType.Unset],
         [WarningConfigOption.WarningsToBan]: [WarningConfigOptionType.Number, WarningConfigOptionType.Unset],
     };
@@ -40,8 +44,8 @@ export class WarningConfigSubCommand extends ComplexCommand<SpindaDiscordBot, Wa
         `Available options: ${CommandOptions.formatOptions(this.options)}`,
         'When a user receives a warning, these options are checked as follows:',
         `If the user has received at least the number of warnings indicated by \`${WarningConfigOption.WarningsToBan}\`, the user is permanently banned.`,
-        `If the user has received at least the number of warnings indicated by \`${WarningConfigOption.WarningsToTimeout}\` the user is timed out for \`${WarningConfigOption.TimeoutPerWarning}\` hours muliplied by the number of warnings over \`${WarningConfigOption.WarningsToTimeout}\`.`,
-        `If \`${WarningConfigOption.WarningsToBan}\` is unset, then permanent bans are not used. If either \`${WarningConfigOption.WarningsToTimeout}\` or \`${WarningConfigOption.TimeoutPerWarning}\` are unset, then timeouts are not used.`,
+        `If the user has received at least the number of warnings indicated by \`${WarningConfigOption.WarningsToTimeout}\` the user is timed out for the duration listed in \`${WarningConfigOption.TimeoutSequence}\`, according to the number of warnings over \`${WarningConfigOption.WarningsToTimeout}\`.`,
+        `If \`${WarningConfigOption.WarningsToBan}\` is unset, then permanent bans are not used. If either \`${WarningConfigOption.WarningsToTimeout}\` or \`${WarningConfigOption.TimeoutSequence}\` are unset, then timeouts are not used.`,
     ];
     public category = CommandCategory.Inherit;
     public permission = CommandPermission.Inherit;
@@ -54,15 +58,21 @@ export class WarningConfigSubCommand extends ComplexCommand<SpindaDiscordBot, Wa
         },
     };
 
+    private parseNumber(option: string, value: string): number {
+        const num = parseInt(value);
+        if (isNaN(num)) {
+            throw new Error(`Invalid value for option \`${option}\`. Value must be a number.`);
+        }
+        return num;
+    }
+
     public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: WarningConfigArgs) {
         const guild = bot.dataService.getCachedGuild(guildId);
         if (!args.options) {
             const embed = bot.createEmbed();
             embed.setTitle(`Warning Configuration for ${src.guild.name}`);
             const fields = [
-                `${WarningConfigOption.TimeoutPerWarning} = ${
-                    guild.timeoutPerWarning ?? WarningConfigOptionType.Unset
-                }`,
+                `${WarningConfigOption.TimeoutSequence} = ${guild.timeoutSequence ?? WarningConfigOptionType.Unset}`,
                 `${WarningConfigOption.WarningsToTimeout} = ${
                     guild.warnsToBeginTimeouts ?? WarningConfigOptionType.Unset
                 }`,
@@ -79,30 +89,41 @@ export class WarningConfigSubCommand extends ComplexCommand<SpindaDiscordBot, Wa
                     );
                 }
 
-                let valueToSet: number | null;
-                if (WarningConfigOptionType.Unset.localeCompare(value, undefined, { sensitivity: 'base' }) === 0) {
-                    valueToSet = null;
-                } else {
-                    valueToSet = parseInt(value);
-                    if (isNaN(valueToSet)) {
-                        throw new Error(`Invalid value for option \`${option}\`. Value must be a number.`);
-                    }
-                }
+                const valueIsNone =
+                    WarningConfigOptionType.Unset.localeCompare(value, undefined, { sensitivity: 'base' }) === 0;
 
                 switch (option as WarningConfigOption) {
-                    case WarningConfigOption.TimeoutPerWarning:
+                    case WarningConfigOption.TimeoutSequence:
                         {
-                            guild.timeoutPerWarning = valueToSet;
+                            if (valueIsNone) {
+                                guild.timeoutSequence = null;
+                            } else {
+                                const timeoutSequence = value.split(WarningConfigSubCommand.timeoutSequenceSeparator);
+                                for (const timeout of timeoutSequence) {
+                                    const duration = moment.duration(...timeout.trim().split(' '));
+                                    if (!duration.isValid() || duration.asMinutes() <= 1) {
+                                        throw new Error(`Invalid timeout length: \`${timeout}\`.`);
+                                    }
+                                }
+                                guild.timeoutSequence = timeoutSequence
+                                    .map(duration => duration.trim())
+                                    .filter(duration => duration.length > 0)
+                                    .join(WarningConfigSubCommand.timeoutSequenceSeparator);
+                            }
                         }
                         break;
                     case WarningConfigOption.WarningsToTimeout:
                         {
-                            guild.warnsToBeginTimeouts = valueToSet;
+                            guild.warnsToBeginTimeouts = valueIsNone
+                                ? null
+                                : this.parseNumber(WarningConfigOption.WarningsToTimeout, value);
                         }
                         break;
                     case WarningConfigOption.WarningsToBan:
                         {
-                            guild.warnsToBan = valueToSet;
+                            guild.warnsToBan = valueIsNone
+                                ? null
+                                : this.parseNumber(WarningConfigOption.WarningsToBan, value);
                         }
                         break;
                 }

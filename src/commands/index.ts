@@ -1,6 +1,5 @@
 import { CommandTypeArray } from 'panda-discord';
 
-import { LogsCommand } from './lib/config/logs';
 import { PrefixCommand } from './lib/config/prefix';
 import { RemoveCommandCommand } from './lib/config/remove-command';
 import { RunCustomCommand } from './lib/config/run-custom';
@@ -18,6 +17,8 @@ import { RollCommand } from './lib/fun/roll';
 import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { BlocklistCommand } from './lib/moderation/blocklist';
+import { LogsCommand } from './lib/moderation/logs';
+import { MemberMessagesCommand } from './lib/moderation/member-messages';
 import { WarnCommand } from './lib/moderation/warn';
 import { WarningsCommand } from './lib/moderation/warnings';
 import { PokengineCommands } from './lib/pokengine';
@@ -60,13 +61,14 @@ export const CommandTypes: CommandTypeArray = [
     ShowArgsCommand,
 
     PrefixCommand,
-    LogsCommand,
     SetCommandCommand,
     RemoveCommandCommand,
     RunCustomCommand,
     RunUniversalCommand,
     SnapshotMembersCommand,
 
+    LogsCommand,
+    MemberMessagesCommand,
     BlocklistCommand,
     WarnCommand,
     WarningsCommand,

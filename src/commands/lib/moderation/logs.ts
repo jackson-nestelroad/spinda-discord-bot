@@ -30,10 +30,10 @@ const LogEvents: { [name: string]: LogOptionBit } = {
     'member-updated': LogOptionBit.MemberUpdated,
     'member-banned': LogOptionBit.MemberBanned,
     'member-unbanned': LogOptionBit.MemberUnbanned,
+    'member-warned': LogOptionBit.MemberWarned,
     'message-edited': LogOptionBit.MessageEdited,
     'message-deleted': LogOptionBit.MessageDeleted,
     'bulk-deleted': LogOptionBit.BulkMessageDeletion,
-    warning: LogOptionBit.Warning,
 } as const;
 
 interface LogsArgs {

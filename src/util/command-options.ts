@@ -40,7 +40,7 @@ export module CommandOptions {
                 break;
             }
 
-            if (!value && !this.options[option].includes(OptionValueType.None)) {
+            if (!value && !options[option].includes(OptionValueType.None)) {
                 throw new Error(`Invalid value for \`${option}\``);
             }
 

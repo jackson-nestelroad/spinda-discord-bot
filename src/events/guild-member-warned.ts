@@ -5,9 +5,9 @@ import { LogOptionBit } from '../data/model/guild';
 import { WarningAttributes } from '../data/model/warning';
 import { BaseLogEvent } from './log';
 
-export class WarningEvent extends BaseLogEvent<'warning'> {
+export class GuildMemberWarnedEvent extends BaseLogEvent<'guildMemberWarned'> {
     constructor(bot: SpindaDiscordBot) {
-        super(bot, 'warning', LogOptionBit.Warning);
+        super(bot, 'guildMemberWarned', LogOptionBit.MemberWarned);
     }
 
     public async run(warning: WarningAttributes) {

@@ -1,4 +1,5 @@
 import * as DiscordJS from 'discord.js';
+import moment from 'moment';
 import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, DiscordUtil, EvalUtil } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
@@ -52,6 +53,7 @@ export class EvalCommand extends ComplexCommand<SpindaDiscordBot, EvalArgs> {
             bot,
             src,
             discord: DiscordJS,
+            moment,
             spinda: {
                 RGBAColor,
                 Spinda,
