@@ -105,7 +105,7 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
             });
         } else {
             let timeoutDuration: Duration = undefined;
-            if (args.timeout?.isValid()) {
+            if (args.timeout) {
                 timeoutDuration = args.timeout;
             } else if (
                 guild.warnsToBeginTimeouts !== null &&
@@ -117,7 +117,7 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
                 timeoutDuration = duration(timeoutSequence[index]);
             }
 
-            if (timeoutDuration?.isValid()) {
+            if (timeoutDuration?.isValid() && timeoutDuration.asMinutes() > 1) {
                 if (!src.guild.members.me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
                     throw new Error('Bot has inadequate permissions to timeout user.');
                 }
