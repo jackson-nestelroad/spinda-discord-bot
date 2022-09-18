@@ -165,6 +165,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     private readonly history: Map<string, CircularBuffer<Spinda>> = new Map();
 
     private todaysGen: SpindaGeneration = undefined;
+    private todaysGenInterval: ReturnType<typeof setInterval> = undefined;
 
     private getSpindaWidth() {
         return SpindaGenerationMetadata.width + this.outlineThickness * 2;
@@ -250,7 +251,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                 // A bit of hack to make sure today's generation does not last
                 // more than a day. If the bot is preempted and restarted, then
                 // this counter resets
-                setInterval(() => {
+                this.todaysGenInterval = setInterval(() => {
                     this.todaysGen = undefined;
                 }, 1000 * 60 * 60 * 24);
             }
@@ -473,5 +474,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     public restart() {
         this.history.clear();
         this.todaysGen = undefined;
+        clearInterval(this.todaysGenInterval);
     }
 }
