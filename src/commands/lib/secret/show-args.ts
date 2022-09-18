@@ -29,7 +29,7 @@ export class ShowArgsCommand extends ComplexCommand<SpindaDiscordBot, ShowArgsAr
         },
     };
 
-    public async run({ bot, src }: CommandParameters, args: ShowArgsArgs) {
+    public async run({ bot, src, extraArgs }: CommandParameters, args: ShowArgsArgs) {
         const embed = bot.createEmbed(EmbedTemplates.Bare);
         embed.setTitle('Command Arguments');
         if (!args.args || args.args.length === 0) {
@@ -37,6 +37,14 @@ export class ShowArgsCommand extends ComplexCommand<SpindaDiscordBot, ShowArgsAr
         } else {
             for (let i = 0; i < args.args.length; ++i) {
                 embed.addFields({ name: `Argument ${i}`, value: args.args.get(i), inline: true });
+            }
+
+            const extraArgsEntries = Object.entries(extraArgs);
+            if (extraArgsEntries.length > 0) {
+                embed.addFields({
+                    name: 'Extra Arguments',
+                    value: extraArgsEntries.map(([name, value]) => `\`${name}\`: ${value}`).join('\n'),
+                });
             }
         }
         await src.send({ embeds: [embed] });
