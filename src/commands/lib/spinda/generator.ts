@@ -167,6 +167,11 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
     private todaysGen: SpindaGeneration = undefined;
     private todaysGenInterval: ReturnType<typeof setInterval> = undefined;
 
+    public constructor(bot: SpindaDiscordBot) {
+        super(bot);
+        this.restartTodaysGenInterval();
+    }
+
     private getSpindaWidth() {
         return SpindaGenerationMetadata.width + this.outlineThickness * 2;
     }
@@ -210,6 +215,26 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         }
     }
 
+    private setTodaysGen() {
+        for (const [gen, odds] of this.odds.gens) {
+            if (Math.floor(Math.random() * odds) === 0) {
+                this.todaysGen = gen;
+                break;
+            }
+        }
+    }
+
+    private restartTodaysGenInterval() {
+        if (this.todaysGenInterval) {
+            clearInterval(this.todaysGenInterval);
+        }
+
+        this.setTodaysGen();
+        this.todaysGenInterval = setInterval(() => {
+            this.setTodaysGen();
+        }, 1000 * 60 * 60 * 24);
+    }
+
     private rollFeatures(spinda: Spinda) {
         if (spinda.isRandom()) {
             spinda.resetFeatures();
@@ -238,22 +263,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
                         Math.random() * 0.4 + 0.6,
                     ).toRGB(),
                 );
-            }
-
-            // Generation is based on a value generated once per day
-            if (this.todaysGen === undefined) {
-                for (const [gen, odds] of this.odds.gens) {
-                    if (Math.floor(Math.random() * odds) === 0) {
-                        this.todaysGen = gen;
-                        break;
-                    }
-                }
-                // A bit of hack to make sure today's generation does not last
-                // more than a day. If the bot is preempted and restarted, then
-                // this counter resets
-                this.todaysGenInterval = setInterval(() => {
-                    this.todaysGen = undefined;
-                }, 1000 * 60 * 60 * 24);
             }
 
             // Set generation
@@ -473,7 +482,6 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
 
     public restart() {
         this.history.clear();
-        this.todaysGen = undefined;
-        clearInterval(this.todaysGenInterval);
+        this.restartTodaysGenInterval();
     }
 }
