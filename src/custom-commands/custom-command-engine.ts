@@ -237,8 +237,10 @@ export class CustomCommandEngine {
             `{undefined? var}`,
             `{empty? string}`,
             `{random a b}`,
-            `{random-member}`,
             `{math expression}`,
+            `{member? name}`,
+            `{random-member}`,
+            `{target-member member}`,
             `{nickname name}`,
             `{role name}`,
             `{+role name}`,
@@ -640,14 +642,6 @@ export class CustomCommandEngine {
                         return Math.floor(Math.random() * (high - low + 1) + low).toString();
                     }
                     break;
-                case 'random-member':
-                    {
-                        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
-                            this.context.params.guildId,
-                        );
-                        return memberList.random().user.username;
-                    }
-                    break;
                 case 'math':
                     {
                         return mathjs.evaluate(args);
@@ -722,6 +716,34 @@ export class CustomCommandEngine {
                         return null;
                     }
                     break;
+                case 'member?':
+                    {
+                        const member = await this.context.params.bot.getMemberFromString(
+                            args,
+                            this.context.params.guildId,
+                        );
+                        return member ? CustomCommandEngine.trueVar : CustomCommandEngine.falseVar;
+                    }
+                    break;
+                case 'random-member':
+                    {
+                        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
+                            this.context.params.guildId,
+                        );
+                        return memberList.random().user.username;
+                    }
+                    break;
+                case 'target-member': {
+                    const newMember = await this.context.params.bot.getMemberFromString(
+                        args,
+                        this.context.params.guildId,
+                    );
+                    if (!newMember) {
+                        throw new Error(`Failed to target member "${args}" who does not exist in this guild.`);
+                    }
+                    this.context.member = newMember;
+                    return '';
+                }
                 case 'nickname':
                     {
                         this.assertLimit(ExecutionLimit.API, 1);
