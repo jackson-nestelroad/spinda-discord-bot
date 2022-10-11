@@ -28,7 +28,7 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
     public cooldown = StandardCooldowns.Low;
 
     public disableChat = true;
-    public disableInCustomCommand = true;
+    public disableInCustomCommand = false;
     public slashGuildId = Environment.Pokengine.getGuildId();
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>) {
