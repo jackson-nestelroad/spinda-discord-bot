@@ -1,8 +1,8 @@
-import { Channel, Guild, GuildMember, Snowflake, User } from 'discord.js';
+import { Channel, Guild, GuildMember, PartialGuildMember, Snowflake, User } from 'discord.js';
 import * as mathjs from 'mathjs';
 import { CommandParameters, CommandPermissionOptions, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 
-import { CommandPermission, SpindaDiscordBot } from '../bot';
+import { SpindaDiscordBot } from '../bot';
 import { DataService } from '../data/data-service';
 import { CustomCommandData, CustomCommandFlag } from '../data/model/custom-command';
 
@@ -14,7 +14,7 @@ export interface CustomCommandEngineExecutionContext {
     params: CommandParameters<SpindaDiscordBot>;
     content?: string;
     args?: SplitArgumentArray;
-    member?: GuildMember;
+    member?: GuildMember | PartialGuildMember;
     options?: CustomCommandEngineOptions;
     permission?: CommandPermissionOptions;
 }
@@ -158,8 +158,9 @@ export class CustomCommandEngine {
         mention: user => user.toString(),
     };
 
-    private static readonly memberParams: ReadonlyDictionary<(member: GuildMember) => string> = {
+    private static readonly memberParams: ReadonlyDictionary<(member: GuildMember | PartialGuildMember) => string> = {
         nickname: member => member.displayName,
+        joinedAt: member => member.joinedAt?.toLocaleDateString() ?? 'Unknown',
     };
 
     private static readonly guildParams: ReadonlyDictionary<(guild: Guild) => string> = {
