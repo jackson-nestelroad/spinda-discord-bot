@@ -236,6 +236,7 @@ export class CustomCommandEngine {
             `{substring start string}`,
             `{length string}`,
             `{timestamp? timestamp}`,
+            `{now}`,
             `{format-timestamp "format" timestamp}`,
             `{not boolean}`,
             `{undefined? var}`,
@@ -828,6 +829,11 @@ export class CustomCommandEngine {
                         return moment(new Date(/^[0-9]+$/.test(args) ? parseInt(args) : args), true).isValid()
                             ? CustomCommandEngine.trueVar
                             : CustomCommandEngine.falseVar;
+                    }
+                    break;
+                case 'now':
+                    {
+                        return new Date().valueOf().toString();
                     }
                     break;
                 case 'user':
