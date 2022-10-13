@@ -1,5 +1,6 @@
 import { Channel, Guild, GuildMember, PartialGuildMember, Snowflake, User } from 'discord.js';
 import * as mathjs from 'mathjs';
+import moment from 'moment';
 import { CommandParameters, CommandPermissionOptions, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -160,7 +161,7 @@ export class CustomCommandEngine {
 
     private static readonly memberParams: ReadonlyDictionary<(member: GuildMember | PartialGuildMember) => string> = {
         nickname: member => member.displayName,
-        joinedAt: member => member.joinedAt?.toLocaleDateString() ?? 'Unknown',
+        joinedAt: member => member.joinedTimestamp?.toString() ?? 'Unknown',
     };
 
     private static readonly guildParams: ReadonlyDictionary<(guild: Guild) => string> = {
@@ -169,7 +170,7 @@ export class CustomCommandEngine {
         icon: guild => guild.iconURL() || CustomCommandEngine.undefinedVar,
         memberCount: guild => guild.memberCount.toString(),
         ownerId: guild => guild.ownerId,
-        createdAt: guild => guild.createdAt.toLocaleDateString(),
+        createdAt: guild => guild.createdTimestamp.toString(),
         region: guild => guild.preferredLocale,
     };
 
@@ -234,6 +235,8 @@ export class CustomCommandEngine {
             `{uppercase string}`,
             `{substring start string}`,
             `{length string}`,
+            `{timestamp? timestamp}`,
+            `{format-timestamp "format" timestamp}`,
             `{not boolean}`,
             `{undefined? var}`,
             `{empty? string}`,
@@ -805,7 +808,30 @@ export class CustomCommandEngine {
                         return '';
                     }
                     break;
+                case 'format-timestamp':
+                    {
+                        const splitArgs = this.context.params.bot.splitIntoArgs(args);
+                        const format = splitArgs.shift();
+                        const timestampString = splitArgs.restore(0);
+                        const date = new Date(
+                            /^[0-9]+$/.test(timestampString) ? parseInt(timestampString) : timestampString,
+                        );
+                        const timestamp = moment(date);
+                        if (!timestamp.isValid()) {
+                            throw new Error(`Cannot format invalid timestamp.`);
+                        }
+                        return timestamp.format(format);
+                    }
+                    break;
+                case 'timestamp?':
+                    {
+                        return moment(new Date(/^[0-9]+$/.test(args) ? parseInt(args) : args), true).isValid()
+                            ? CustomCommandEngine.trueVar
+                            : CustomCommandEngine.falseVar;
+                    }
+                    break;
                 case 'user':
+                case 'member':
                     {
                         if (args.startsWith(SpecialChars.AttributeSeparator)) {
                             const attr = args.substring(1);
