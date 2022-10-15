@@ -89,7 +89,7 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
         await modalSubmit.deferReply({ ephemeral: true });
 
         await bot.sendErrorsToInteraction(modalSubmit, async () => {
-            const username = modalSubmit.fields.getTextInputValue('usernameInput');
+            const username = modalSubmit.fields.getTextInputValue('usernameInput').trim();
             const password = modalSubmit.fields.getTextInputValue('passwordInput');
 
             let response: AxiosResponse;
