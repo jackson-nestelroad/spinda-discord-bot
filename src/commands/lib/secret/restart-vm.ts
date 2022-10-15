@@ -43,7 +43,7 @@ export class RestartVmCommand extends SimpleCommand<SpindaDiscordBot> {
             let operation: protos.google.cloud.compute.v1.IOperation;
             do {
                 [operation] = await operationsClient.wait({
-                    operation: operation.name ?? response.latestResponse.name,
+                    operation: operation?.name ?? response.latestResponse.name,
                     project: Environment.GoogleCompute.getProjectId(),
                     zone: Environment.GoogleCompute.getZone(),
                 });
