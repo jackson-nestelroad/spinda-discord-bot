@@ -226,7 +226,7 @@ export class CustomCommandEngine {
             `{prefix}`,
         ],
         Functions: [
-            `{>command arg1 arg2 ...}`,
+            `{/command arg1 arg2 ...}`,
             `{message msg}`,
             `{embed msg}`,
             `{regex /pattern/ string}`,
@@ -501,7 +501,7 @@ export class CustomCommandEngine {
             return '';
         }
         // Nested command call
-        else if (name.startsWith(DataService.defaultPrefix)) {
+        else if (name.startsWith(DataService.defaultPrefix) || name.startsWith('/')) {
             this.assertLimit(ExecutionLimit.Command, 1);
             const cmd = name.substring(1);
             if (this.context.params.bot.commands.has(cmd)) {
