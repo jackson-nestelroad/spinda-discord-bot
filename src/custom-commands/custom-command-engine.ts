@@ -101,7 +101,7 @@ export class CustomCommandEngine {
     private static readonly undefinedVar = 'undefined';
     private static readonly trueVar = 'true';
     private static readonly falseVar = 'false';
-    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$%>\+\-\[\]]/;
+    private static readonly nonVarChar = /[^a-zA-Z\d_!?\$%>/\+\-\[\]]/;
     private static readonly whitespaceRegex = /\s/;
     private static readonly maxParseDepth = 32;
 
