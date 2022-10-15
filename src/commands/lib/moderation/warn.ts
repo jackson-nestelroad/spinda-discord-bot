@@ -114,7 +114,7 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
             ) {
                 const timeoutSequence = guild.timeoutSequence.split(WarningConfigSubCommand.timeoutSequenceSeparator);
                 const index = Math.max(numWarnings - guild.warnsToBeginTimeouts, timeoutSequence.length - 1);
-                timeoutDuration = duration(timeoutSequence[index]);
+                timeoutDuration = duration(...timeoutSequence[index].trim().split(' '));
             }
 
             if (timeoutDuration?.isValid() && timeoutDuration.asMinutes() > 1) {
