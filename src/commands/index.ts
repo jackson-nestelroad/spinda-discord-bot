@@ -24,6 +24,7 @@ import { WarningsCommand } from './lib/moderation/warnings';
 import { PokengineCommands } from './lib/pokengine';
 import { EvalCommand } from './lib/secret/eval';
 import { RefreshCommand } from './lib/secret/refresh';
+import { RestartVmCommand } from './lib/secret/restart-vm';
 import { SayCommand } from './lib/secret/say';
 import { ShowArgsCommand } from './lib/secret/show-args';
 import { SpindaCommands } from './lib/spinda';
@@ -57,6 +58,7 @@ export const CommandTypes: CommandTypeArray = [
 
     EvalCommand,
     RefreshCommand,
+    RestartVmCommand,
     SayCommand,
     ShowArgsCommand,
 

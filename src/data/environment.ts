@@ -38,4 +38,18 @@ export namespace Environment {
             return process.env.POKENGINE_SECRET_PASSWORD_LINK;
         }
     }
+
+    export namespace GoogleCompute {
+        export function getProjectId(): string {
+            return process.env.GCE_PROJECT_ID;
+        }
+
+        export function getZone(): string {
+            return process.env.GCE_ZONE;
+        }
+
+        export function getInstanceName(): string {
+            return process.env.GCE_INSTANCE_NAME;
+        }
+    }
 }
