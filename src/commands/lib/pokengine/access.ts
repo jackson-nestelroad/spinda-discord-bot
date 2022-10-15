@@ -86,7 +86,7 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
             throw new Error('You did not respond in time. Please try again.');
         }
 
-        await modalSubmit.deferReply({ ephemeral: true });
+        await modalSubmit.deferReply();
 
         await bot.sendErrorsToInteraction(modalSubmit, async () => {
             const username = modalSubmit.fields.getTextInputValue('usernameInput').trim();
