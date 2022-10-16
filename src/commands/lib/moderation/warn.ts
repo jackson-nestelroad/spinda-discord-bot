@@ -12,10 +12,15 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { WarningConfigSubCommand } from './warnings';
 
+interface WarnDurationArg {
+    duration?: Duration;
+    none: boolean;
+}
+
 interface WarnArgs {
     user: GuildMember;
     reason: string;
-    timeout?: Duration;
+    timeout?: WarnDurationArg;
     silent: boolean;
 }
 
@@ -25,6 +30,8 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
     public category = CommandCategory.Moderation;
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Low;
+
+    private noneDurations: string[] = ['none', '0'];
 
     public args: ArgumentsConfig<WarnArgs> = {
         user: {
@@ -44,9 +51,17 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
             required: false,
             transformers: {
                 any: (value, result) => {
-                    result.value = duration(...value.split(' '));
-                    if (!result.value.isValid() || result.value.asMinutes() <= 1) {
-                        result.error = 'Invalid timeout length.';
+                    if (
+                        this.noneDurations.some(
+                            str => str.localeCompare(value, undefined, { sensitivity: 'base' }) === 0,
+                        )
+                    ) {
+                        result.value = { none: true };
+                    } else {
+                        result.value = { duration: duration(...value.split(' ')), none: false };
+                        if (!result.value.duration.isValid() || result.value.duration.asMinutes() < 1) {
+                            result.error = 'Invalid timeout length.';
+                        }
                     }
                 },
             },
@@ -105,16 +120,20 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
             });
         } else {
             let timeoutDuration: Duration = undefined;
-            if (args.timeout) {
-                timeoutDuration = args.timeout;
-            } else if (
-                guild.warnsToBeginTimeouts !== null &&
-                numWarnings >= guild.warnsToBeginTimeouts &&
-                guild.timeoutSequence !== null
-            ) {
-                const timeoutSequence = guild.timeoutSequence.split(WarningConfigSubCommand.timeoutSequenceSeparator);
-                const index = Math.max(numWarnings - guild.warnsToBeginTimeouts, timeoutSequence.length - 1);
-                timeoutDuration = duration(...timeoutSequence[index].trim().split(' '));
+            if (!args.timeout.none) {
+                if (args.timeout) {
+                    timeoutDuration = args.timeout.duration;
+                } else if (
+                    guild.warnsToBeginTimeouts !== null &&
+                    numWarnings >= guild.warnsToBeginTimeouts &&
+                    guild.timeoutSequence !== null
+                ) {
+                    const timeoutSequence = guild.timeoutSequence.split(
+                        WarningConfigSubCommand.timeoutSequenceSeparator,
+                    );
+                    const index = Math.max(numWarnings - guild.warnsToBeginTimeouts, timeoutSequence.length - 1);
+                    timeoutDuration = duration(...timeoutSequence[index].trim().split(' '));
+                }
             }
 
             if (timeoutDuration?.isValid() && timeoutDuration.asMinutes() > 1) {
