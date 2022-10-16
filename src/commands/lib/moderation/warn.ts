@@ -120,20 +120,18 @@ export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
             });
         } else {
             let timeoutDuration: Duration = undefined;
-            if (!args.timeout.none) {
-                if (args.timeout) {
+            if (args.timeout) {
+                if (!args.timeout.none && args.timeout.duration) {
                     timeoutDuration = args.timeout.duration;
-                } else if (
-                    guild.warnsToBeginTimeouts !== null &&
-                    numWarnings >= guild.warnsToBeginTimeouts &&
-                    guild.timeoutSequence !== null
-                ) {
-                    const timeoutSequence = guild.timeoutSequence.split(
-                        WarningConfigSubCommand.timeoutSequenceSeparator,
-                    );
-                    const index = Math.max(numWarnings - guild.warnsToBeginTimeouts, timeoutSequence.length - 1);
-                    timeoutDuration = duration(...timeoutSequence[index].trim().split(' '));
                 }
+            } else if (
+                guild.warnsToBeginTimeouts !== null &&
+                numWarnings >= guild.warnsToBeginTimeouts &&
+                guild.timeoutSequence !== null
+            ) {
+                const timeoutSequence = guild.timeoutSequence.split(WarningConfigSubCommand.timeoutSequenceSeparator);
+                const index = Math.max(numWarnings - guild.warnsToBeginTimeouts, timeoutSequence.length - 1);
+                timeoutDuration = duration(...timeoutSequence[index].trim().split(' '));
             }
 
             if (timeoutDuration?.isValid() && timeoutDuration.asMinutes() > 1) {
