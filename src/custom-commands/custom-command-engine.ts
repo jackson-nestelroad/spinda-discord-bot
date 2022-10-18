@@ -69,7 +69,7 @@ interface ParseMetadataResult {
     // Parsed code, with no metadata
     code: string;
     // Metadata values
-    values: Map<CustomCommandMetadata, string | boolean>;
+    values: Map<string, string>;
 }
 
 // Special characters within custom command code
@@ -293,7 +293,7 @@ export class CustomCommandEngine {
                 let metadataEnd: number;
                 // No value at all, no parsing required
                 if (code.charAt(nameEnd) === SpecialChars.FunctionEnd) {
-                    value = true;
+                    value = 'true';
                     metadataEnd = nameEnd + 1;
                 }
                 // There is some value data after the metadata tag, parse it
@@ -303,7 +303,7 @@ export class CustomCommandEngine {
                     metadataEnd = response.index;
                 }
 
-                result.values.set(code.substring(nameStart, nameEnd) as CustomCommandMetadata, value);
+                result.values.set(code.substring(nameStart, nameEnd), value);
                 code = code.substring(0, i - 1) + code.substring(metadataEnd);
                 // Do not update i, because the whole metadata portion was removed
                 // We begin searching for the next metadata at the same index!
