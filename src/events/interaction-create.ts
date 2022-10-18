@@ -1,40 +1,19 @@
 import { Interaction } from 'discord.js';
-import { BaseEvent, CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
+import { CommandParameters, CommandSource, SlashCommandParameters } from 'panda-discord';
 
 import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { CustomCommandFlag } from '../data/model/custom-command';
+import { BaseInteractionEvent } from './base-interaction';
 
-export class InteractionCreateEvent extends BaseEvent<'interactionCreate', SpindaDiscordBot> {
-    constructor(bot: SpindaDiscordBot) {
-        super(bot, 'interactionCreate');
-    }
-
+export class InteractionCreateEvent extends BaseInteractionEvent {
     public async run(interaction: Interaction) {
+        if (!(await this.shouldProcess(interaction))) {
+            return;
+        }
+
         // Only serve chat input commands
         if (!interaction.isChatInputCommand()) {
             return;
-        }
-
-        // User is a bot or in a direct message
-        if (interaction.user.bot) {
-            return;
-        }
-
-        // User is on timeout
-        if (this.bot.timeoutService.onTimeout(interaction.user)) {
-            return;
-        }
-
-        if (interaction.guildId) {
-            // User is blocklisted in this guild
-            const blocklist = await this.bot.dataService.getBlocklist(interaction.guildId);
-            if (blocklist.has(interaction.user.id)) {
-                return;
-            }
-
-            if (!this.bot.dataService.hasGuildInCache(interaction.guildId)) {
-                await this.bot.dataService.getGuild(interaction.guildId);
-            }
         }
 
         // Global command

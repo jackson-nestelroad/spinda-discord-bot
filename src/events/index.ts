@@ -10,6 +10,7 @@ import { MessageCreateEvent } from './message-create';
 import { MessageDeleteEvent } from './message-delete';
 import { MessageDeleteBulkEvent } from './message-delete-bulk';
 import { MessageUpdateEvent } from './message-update';
+import { ButtonPressEvent } from './specific/button-press';
 
 export const EventTypes: EventTypeArray = [
     DefaultReadyEvent,
@@ -28,4 +29,6 @@ export const EventTypes: EventTypeArray = [
     MessageUpdateEvent,
 
     GuildMemberWarnedEvent,
+
+    ButtonPressEvent,
 ];

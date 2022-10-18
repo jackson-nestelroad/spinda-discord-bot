@@ -13,6 +13,7 @@ export class RefreshCommand extends SimpleCommand<SpindaDiscordBot> {
         bot.dataService.clearCache();
         bot.customCommandService.clearCooldowns();
         bot.spindaGeneratorService.restart();
+        bot.pollsService.clearPolls();
         await src.reply('Refresh successful.');
     }
 }

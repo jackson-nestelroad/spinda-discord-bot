@@ -13,6 +13,7 @@ import { ChooseCommand } from './lib/fun/choose';
 import { ColorCommand } from './lib/fun/color';
 import { ConchCommand } from './lib/fun/conch';
 import { ImpostorCommand } from './lib/fun/impostor';
+import { PollCommand } from './lib/fun/poll';
 import { RollCommand } from './lib/fun/roll';
 import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
@@ -52,6 +53,7 @@ export const CommandTypes: CommandTypeArray = [
     ChooseCommand,
     ColorCommand,
     ScreenshotCommand,
+    PollCommand,
 
     ...ExternalCommands,
     ...PokengineCommands,

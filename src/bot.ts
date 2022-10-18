@@ -14,6 +14,7 @@ import { SpindaColors } from './commands/lib/spinda/util/spinda-colors';
 import { CustomCommandService } from './custom-commands/custom-command-service';
 import { DataService } from './data/data-service';
 import { MediaWikiService } from './services/media-wiki';
+import { PollsService } from './services/polls';
 import { ResourceService } from './services/resources';
 
 export const CommandCategory = {
@@ -61,6 +62,7 @@ export class SpindaDiscordBot extends PandaDiscordBot {
     public readonly mediaWikiService = new MediaWikiService(this);
     public readonly spindaGeneratorService = new SpindaGeneratorService(this);
     public readonly customCommandService = new CustomCommandService(this);
+    public readonly pollsService = new PollsService(this);
 
     public createJSONAttachment(data: object, name: string, src: CommandSource): AttachmentBuilder {
         return new AttachmentBuilder(Buffer.from(JSON.stringify(data)), {
