@@ -9,6 +9,8 @@ It is implemented using **TypeScript**, the **[discord.js](https://discord.js.or
   - Spinda generation, Magic 8-Ball, Russian Roulette, Ask the Magic Conch Shell, and more
 - Moderation
   - Customizable event logging
+  - Warnings with auto timeout and banning
+  - Member joined and left messages
 - Custom Commands
   - Server-specific, highly-programmable commands
 
