@@ -1,5 +1,6 @@
 import { AttachmentBuilder, PermissionFlagsBits, Snowflake } from 'discord.js';
 import {
+    BaseHelpServiceInternal,
     CommandPermissionOptions,
     CommandSource,
     DefaultCommandCategory,
@@ -13,6 +14,7 @@ import { SpindaGeneratorService } from './commands/lib/spinda/generator';
 import { SpindaColors } from './commands/lib/spinda/util/spinda-colors';
 import { CustomCommandService } from './custom-commands/custom-command-service';
 import { DataService } from './data/data-service';
+import { SpindaHelpService } from './services/help';
 import { MediaWikiService } from './services/media-wiki';
 import { PollsService } from './services/polls';
 import { ResourceService } from './services/resources';
@@ -54,6 +56,7 @@ export class SpindaDiscordBot extends PandaDiscordBot {
 
     public readonly color = SpindaColors.spot.hexString();
 
+    public readonly helpService: SpindaHelpService = new SpindaHelpService(this, new BaseHelpServiceInternal(this));
     public readonly timeoutService: TimeoutService = new TimeoutService(this);
     public readonly memberListService: MemberListService = new MemberListService(this);
 

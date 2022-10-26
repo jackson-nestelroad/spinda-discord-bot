@@ -1,4 +1,4 @@
-import { TextChannel, GuildBan } from 'discord.js';
+import { GuildBan, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';

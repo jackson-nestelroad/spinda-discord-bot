@@ -62,7 +62,7 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                 try {
                     if (this.bot.options.namedArgs === NamedArgsOption.Always) {
                         const { named, unnamed } = this.bot.extractNamedArgs(params.args);
-                        params.extraArgs = named.reduce((obj, { name, value }) => {
+                        params.extraArgs = [...named.entries()].reduce((obj, [name, value]) => {
                             obj[name] = value;
                             return obj;
                         }, {});

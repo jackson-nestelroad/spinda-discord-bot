@@ -1,4 +1,4 @@
-import { CommandTypeArray } from 'panda-discord';
+import { CommandTypeArray, HelpCommand } from 'panda-discord';
 
 import { PrefixCommand } from './lib/config/prefix';
 import { RemoveCommandCommand } from './lib/config/remove-command';
@@ -30,14 +30,13 @@ import { SayCommand } from './lib/secret/say';
 import { ShowArgsCommand } from './lib/secret/show-args';
 import { SpindaCommands } from './lib/spinda';
 import { CleanCommand } from './lib/utility/clean';
-import { SpindaHelpCommand } from './lib/utility/help';
 import { MemoryCommand } from './lib/utility/memory';
 import { PingCommand } from './lib/utility/ping';
 import { UptimeCommand } from './lib/utility/uptime';
 
 export const CommandTypes: CommandTypeArray = [
     PingCommand,
-    SpindaHelpCommand,
+    HelpCommand,
     CleanCommand,
     UptimeCommand,
     MemoryCommand,

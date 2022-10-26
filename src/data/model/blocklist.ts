@@ -1,5 +1,5 @@
 import { Snowflake } from 'discord.js';
-import { Optional, Model, Sequelize, DataTypes } from 'sequelize';
+import { DataTypes, Model, Optional, Sequelize } from 'sequelize';
 
 export interface BlocklistEntryAttributes {
     readonly id: number;

@@ -26,8 +26,6 @@ export class SetCommandCommand extends ComplexCommand<SpindaDiscordBot, SetComma
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.High;
 
-    public disableNamedArgs = true;
-
     public args: ArgumentsConfig<SetCommandArgs> = {
         command: {
             description: 'New command name.',

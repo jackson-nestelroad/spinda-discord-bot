@@ -37,7 +37,7 @@ export class InteractionCreateEvent extends BaseInteractionEvent {
                     await params.src.reply({ content: 'Permission denied', ephemeral: true });
                 }
             } catch (error) {
-                this.bot.sendError(params.src, error);
+                await this.bot.sendError(params.src, error);
             }
         }
         // Could be a custom (guild) command
