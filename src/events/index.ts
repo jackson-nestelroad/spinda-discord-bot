@@ -1,4 +1,4 @@
-import { DefaultReadyEvent, DefaultSharedResumeEvent, EventTypeArray } from 'panda-discord';
+import { DefaultAutocompleteEvent, DefaultReadyEvent, DefaultSharedResumeEvent, EventTypeArray } from 'panda-discord';
 
 import { GuildBanAddEvent } from './guild-ban-add';
 import { GuildBanRemoveEvent } from './guild-ban-remove';
@@ -15,6 +15,7 @@ import { ButtonPressEvent } from './specific/button-press';
 export const EventTypes: EventTypeArray = [
     DefaultReadyEvent,
     DefaultSharedResumeEvent,
+    DefaultAutocompleteEvent,
 
     MessageCreateEvent,
 

@@ -4,6 +4,7 @@ import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, Stand
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaPositionAutocomplete } from './util/autocomplete';
 import { SpindaColorChange, SpindaGeneration } from './util/spinda';
 
 interface MySpindaArgs {
@@ -23,6 +24,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
             description: 'Position to regenerate. If none is given, your entire party will be generated.',
             type: ArgumentType.Integer,
             required: false,
+            autocomplete: SpindaPositionAutocomplete,
         },
         generation: {
             description: 'Generation style. Displays your Spinda in a different style than what it was caught in.',

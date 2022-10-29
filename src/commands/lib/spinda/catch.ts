@@ -10,6 +10,7 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaPositionAutocomplete } from './util/autocomplete';
 
 export class GotAwayError extends Error {}
 
@@ -33,6 +34,7 @@ export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
             description: `The Spinda to catch. Ranges top-to-bottom, left-to-right from 1 to ${SpindaGeneratorService.partySize}, or none for the most recent.`,
             type: ArgumentType.Integer,
             required: false,
+            autocomplete: SpindaPositionAutocomplete,
         },
     };
 

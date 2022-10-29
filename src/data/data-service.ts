@@ -126,6 +126,10 @@ export class DataService extends BaseService<SpindaDiscordBot> {
         return this.cache.customCommands.get(guildId);
     }
 
+    public getCachedCustomCommands(guildId: Snowflake): ReadonlyDictionary<CustomCommandData> {
+        return this.cache.customCommands.get(guildId);
+    }
+
     public async setCustomCommand(guildId: Snowflake, data: CustomCommandData): Promise<void> {
         await this.assureCustomCommandsCache(guildId);
         const map = this.cache.customCommands.get(guildId);

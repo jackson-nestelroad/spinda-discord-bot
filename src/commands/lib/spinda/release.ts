@@ -17,6 +17,7 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaPositionAutocomplete } from './util/autocomplete';
 
 interface ReleaseArgs {
     position: number;
@@ -34,6 +35,7 @@ export class ReleaseCommand extends ComplexCommand<SpindaDiscordBot, ReleaseArgs
             description: `Position to release, with 1 being the left-most and ${SpindaGeneratorService.partySize} being the right-most.`,
             type: ArgumentType.Integer,
             required: true,
+            autocomplete: SpindaPositionAutocomplete,
         },
     };
 

@@ -10,6 +10,7 @@ import {
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
+import { SpindaPositionAutocomplete } from './util/autocomplete';
 
 interface SwapArgs {
     first: number;
@@ -28,11 +29,13 @@ export class SwapCommand extends ComplexCommand<SpindaDiscordBot, SwapArgs> {
             description: 'First position to switch.',
             type: ArgumentType.Integer,
             required: true,
+            autocomplete: SpindaPositionAutocomplete,
         },
         second: {
             description: 'Second position to switch',
             type: ArgumentType.Integer,
             required: true,
+            autocomplete: SpindaPositionAutocomplete,
         },
     };
 
