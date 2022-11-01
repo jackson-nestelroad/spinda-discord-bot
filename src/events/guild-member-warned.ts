@@ -28,7 +28,7 @@ export class GuildMemberWarnedEvent extends BaseLogEvent<'guildMemberWarned'> {
             embed.addFields(
                 { name: 'Reason', value: warning.reason },
                 { name: 'Warning ID', value: warning.id.toString(), inline: true },
-                { name: 'Issuer', value: warning.issuerId, inline: true },
+                { name: 'Issuer', value: `<@${warning.issuerId}>`, inline: true },
             );
 
             await channel.send({ embeds: [embed] });
