@@ -29,10 +29,10 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
 
     public disableChat = true;
     public disableInCustomCommand = false;
-    public slashGuildId = Environment.Pokengine.getGuildId();
+    public guildId = Environment.Pokengine.getGuildId();
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>) {
-        if (!src.isInteraction()) {
+        if (!src.isCommandInteraction()) {
             return;
         }
 

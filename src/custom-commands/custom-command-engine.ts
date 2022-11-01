@@ -1,7 +1,13 @@
 import { Channel, Guild, GuildMember, PartialGuildMember, Snowflake, User } from 'discord.js';
 import * as mathjs from 'mathjs';
 import moment from 'moment';
-import { CommandParameters, CommandPermissionOptions, EmbedTemplates, SplitArgumentArray } from 'panda-discord';
+import {
+    CommandParameters,
+    CommandPermissionOptions,
+    EmbedTemplates,
+    MessageCommandSource,
+    SplitArgumentArray,
+} from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
 import { DataService } from '../data/data-service';
@@ -517,7 +523,7 @@ export class CustomCommandEngine {
 
                     await command.executeChat({
                         bot: this.context.params.bot,
-                        src: this.context.params.src,
+                        src: this.context.params.src as MessageCommandSource,
                         guildId: this.context.params.guildId,
                         content: args,
                         args: this.context.params.bot.splitIntoArgs(args),

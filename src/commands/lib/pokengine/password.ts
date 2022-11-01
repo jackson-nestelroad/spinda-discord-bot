@@ -24,7 +24,7 @@ export class PasswordCommand extends ComplexCommand<SpindaDiscordBot, PasswordAr
 
     public disableChat = true;
     public disableInCustomCommand = true;
-    public slashGuildId = Environment.Pokengine.getGuildId();
+    public guildId = Environment.Pokengine.getGuildId();
 
     public args: ArgumentsConfig<PasswordArgs> = {
         password: {

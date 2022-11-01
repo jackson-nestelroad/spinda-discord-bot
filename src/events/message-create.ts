@@ -1,5 +1,12 @@
 import { Message } from 'discord.js';
-import { BaseEvent, ChatCommandParameters, CommandSource, NamedArgsOption, SplitArgumentArray } from 'panda-discord';
+import {
+    BaseEvent,
+    ChatCommandParameters,
+    CommandSource,
+    MessageCommandSource,
+    NamedArgsOption,
+    SplitArgumentArray,
+} from 'panda-discord';
 
 import { CommandPermission, SpindaDiscordBot } from '../bot';
 import { GuildAttributes } from '../data/model/guild';
@@ -33,7 +40,7 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
 
         const params: ChatCommandParameters<SpindaDiscordBot> = {
             bot: this.bot,
-            src: new CommandSource(msg),
+            src: new CommandSource(msg) as MessageCommandSource,
             args,
             content,
             guildId: guild.id,
