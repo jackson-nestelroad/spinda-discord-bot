@@ -12,9 +12,8 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<'messageDeleteBulk'> {
 
     public async run(messages: Collection<Snowflake, Message>, channel: GuildTextBasedChannel) {
         if (messages.size > 0) {
-            7;
             const logChannel = await this.getDestination(channel.guild.id);
-            if (channel) {
+            if (logChannel) {
                 const embed = this.bot.createEmbed(EmbedTemplates.Log);
 
                 embed.setTitle('Bulk Message Deletion');
