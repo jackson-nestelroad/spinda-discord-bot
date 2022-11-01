@@ -116,7 +116,5 @@ export class PollCommand extends NestedCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Minute;
 
-    public initializeShared() {}
-
     public subcommands = [PollCreateCommand, PollEndCommand];
 }

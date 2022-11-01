@@ -153,7 +153,5 @@ export class SnapshotMembersCommand extends NestedCommand<SpindaDiscordBot> {
     public category = CommandCategory.Config;
     public permission = CommandPermission.Moderator;
 
-    public initializeShared() {}
-
     public subcommands = [SaveSnapshotSubCommand, RestoreFromSnapshotSubCommand];
 }

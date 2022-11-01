@@ -249,8 +249,6 @@ export class MemberMessagesCommand extends NestedCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Low;
 
-    public initializeShared() {}
-
     public subcommands = [
         MemberMessagesJoinedSubCommand,
         MemberMessagesLeftSubCommand,

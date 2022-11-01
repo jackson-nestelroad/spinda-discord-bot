@@ -129,8 +129,6 @@ export class BlocklistCommand extends NestedCommand<SpindaDiscordBot> {
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Medium;
 
-    public initializeShared() {}
-
     public subcommands = [
         AddMemberOnBlocklistSubCommand,
         RemoveMemberFromBlocklistSubCommand,
