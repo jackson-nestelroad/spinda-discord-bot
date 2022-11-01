@@ -347,7 +347,7 @@ export class DataService extends BaseService<SpindaDiscordBot> {
     }
 
     public async getWarnings(guildId: Snowflake, userId: Snowflake): Promise<WarningAttributes[]> {
-        const warnings = await this.warnings.findAll({ where: { guildId, userId }, order: [['id', 'ASC']] });
+        const warnings = await this.warnings.findAll({ where: { guildId, userId }, order: [['id', 'DESC']] });
         return warnings.map(warning => warning.get());
     }
 
