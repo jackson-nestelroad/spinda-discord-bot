@@ -1,11 +1,25 @@
-import { EmbedBuilder, GuildMember, PermissionFlagsBits } from 'discord.js';
+import {
+    ActionRowBuilder,
+    EmbedBuilder,
+    GuildMember,
+    ModalActionRowComponentBuilder,
+    ModalBuilder,
+    ModalSubmitInteraction,
+    PermissionFlagsBits,
+    TextInputBuilder,
+    TextInputStyle,
+} from 'discord.js';
 import { Duration, duration } from 'moment';
 import {
     ArgumentType,
     ArgumentsConfig,
     CommandParameters,
+    CommandSource,
     ComplexCommand,
     EmbedTemplates,
+    GuildMemberContextMenuCommand,
+    InteractionCommandParameters,
+    InteractionCommandSource,
     StandardCooldowns,
 } from 'panda-discord';
 
@@ -24,12 +38,85 @@ interface WarnArgs {
     silent: boolean;
 }
 
+class WarnContextMenuCommand extends GuildMemberContextMenuCommand<SpindaDiscordBot, WarnArgs> {
+    public name = 'Warn User';
+
+    public async run(
+        { bot, src, guildId, extraArgs }: InteractionCommandParameters<SpindaDiscordBot>,
+        member: GuildMember,
+    ) {
+        const modal = new ModalBuilder().setCustomId('warnModal').setTitle(`Warn ${member.user.tag}`);
+
+        modal.addComponents(
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('reasonInput')
+                    .setLabel('Reason')
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setRequired(),
+            ),
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('timeoutInput')
+                    .setLabel('Timeout')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('"6 hours", "2 days", or blank to use guild configuration')
+                    .setRequired(false),
+            ),
+            new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+                new TextInputBuilder()
+                    .setCustomId('silentInput')
+                    .setLabel('Silent?')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('"true" or "false"')
+                    .setRequired(false),
+            ),
+        );
+
+        await src.interaction.showModal(modal);
+
+        let modalSubmit: ModalSubmitInteraction;
+        try {
+            modalSubmit = await src.interaction.awaitModalSubmit({
+                filter: interaction => {
+                    return interaction.customId === 'warnModal' && interaction.user.id === src.author.id;
+                },
+                time: 5 * 60 * 1000,
+            });
+        } catch (error) {
+            throw new Error('You did not respond in time. Please try again.');
+        }
+
+        const reason = modalSubmit.fields.getTextInputValue('reasonInput').trim();
+        const timeout = modalSubmit.fields.getTextInputValue('timeoutInput')?.trim() || undefined;
+        const silent = modalSubmit.fields.getTextInputValue('silentInput')?.trim() || undefined;
+
+        const newSrc = new CommandSource(modalSubmit);
+        try {
+            const params: CommandParameters<SpindaDiscordBot> = {
+                bot,
+                src: newSrc,
+                guildId,
+                extraArgs,
+            };
+            await this.command.run(
+                params,
+                await this.command.parseArguments(params, { reason, timeout, silent }, { user: member }),
+            );
+        } catch (error) {
+            await bot.sendError(newSrc, error);
+        }
+    }
+}
+
 export class WarnCommand extends ComplexCommand<SpindaDiscordBot, WarnArgs> {
     public name = 'warn';
     public description = 'Warns the given user and logs the warning.';
     public category = CommandCategory.Moderation;
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Low;
+
+    public contextMenu = [WarnContextMenuCommand];
 
     private noneDurations: string[] = ['none', '0'];
 

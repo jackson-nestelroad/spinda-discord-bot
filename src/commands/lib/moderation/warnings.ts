@@ -6,6 +6,8 @@ import {
     CommandParameters,
     ComplexCommand,
     EmbedTemplates,
+    GuildMemberContextMenuCommand,
+    InteractionCommandParameters,
     NestedCommand,
     StandardCooldowns,
 } from 'panda-discord';
@@ -244,6 +246,18 @@ export class WarningClearSubCommand extends ComplexCommand<SpindaDiscordBot, War
 interface WarningUserArgs {
     user: GuildMember;
     page?: number;
+    ephemeral: boolean;
+}
+
+class WarningViewContextMenuCommand extends GuildMemberContextMenuCommand<SpindaDiscordBot, WarningUserArgs> {
+    public name = 'View Warnings';
+
+    public async run(params: InteractionCommandParameters<SpindaDiscordBot>, member: GuildMember) {
+        await this.command.run(
+            params,
+            await this.command.parseArguments(params, {}, { user: member, ephemeral: true }),
+        );
+    }
 }
 
 export class WarningUserSubCommand extends ComplexCommand<SpindaDiscordBot, WarningUserArgs> {
@@ -253,6 +267,8 @@ export class WarningUserSubCommand extends ComplexCommand<SpindaDiscordBot, Warn
     public description = 'Views all warnings for a user.';
     public category = CommandCategory.Inherit;
     public permission = CommandPermission.Inherit;
+
+    public contextMenu = [WarningViewContextMenuCommand];
 
     public args: ArgumentsConfig<WarningUserArgs> = {
         user: {
@@ -274,10 +290,18 @@ export class WarningUserSubCommand extends ComplexCommand<SpindaDiscordBot, Warn
                 },
             },
         },
+        ephemeral: {
+            description: 'Respond with an ephemeral message.',
+            type: ArgumentType.Boolean,
+            required: false,
+            named: true,
+            hidden: true,
+            default: false,
+        },
     };
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: WarningUserArgs) {
-        await src.deferReply();
+        await src.deferReply(args.ephemeral);
 
         const warnings = await bot.dataService.getWarnings(src.guildId, args.user.id);
 
@@ -301,7 +325,7 @@ export class WarningUserSubCommand extends ComplexCommand<SpindaDiscordBot, Warn
         }
 
         embed.setDescription(description.join('\n'));
-        await src.send({ embeds: [embed] });
+        await src.send({ embeds: [embed], ephemeral: args.ephemeral });
     }
 }
 
@@ -375,8 +399,6 @@ export class WarningsCommand extends NestedCommand<SpindaDiscordBot> {
     public category = CommandCategory.Moderation;
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Low;
-
-    public initializeShared() {}
 
     public subcommands = [
         WarningClearSubCommand,

@@ -35,7 +35,7 @@ if (Environment.getEnvironment() !== 'production') {
         events: EventTypes,
         interactionEvent: InteractionCreateEvent,
         owner: Environment.getGlobalOwner(),
-        commandType: EnabledCommandType.Chat | EnabledCommandType.Slash,
+        commandType: EnabledCommandType.Chat | EnabledCommandType.Application,
     });
     await bot.run(Environment.getDiscordToken());
 })().catch(error => {
