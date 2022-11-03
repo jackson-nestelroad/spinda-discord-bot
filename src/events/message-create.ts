@@ -54,11 +54,12 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                 if (command.disableChat) {
                     return;
                 }
-                if (this.bot.validate(params, command)) {
-                    await command.executeChat(params);
+                if (await command.executeChat(params)) {
+                    this.bot.autoTimeoutService.clearErrors(params.src.author);
                 }
             } catch (error) {
                 await this.bot.sendError(params.src, error);
+                await this.bot.autoTimeoutService.addError(params.src.author);
             }
         }
         // Could be a custom (guild) command
@@ -81,8 +82,10 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
                         args: params.args,
                         permission: CommandPermission[customCommand.permission],
                     });
+                    this.bot.autoTimeoutService.clearErrors(params.src.author);
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
+                    await this.bot.autoTimeoutService.addError(params.src.author);
                 }
             }
         }

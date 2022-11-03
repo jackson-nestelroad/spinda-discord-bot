@@ -37,9 +37,12 @@ export class InteractionCreateEvent extends BaseInteractionEvent {
                     if (command.disableSlash) {
                         return;
                     }
-                    await command.executeSlash(params);
+                    if (await command.executeSlash(params)) {
+                        this.bot.autoTimeoutService.clearErrors(params.src.author);
+                    }
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
+                    await this.bot.autoTimeoutService.addError(params.src.author);
                 }
             } else if (interaction.guildId) {
                 // Could be a custom (guild) command
@@ -57,8 +60,10 @@ export class InteractionCreateEvent extends BaseInteractionEvent {
                             content,
                             permission: CommandPermission[customCommand.permission],
                         });
+                        this.bot.autoTimeoutService.clearErrors(params.src.author);
                     } catch (error) {
                         await this.bot.sendError(params.src, error);
+                        await this.bot.autoTimeoutService.addError(params.src.author);
                     }
                 }
             }
@@ -72,9 +77,12 @@ export class InteractionCreateEvent extends BaseInteractionEvent {
             if (this.bot.contextMenuCommands.has(interaction.commandName)) {
                 try {
                     const command = this.bot.contextMenuCommands.get(interaction.commandName);
-                    await command.execute(params);
+                    if (await command.execute(params)) {
+                        this.bot.autoTimeoutService.clearErrors(params.src.author);
+                    }
                 } catch (error) {
                     await this.bot.sendError(params.src, error);
+                    await this.bot.autoTimeoutService.addError(params.src.author);
                 }
             }
         } else {
