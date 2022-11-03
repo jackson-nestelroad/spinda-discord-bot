@@ -14,6 +14,8 @@ export class AutoTimeoutService extends BaseService<SpindaDiscordBot> {
     }
 
     public async addError(user: User): Promise<void> {
+        // Disabling this until Spinda can DM users again.
+        return;
         const previousErrors = this.consecutiveErrors.get(user.id) ?? 0;
         const errors = previousErrors + 1;
         if (errors === this.errorsToTimeoutAt) {
