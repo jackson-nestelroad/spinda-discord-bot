@@ -35,6 +35,7 @@ export class JcoadCommand extends ComplexCommand<SpindaDiscordBot, JcoadArgs> {
         'jcoad:condition': ':regional_indicator_c: ',
         'jcoad:type': ':regional_indicator_y: ',
         'jcoad:pokeoption': ':regional_indicator_o: ',
+        'jcoad:battleoption': ':regional_indicator_b: ',
     } as const;
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: JcoadArgs) {
