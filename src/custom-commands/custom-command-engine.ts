@@ -374,7 +374,9 @@ export class CustomCommandEngine {
     }
 
     private handleVariableNative(name: string): string | undefined {
-        if (/^\d+$/.test(name)) {
+        if (!name) {
+            return SpecialChars.VarBegin;
+        } else if (/^\d+$/.test(name)) {
             const argIndex = parseInt(name);
             return !isNaN(argIndex) ? this.context.args.get(argIndex - 1) : undefined;
         } else if (name === CustomCommandEngine.specialVars.allArguments) {
@@ -464,12 +466,12 @@ export class CustomCommandEngine {
     }
 
     private async handleFunction(name: string, args: string): Promise<string | null> {
-        // Variable function
         if (name.startsWith(SpecialChars.VarBegin)) {
+            // Variable function
             const varName = name.substring(1);
 
-            // Assignment
             if (args.startsWith(SpecialChars.VarAssign)) {
+                // Assignment
                 const rightSide = args.substring(SpecialChars.VarAssign.length);
                 const potentialValues = rightSide.split(/\s+or\s+/).map(val => val.trim());
                 if (potentialValues.length > 1) {
@@ -486,19 +488,16 @@ export class CustomCommandEngine {
                     this.setVariable(varName, rightSide.trimLeft());
                 }
                 return '';
-            }
-            // Function assignment, which means no null coalescing
-            if (args.startsWith(SpecialChars.FunctionAssign)) {
+            } else if (args.startsWith(SpecialChars.FunctionAssign)) {
+                // Function assignment, which means no null coalescing
                 const rightSide = args.substring(SpecialChars.FunctionAssign.length);
                 this.setVariable(varName, rightSide.trim());
                 return '';
-            }
-            // Text replacement
-            else if (!args) {
+            } else if (!args || !varName) {
+                // Text replacement
                 return this.handleVariable(varName);
-            }
-            // Error
-            else {
+            } else {
+                // Error
                 return null;
             }
         }
