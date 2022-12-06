@@ -239,7 +239,9 @@ export class PollsService extends BaseService {
 
     public async endPoll(userId: Snowflake): Promise<void> {
         if (!this.userIdToPoll.has(userId)) {
-            throw new Error(`You do not have an active poll.`);
+            throw new Error(
+                `You do not have an active poll, at least that the bot knows about. If the bot restarted while the poll is active, the poll will end automatically when a new vote is received.`,
+            );
         }
 
         const poll = this.userIdToPoll.get(userId);
