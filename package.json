@@ -14,12 +14,12 @@
     "dependencies": {
         "@google-cloud/compute": "^3.5.1",
         "axios": "^0.21.1",
-        "canvas": "^2.6.1",
+        "canvas": "^2.10.2",
         "cheerio": "^1.0.0-rc.5",
         "dotenv": "^8.2.0",
         "mathjs": "^9.2.0",
         "moment": "^2.29.1",
-        "panda-discord": "^4.3.1",
+        "panda-discord": "^4.3.2",
         "pg": "^8.5.1",
         "sequelize": "^6.5.0"
     },
