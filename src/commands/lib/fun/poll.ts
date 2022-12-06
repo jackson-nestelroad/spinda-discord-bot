@@ -27,12 +27,13 @@ class PollCreateCommand extends ComplexCommand<SpindaDiscordBot, PollCreateArgs>
         'Separate options using quotations. For example, `"Bulbasaur" "Charmander" "Squirtle"`.',
         'When using the chat command, wrap question in quotations as well.',
         'You can specify button style and emoji using brackets. For example, `"{style success} {emoji \u{1F343}} Bulbasaur"`. Available styles are `primary`, `secondary`, `success`, and `danger`.',
-        'Note that polls do not currently persist past bot refresh or restart. End time is the latest end time, and polls will end early if the bot restarts.',
+        '**Note:** polls do not currently persist past bot refresh or restart. End time is the latest end time, and polls will end early if the bot restarts.',
     ];
     public category = CommandCategory.Inherit;
     public permission = CommandPermission.Inherit;
     public examples = [
-        '--duration="6 hours" "What is the best starter?" "{style success} {emoji \u{1F343}} Bulbasaur" "{style danger} {emoji \u{1F525}} Charmander" "{style primary} {emoji \u{1F30A}} Squirtle"',
+        'duration:1 week question:Should we continue to disallow spoilers? options:"Yes" "No" "I don\'t care!"',
+        'duration:6 hours question:What is the best starter? options:"{style success} {emoji \u{1F343}} Bulbasaur" "{style danger} {emoji \u{1F525}} Charmander" "{style primary} {emoji \u{1F30A}} Squirtle"',
     ];
 
     public args: ArgumentsConfig<PollCreateArgs> = {
@@ -42,12 +43,12 @@ class PollCreateCommand extends ComplexCommand<SpindaDiscordBot, PollCreateArgs>
             required: true,
         },
         options: {
-            description: 'Poll options. Surround each option in quotations.',
+            description: 'Poll options. Surround each option in quotations. Example: "Yes" "No"',
             type: ArgumentType.SplitArguments,
             required: true,
         },
         duration: {
-            description: 'Poll duration. Number followed by unit. Default is "1 hour".',
+            description: 'Poll duration. Number followed by unit, such as "1 week" or "3 hours". Default is "1 hour".',
             type: ArgumentType.String,
             required: false,
             named: true,
