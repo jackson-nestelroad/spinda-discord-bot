@@ -29,7 +29,8 @@ class PruneContextMenuCommand extends MessageContextMenuCommand<SpindaDiscordBot
 
 export class PruneCommand extends ComplexCommand<SpindaDiscordBot, PruneArgs> {
     public name = 'prune';
-    public description = 'Prunes the most recent chunk of messages, over the last two weeks, from a given user.';
+    public description =
+        'Prunes the most recent chunk of messages, over the last two weeks, from a given user in a channel.';
     public category = CommandCategory.Moderation;
     public permission = CommandPermission.Moderator;
     public cooldown = StandardCooldowns.Medium;
