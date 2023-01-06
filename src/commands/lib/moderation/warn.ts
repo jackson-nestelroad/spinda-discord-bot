@@ -19,7 +19,6 @@ import {
     EmbedTemplates,
     GuildMemberContextMenuCommand,
     InteractionCommandParameters,
-    InteractionCommandSource,
     StandardCooldowns,
 } from 'panda-discord';
 

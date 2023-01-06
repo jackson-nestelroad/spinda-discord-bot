@@ -20,6 +20,7 @@ import { ScreenshotCommand } from './lib/fun/screenshot';
 import { BlocklistCommand } from './lib/moderation/blocklist';
 import { LogsCommand } from './lib/moderation/logs';
 import { MemberMessagesCommand } from './lib/moderation/member-messages';
+import { PruneCommand } from './lib/moderation/prune';
 import { WarnCommand } from './lib/moderation/warn';
 import { WarningsCommand } from './lib/moderation/warnings';
 import { PokengineCommands } from './lib/pokengine';
@@ -72,6 +73,7 @@ export const CommandTypes: CommandTypeArray = [
 
     LogsCommand,
     MemberMessagesCommand,
+    PruneCommand,
     BlocklistCommand,
     WarnCommand,
     WarningsCommand,
