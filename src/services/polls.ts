@@ -49,6 +49,7 @@ interface PollVoteCustomId {
 
 export class PollsService extends BaseService {
     public static readonly buttonIdPrefix = 'poll';
+    public static readonly maxOptionLength = 80;
 
     private userIdToPoll: Map<Snowflake, ActivePoll> = new Map();
 
@@ -155,6 +156,14 @@ export class PollsService extends BaseService {
         // Discord limit
         if (newPoll.options.length > 25) {
             throw new Error(`Poll cannot have over 25 options.`);
+        }
+
+        if (newPoll.options.some(option => option.length > PollsService.maxOptionLength)) {
+            throw new Error(`Poll options must be ${PollsService.maxOptionLength} characters or less.`);
+        }
+
+        if (newPoll.options.some(option => option.length === 0)) {
+            throw new Error(`Poll options may not be empty. Check that all quotations are paired correctly.`);
         }
 
         const embed = this.bot.createEmbed(EmbedTemplates.Bare);

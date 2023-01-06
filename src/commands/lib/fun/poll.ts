@@ -12,6 +12,7 @@ import {
 } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { PollsService } from '../../../services/polls';
 
 interface PollCreateArgs {
     question: string;
@@ -43,7 +44,7 @@ class PollCreateCommand extends ComplexCommand<SpindaDiscordBot, PollCreateArgs>
             required: true,
         },
         options: {
-            description: 'Poll options. Surround each option in quotations. Example: "Yes" "No"',
+            description: `Poll options. Surround each option in quotations. ${PollsService.maxOptionLength} character maximum. Example: "Yes" "No"`,
             type: ArgumentType.SplitArguments,
             required: true,
         },
