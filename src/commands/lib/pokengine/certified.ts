@@ -33,7 +33,7 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
         },
     };
 
-    public readonly pokedexPath: string = '/pok\u{00E9}dex';
+    public readonly pokedexPath: string = '/dexes';
     public certifiedDexNames: WebScrapedPokedex[];
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: CertifiedArgs) {
@@ -50,7 +50,7 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
             cheerio
                 .load(dexesResponse.data)('.dexes')
                 .first()
-                .find('a.button')
+                .find('a.tab.icon')
                 .each((i, button) => {
                     const ctx = cheerio.load(button);
                     this.certifiedDexNames.push({
