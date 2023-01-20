@@ -159,13 +159,7 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
             embed.setDescription(description.join('\n'));
 
             await modalSubmit.followUp({ content: this.successReact, ephemeral: true });
-
-            // Try to send the embed in a direct message first.
-            try {
-                await modalSubmit.user.send({ embeds: [embed] });
-            } catch (error) {
-                await src.reply({ embeds: [embed], ephemeral: true });
-            }
+            await src.reply({ embeds: [embed], ephemeral: true });
         });
     }
 }
