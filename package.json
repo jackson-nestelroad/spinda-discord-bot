@@ -21,7 +21,7 @@
         "moment": "^2.29.1",
         "panda-discord": "^4.3.2",
         "pg": "^8.5.1",
-        "sequelize": "^6.5.0"
+        "sequelize": "^6.29.0"
     },
     "devDependencies": {
         "@trivago/prettier-plugin-sort-imports": "^3.3.1",
