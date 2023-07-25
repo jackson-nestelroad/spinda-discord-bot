@@ -22,10 +22,7 @@ enum SearchTabs {
     'Players',
     'Maps',
     'Trainers',
-    'Forums',
 }
-
-type SearchTab = keyof typeof SearchTabs;
 
 interface SearchArgs {
     query: string;
@@ -135,7 +132,6 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMove(embed, {
-                    num: parseInt(cols.eq(0).text().substring(1)),
                     name: cols.eq(1).text(),
                     type: cols.eq(2).text() as any,
                     category: cols.eq(3).text() as any,
@@ -148,11 +144,10 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedItem(embed, {
-                    num: parseInt(cols.eq(0).text().substring(1)),
-                    name: cols.eq(2).text(),
-                    description: cols.eq(3).text(),
-                    pagePath: cols.eq(2).find('a').attr('href'),
-                    imagePath: cols.eq(1).find('img').attr('data-src'),
+                    name: cols.eq(1).text(),
+                    description: cols.eq(2).text(),
+                    pagePath: cols.eq(0).find('a').attr('href'),
+                    imagePath: cols.eq(0).find('img').attr('data-src'),
                 });
             }
         },
@@ -160,10 +155,9 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedAbility(embed, {
-                    num: parseInt(cols.eq(0).text().substring(1)),
-                    name: cols.eq(1).text(),
-                    description: cols.eq(2).text(),
-                    pagePath: cols.eq(1).find('a').attr('href'),
+                    name: cols.eq(0).text(),
+                    description: cols.eq(1).text(),
+                    pagePath: cols.eq(0).find('a').attr('href'),
                 });
             }
         },
@@ -176,7 +170,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
                     joined: cols.eq(3).find('span').text(),
                     lastActive: cols.eq(4).find('span').text(),
                     pagePath: cols.eq(2).find('a').attr('href'),
-                    imagePath: '/' + cols.eq(1).find('img').attr('data-src'),
+                    imagePath: cols.eq(1).find('img').attr('data-src'),
                 });
             }
         },
@@ -184,31 +178,16 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
             const [cols, handle] = this.handleSearchTable(i, results, embed);
             if (handle) {
                 PokengineUtil.embedMap(embed, {
-                    num: parseInt(cols.eq(0).text().substring(1)),
-                    name: cols.eq(1).text() || 'Unnamed Map',
-                    owner: cols.eq(2).find('a').text(),
+                    name: cols.eq(0).text() || 'Unnamed Map',
+                    owner: cols.eq(1).find('a').text(),
                     region: (
                         cols
-                            .eq(3)
+                            .eq(2)
                             .contents()
                             .filter((index, element) => (element as any).nodeType == 3)[0] as any
                     ).nodeValue,
-                    pagePath: cols.eq(1).find('a').attr('href'),
+                    pagePath: cols.eq(0).find('a').attr('href'),
                 });
-            }
-        },
-        [SearchTabs.Forums]: (i, results, embed) => {
-            const forumPost = results('.content.below .content-inner.forum').eq(i);
-            if (forumPost.length > 0) {
-                const origin = forumPost.find('.time').find('a');
-                PokengineUtil.embedPost(embed, {
-                    title: forumPost.find('.title').text(),
-                    author: origin.eq(0).text(),
-                    posted: origin.eq(1).text(),
-                    pagePath: origin.eq(1).attr('href'),
-                });
-            } else {
-                embed.setTitle('Index is too large!');
             }
         },
     };
@@ -236,7 +215,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         results: cheerio.CheerioAPI,
         embed: EmbedBuilder,
     ): [cheerio.Cheerio<cheerio.Element>, boolean] {
-        const tableRow = results('.search-table tr').eq(i);
+        const tableRow = results('tbody tr').eq(i);
         if (tableRow.length > 0) {
             return [tableRow.children(), true];
         } else {
@@ -248,7 +227,7 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
     private searchFor(query: string, page: number = 1): string {
         // Encode #, because they are used in searching
         return PokengineUtil.encodeURI(
-            PokengineUtil.baseUrl + this.searchPath + '?query=' + query + '&page=' + page,
+            PokengineUtil.baseOrigin + this.searchPath + '?query=' + query + '&page=' + page,
         ).replace(/#/g, '%23');
     }
 
@@ -272,14 +251,20 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         }
 
         const searchUrl = this.searchFor(args.query, args.page);
-        const searchResponse = await axios.get(searchUrl, { responseEncoding: 'binary' } as any);
+        const searchResponse = await axios.request({
+            method: 'GET',
+            url: searchUrl,
+            headers: {
+                'Content-Type': 'text/html; charset=UTF-8',
+            },
+        });
         const searchResults = cheerio.load(searchResponse.data);
 
         const selectedTab = searchResults('#top-bar .tabs > a.selected').first();
         const selectedTabTextUppercase = selectedTab.text().toUpperCase();
 
         // Get which tab we are on
-        let tab: SearchTabs = -1;
+        let tab: SearchTabs = undefined;
         const mapIter = this.tabNamesToUpperCase.entries();
         let curr = mapIter.next();
         while (!curr.done) {
@@ -293,18 +278,18 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         const embed: EmbedBuilder = bot.createEmbed();
 
         // No results
-        if (tab < 0) {
+        if (tab === undefined) {
             embed.setTitle('No results found!');
             return this.sendEmbed(src, embed, searchUrl);
         }
 
         const mainContent = searchResults('#content');
-        const title = mainContent.find('.content.above').last();
+        const title = mainContent.find('.marbot-16').last();
         const titleText = title.text();
-        const page = mainContent.find('.content .pages > span');
+        const pageSelected = mainContent.find('.pages > .tab.selected');
         let pageText = '1';
-        if (page.length > 0) {
-            pageText = page.first().text();
+        if (pageSelected.length > 0) {
+            pageText = pageSelected.first().text();
         }
 
         embed.setAuthor({
@@ -321,6 +306,6 @@ export class SearchCommand extends ComplexCommand<SpindaDiscordBot, SearchArgs> 
         } else {
             handler(args.n - 1, searchResults, embed);
         }
-        this.sendEmbed(src, embed, searchUrl);
+        await this.sendEmbed(src, embed, searchUrl);
     }
 }

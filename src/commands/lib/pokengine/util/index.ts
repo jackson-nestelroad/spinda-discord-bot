@@ -47,7 +47,6 @@ export interface WebScrapedDexBlock {
 }
 
 export interface WebScrapedMove {
-    num: number;
     name: string;
     type: PokemonType;
     category: MoveType;
@@ -56,7 +55,6 @@ export interface WebScrapedMove {
 }
 
 export interface WebScrapedItem {
-    num: number;
     name: string;
     description: string;
     pagePath: string;
@@ -64,7 +62,6 @@ export interface WebScrapedItem {
 }
 
 export interface WebScrapedAbility {
-    num: number;
     name: string;
     description: string;
     pagePath: string;
@@ -80,7 +77,6 @@ export interface WebScrapedPlayer {
 }
 
 export interface WebScrapedMap {
-    num: number;
     name: string;
     owner: string;
     region: string;
@@ -96,7 +92,8 @@ export interface WebScrapedPost {
 
 export namespace PokengineUtil {
     const noneString: string = 'None';
-    export const baseUrl: string = 'http://pokengine.org';
+    export const baseHost: string = 'pokengine.org';
+    export const baseOrigin: string = `https://${baseHost}`;
 
     export function formatNum(num: number, length: number = 3): string {
         const str = num.toString();
@@ -111,14 +108,26 @@ export namespace PokengineUtil {
         return global.decodeURI(uri).replace(/ /g, '+');
     }
 
+    export function setURLOrigin(urlString: string): string {
+        try {
+            const url = new URL(urlString);
+            if (url.host === 'pokengine.b-cdn.net') {
+                url.host = baseHost;
+            }
+            return url.toString();
+        } catch (error) {
+            return `${baseOrigin}${urlString.charAt(0) === '/' ? '' : '/'}${urlString}`;
+        }
+    }
+
     export function embedDexBlock(embed: EmbedBuilder, block: WebScrapedDexBlock) {
         if (block.num || block.num === 0) {
             embed.setTitle(`#${formatNum(block.num)} ${block.name}`);
         } else {
             embed.setTitle(block.name);
         }
-        embed.setURL(decodeURI(baseUrl + block.pagePath));
-        embed.setImage(baseUrl + block.imagePath);
+        embed.setURL(setURLOrigin(decodeURI(block.pagePath)));
+        embed.setImage(setURLOrigin(block.imagePath));
     }
 
     export function embedPrivate(embed: EmbedBuilder) {
@@ -127,8 +136,8 @@ export namespace PokengineUtil {
     }
 
     export function embedMove(embed: EmbedBuilder, move: WebScrapedMove) {
-        embed.setTitle(`#${move.num} ${move.name}`);
-        embed.setURL(decodeURI(baseUrl + move.pagePath));
+        embed.setTitle(`${move.name}`);
+        embed.setURL(setURLOrigin(decodeURI(move.pagePath)));
         embed.addFields(
             { name: 'Description', value: move.description || noneString },
             { name: 'Type', value: move.type || noneString, inline: true },
@@ -137,22 +146,22 @@ export namespace PokengineUtil {
     }
 
     export function embedItem(embed: EmbedBuilder, item: WebScrapedItem) {
-        embed.setTitle(`#${item.num} ${item.name}`);
-        embed.setURL(decodeURI(baseUrl + item.pagePath));
-        embed.setThumbnail(baseUrl + item.imagePath);
+        embed.setTitle(`${item.name}`);
+        embed.setURL(setURLOrigin(decodeURI(item.pagePath)));
+        embed.setThumbnail(setURLOrigin(item.imagePath));
         embed.addFields({ name: 'Description', value: item.description || noneString });
     }
 
     export function embedAbility(embed: EmbedBuilder, ability: WebScrapedAbility) {
-        embed.setTitle(`#${ability.num} ${ability.name}`);
-        embed.setURL(decodeURI(baseUrl + ability.pagePath));
+        embed.setTitle(`${ability.name}`);
+        embed.setURL(setURLOrigin(decodeURI(ability.pagePath)));
         embed.addFields({ name: 'Description', value: ability.description || noneString });
     }
 
     export function embedPlayer(embed: EmbedBuilder, player: WebScrapedPlayer) {
         embed.setTitle(`#${player.num} ${player.name}`);
-        embed.setURL(decodeURI(baseUrl + player.pagePath));
-        embed.setThumbnail(baseUrl + player.imagePath);
+        embed.setURL(setURLOrigin(decodeURI(player.pagePath)));
+        embed.setThumbnail(setURLOrigin(player.imagePath));
         embed.addFields(
             { name: 'Joined', value: player.joined || noneString, inline: true },
             { name: 'Last Active', value: player.lastActive || noneString, inline: true },
@@ -160,8 +169,8 @@ export namespace PokengineUtil {
     }
 
     export function embedMap(embed: EmbedBuilder, map: WebScrapedMap) {
-        embed.setTitle(`#${map.num} ${map.name}`);
-        embed.setURL(decodeURI(baseUrl + map.pagePath));
+        embed.setTitle(`${map.name}`);
+        embed.setURL(setURLOrigin(decodeURI(map.pagePath)));
         embed.addFields(
             { name: 'Owner', value: map.owner || noneString, inline: true },
             { name: 'Region', value: map.region || noneString, inline: true },
@@ -170,7 +179,7 @@ export namespace PokengineUtil {
 
     export function embedPost(embed: EmbedBuilder, post: WebScrapedPost) {
         embed.setTitle(post.title);
-        embed.setURL(decodeURI(baseUrl + post.pagePath));
+        embed.setURL(setURLOrigin(decodeURI(post.pagePath)));
         embed.addFields(
             { name: 'Author', value: post.author || noneString, inline: true },
             { name: 'Posted', value: post.posted || noneString, inline: true },

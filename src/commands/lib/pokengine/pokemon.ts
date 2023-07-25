@@ -1,30 +1,39 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { ArgumentType, ArgumentsConfig, CommandParameters, ComplexCommand, StandardCooldowns } from 'panda-discord';
+import {
+    ArgumentAutocompleteContext,
+    ArgumentAutocompleteOption,
+    ArgumentType,
+    ArgumentsConfig,
+    CommandParameters,
+    ComplexCommand,
+    StandardCooldowns,
+} from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
 import { PokengineUtil, WebScrapedDexBlock, WebScrapedPokedex } from './util';
 
-interface CertifiedArgs {
+interface PokemonArgs {
     dex?: string;
     mon?: string;
 }
 
-export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, CertifiedArgs> {
-    public name = 'certified';
+export class PokemonCommand extends ComplexCommand<SpindaDiscordBot, PokemonArgs> {
+    public name = 'pokemon';
     public description =
-        'Returns a link to a Pok\u{00E9}mon or Fak\u{00E9}mon from the certified Pok\u{00E9}dexes on the Pok\u{00E9}ngine website.';
+        'Returns a link to a Pok\u{00E9}mon or Fak\u{00E9}mon from the Pok\u{00E9}dexes on the Pok\u{00E9}ngine website.';
     public moreDescription =
         'If no Pok\u{00E9}dex is given, a random one will be selected. If no Pok\u{00E9}mon or Dex Number is given, a random one will be selected.';
     public category = CommandCategory.Pokengine;
     public permission = CommandPermission.Everyone;
     public cooldown = StandardCooldowns.Medium;
 
-    public args: ArgumentsConfig<CertifiedArgs> = {
+    public args: ArgumentsConfig<PokemonArgs> = {
         dex: {
             description: 'Pok\u{00E9}dex name.',
             type: ArgumentType.String,
             required: false,
+            autocomplete: context => this.autocompleteDex(context),
         },
         mon: {
             description: 'Pok\u{00E9}mon name or Pok\u{00E9}dex number',
@@ -36,15 +45,29 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
     public readonly pokedexPath: string = '/dexes';
     public certifiedDexNames: WebScrapedPokedex[];
 
-    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: CertifiedArgs) {
+    private autocompleteDex({ value }: ArgumentAutocompleteContext): ArgumentAutocompleteOption[] {
+        if (!this.certifiedDexNames) {
+            return [];
+        }
+        const regex = new RegExp(`^${value}`, 'i');
+        return this.certifiedDexNames
+            .filter(({ name }) => name.match(regex))
+            .map(({ name }) => ({ name, value: name }));
+    }
+
+    public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: PokemonArgs) {
         await src.deferReply();
 
         // Retrieve certified dex information
         // We cache this data since it is very unlikely to change
         if (!this.certifiedDexNames) {
-            const dexesResponse = await axios.get(PokengineUtil.encodeURI(PokengineUtil.baseUrl + this.pokedexPath), {
-                responseEncoding: 'binary',
-            } as any);
+            const dexesResponse = await axios.request({
+                method: 'GET',
+                url: PokengineUtil.encodeURI(PokengineUtil.baseOrigin + this.pokedexPath),
+                headers: {
+                    'Content-Type': 'text/html; charset=UTF-8',
+                },
+            });
             this.certifiedDexNames = [];
 
             cheerio
@@ -56,7 +79,7 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
                     this.certifiedDexNames.push({
                         name: ctx.root().text(),
                         dexPath: button.attribs['href'],
-                        iconPath: '/' + ctx('img').attr('src'),
+                        iconPath: ctx('img').attr('src'),
                     });
                 });
         }
@@ -75,9 +98,13 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
         }
 
         // Get dex page, this is somewhat of a slow operation
-        const dexResponse = await axios.get(PokengineUtil.baseUrl + dex.dexPath + '?all', {
-            responseEncoding: 'binary',
-        } as any);
+        const dexResponse = await axios.request({
+            method: 'GET',
+            url: PokengineUtil.baseOrigin + dex.dexPath + '?all',
+            headers: {
+                'Content-Type': 'text/html; charset=UTF-8',
+            },
+        });
 
         // Gather data
         // TODO: Think about caching this data
@@ -131,7 +158,10 @@ export class CertifiedCommand extends ComplexCommand<SpindaDiscordBot, Certified
         // Send embed
         const embed = bot.createEmbed();
         PokengineUtil.embedDexBlock(embed, chosenMon);
-        embed.setAuthor({ name: dex.name, iconURL: dex.iconPath ? PokengineUtil.baseUrl + dex.iconPath : undefined });
+        embed.setAuthor({
+            name: dex.name,
+            iconURL: dex.iconPath ? PokengineUtil.setURLOrigin(dex.iconPath) : undefined,
+        });
 
         await src.send({ embeds: [embed] });
     }
