@@ -148,7 +148,8 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
             embed.setTitle(this.serverName);
             const description = [
                 `You have been granted access to ${this.serverName}!`,
-                'You may access all channels in this server. Our game is currently down for maintenance, so you are unable to play at this time. Stay tune to announcements from this server!',
+                'You may access all channels and our browser-based MMO.',
+                `[Click here to access the MMO!](${this.site}/mmo)`,
             ];
 
             if (nicknameFailed) {
