@@ -78,4 +78,12 @@ export class SpindaDiscordBot extends PandaDiscordBot {
     public async initialize() {
         await this.dataService.initialize();
     }
+
+    public handleUncaughtEventHandlerError(error: any): void {
+        const message: string = error.toString();
+        // Something happened with the VM network, so the bot should restart.
+        if (message.includes('getaddrinfo EAI_AGAIN')) {
+            process.exit(1);
+        }
+    }
 }
