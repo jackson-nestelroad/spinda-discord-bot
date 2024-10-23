@@ -200,5 +200,34 @@ export const SpindaGenerationMetadata: SpindaGenerationMetadataInterface = {
                 },
             },
         },
+        [SpindaGeneration.Gen3Beta]: {
+            baseColor: Color.Hex(0xe2d5a5),
+            resources: {
+                base: new Resource('spinda/gen3beta/base.png'),
+                components: {
+                    red: new Resource('spinda/gen3beta/components/red.png'),
+                    tan: new Resource('spinda/gen3beta/components/tan.png'),
+                    black: new Resource('spinda/gen3beta/components/black.png'),
+                    mouth: new Resource('spinda/gen3beta/components/mouth.png'),
+                    shading: new Resource('spinda/gen3beta/components/shading.png'),
+                },
+                spots: {
+                    [SpotLocation.TopLeft]: new Spot('spinda/gen3beta/normal/top_left_spot.png', new Point(-6, -6)),
+                    [SpotLocation.TopRight]: new Spot('spinda/gen3beta/normal/top_right_spot.png', new Point(18, -5)),
+                    [SpotLocation.BottomLeft]: new Spot(
+                        'spinda/gen3beta/normal/bottom_left_spot.png',
+                        new Point(0, 12),
+                    ),
+                    [SpotLocation.BottomRight]: new Spot(
+                        'spinda/gen3beta/normal/bottom_right_spot.png',
+                        new Point(12, 13),
+                    ),
+                },
+                specialSpots: {
+                    heart: new Spot('spinda/gen3beta/special/bottom_left_heart.png', new Point(0, 12)),
+                    star: new Spot('spinda/gen3beta/special/bottom_right_star.png', new Point(12, 13)),
+                },
+            },
+        },
     },
 } as const;

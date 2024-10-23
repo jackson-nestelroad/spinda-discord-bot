@@ -38,6 +38,7 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
                 { name: 'Sinnoh', value: SpindaGeneration.Gen4 },
                 { name: 'Unova', value: SpindaGeneration.Gen5 },
                 { name: 'Retro', value: SpindaGeneration.Retro },
+                { name: 'Beta', value: SpindaGeneration.Gen3Beta },
             ],
         },
     };

@@ -35,6 +35,7 @@ export enum SpindaGeneration {
     Gen4 = 0b010,
     Gen5 = 0b011,
     Retro = 0b100,
+    Gen3Beta = 0b101,
     Random = 0b111,
 }
 
@@ -94,7 +95,7 @@ export class Spinda {
     }
 
     public getGeneration(): SpindaGeneration {
-        return Number((this.data.features & SpindaFeatureBitMask[SpindaFeature.Generation] ?? 0n) >> 4n);
+        return Number((this.data.features & SpindaFeatureBitMask[SpindaFeature.Generation]) >> 4n);
     }
 
     public setGeneration(gen: SpindaGeneration): void {

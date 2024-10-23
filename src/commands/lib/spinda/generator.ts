@@ -146,6 +146,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
             [SpindaGeneration.Gen5, 8],
             [SpindaGeneration.Retro, 8],
             [SpindaGeneration.Random, 8],
+            [SpindaGeneration.Gen3Beta, 20],
             [SpindaGeneration.Normal, 1],
         ],
     } as const;
