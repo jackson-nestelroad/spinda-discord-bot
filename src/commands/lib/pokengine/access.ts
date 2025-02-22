@@ -19,6 +19,9 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
     private readonly nicknameFailMsg =
         'Your nickname in the Discord server could not be updated. Please contact a staff member to change your nickname.';
 
+    private readonly translatorMsg =
+        "If you're having trouble with registering or finding your account, **please disable your translator**.\n\nSi vous rencontrez des difficultés pour vous inscrire ou trouver votre compte, **veuillez désactiver votre traducteur et essayer de vous inscrire au jeu**.";
+
     private accessRole: Role = null;
 
     public name = 'access';
@@ -110,10 +113,10 @@ export class AccessCommand extends SimpleCommand<SpindaDiscordBot> {
                     const axiosError = error as AxiosError;
                     switch (axiosError.response.status) {
                         case 401:
-                            throw new Error('Invalid password!');
+                            throw new Error(`Invalid password!\n\n${this.translatorMsg}`);
                         case 404:
                             throw new Error(
-                                `Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.`,
+                                `Player ${username} does not exist on ${this.site}. Register an account at ${this.site}/register.\n\n${this.translatorMsg}`,
                             );
                         default:
                             throw new Error(
