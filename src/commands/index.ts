@@ -18,6 +18,7 @@ import { RollCommand } from './lib/fun/roll';
 import { RoutletteCommand } from './lib/fun/roulette';
 import { ScreenshotCommand } from './lib/fun/screenshot';
 import { BlocklistCommand } from './lib/moderation/blocklist';
+import { HoneypotCommand } from './lib/moderation/honeypot';
 import { LogsCommand } from './lib/moderation/logs';
 import { MemberMessagesCommand } from './lib/moderation/member-messages';
 import { PruneCommand } from './lib/moderation/prune';
@@ -77,4 +78,5 @@ export const CommandTypes: CommandTypeArray = [
     BlocklistCommand,
     WarnCommand,
     WarningsCommand,
+    HoneypotCommand,
 ];

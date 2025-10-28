@@ -27,6 +27,7 @@ export interface GuildAttributes {
     memberLeftCode?: string;
     memberMessagesChannelId?: Snowflake;
     honeypotChannelId?: Snowflake;
+    honeypotEnableBans: boolean;
 }
 
 interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
@@ -41,6 +42,9 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
     public warnsToBan?: number;
     public memberJoinedCode?: string;
     public memberLeftCode?: string;
+    public memberMessagesChannelId?: Snowflake;
+    public honeypotChannelId?: Snowflake;
+    public honeypotEnableBans: boolean;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -117,6 +121,11 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                     type: DataTypes.STRING,
                     allowNull: true,
                     defaultValue: null,
+                },
+                honeypotEnableBans: {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false,
                 },
             },
             {
