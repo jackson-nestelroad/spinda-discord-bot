@@ -14,12 +14,12 @@
     "dependencies": {
         "@google-cloud/compute": "^3.5.1",
         "axios": "^1.6.5",
-        "canvas": "^2.10.2",
+        "canvas": "^3.2.0",
         "cheerio": "^1.0.0-rc.5",
         "dotenv": "^8.2.0",
         "mathjs": "^9.2.0",
         "moment": "^2.29.1",
-        "panda-discord": "^4.5.0",
+        "panda-discord": "^4.6.1",
         "pg": "^8.5.1",
         "sequelize": "^6.5.0"
     },
@@ -32,10 +32,10 @@
         "gulp-typescript": "^6.0.0-alpha.1",
         "prettier": "^2.3.2",
         "sequelize-cli": "^6.2.0",
-        "typescript": "^5.2.2"
+        "typescript": "^5.9.3"
     },
     "engines": {
-        "node": "16.6.1",
-        "npm": ">=8.1.0"
+        "node": ">=25.0.0",
+        "npm": ">=11.0.0"
     }
 }

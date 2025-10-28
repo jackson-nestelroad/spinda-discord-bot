@@ -12,7 +12,7 @@ export class GuildMemberWarnedEvent extends BaseLogEvent<'guildMemberWarned'> {
 
     public async run(warning: WarningAttributes) {
         const channel = await this.getDestination(warning.guildId);
-        if (channel) {
+        if (channel && channel.isSendable()) {
             const embed = this.bot.createEmbed({
                 footer: true,
                 timestamp: true,

@@ -1,4 +1,13 @@
-import { AttachmentBuilder, Collection, GuildTextBasedChannel, Message, Snowflake, TextChannel } from 'discord.js';
+import {
+    AttachmentBuilder,
+    Collection,
+    GuildTextBasedChannel,
+    Message,
+    PartialMessage,
+    ReadonlyCollection,
+    Snowflake,
+    TextChannel,
+} from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -10,10 +19,13 @@ export class MessageDeleteBulkEvent extends BaseLogEvent<'messageDeleteBulk'> {
         super(bot, 'messageDeleteBulk', LogOptionBit.BulkMessageDeletion);
     }
 
-    public async run(messages: Collection<Snowflake, Message>, channel: GuildTextBasedChannel) {
+    public async run(
+        messages: ReadonlyCollection<Snowflake, Message | PartialMessage>,
+        channel: GuildTextBasedChannel,
+    ) {
         if (messages.size > 0) {
             const logChannel = await this.getDestination(channel.guild.id);
-            if (logChannel) {
+            if (logChannel && logChannel.isSendable()) {
                 const embed = this.bot.createEmbed(EmbedTemplates.Log);
 
                 embed.setTitle('Bulk Message Deletion');

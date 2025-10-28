@@ -39,6 +39,10 @@ export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
     };
 
     public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>, args: CatchArgs) {
+        if (!src.channel.isSendable()) {
+            return;
+        }
+
         const wantedPosition = args.position ?? 0;
         if (wantedPosition < 0) {
             throw new Error('Position must be a positive integer.');

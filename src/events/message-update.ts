@@ -1,4 +1,4 @@
-import { Message, TextChannel } from 'discord.js';
+import { Message, OmitPartialGroupDMChannel, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -12,9 +12,9 @@ export class MessageUpdateEvent extends BaseLogEvent<'messageUpdate'> {
         super(bot, 'messageUpdate', LogOptionBit.MessageEdited);
     }
 
-    public async run(oldMsg: Message, newMsg: Message) {
+    public async run(oldMsg: OmitPartialGroupDMChannel<Message>, newMsg: OmitPartialGroupDMChannel<Message>) {
         const channel = await this.getDestination(newMsg.guild?.id ?? null);
-        if (channel && !newMsg.author.bot) {
+        if (channel && channel.isSendable() && !newMsg.author.bot) {
             const embed = this.bot.createEmbed(EmbedTemplates.Log);
             embed.setTimestamp(newMsg.editedTimestamp);
 

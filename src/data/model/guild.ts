@@ -26,6 +26,7 @@ export interface GuildAttributes {
     memberJoinedCode?: string;
     memberLeftCode?: string;
     memberMessagesChannelId?: Snowflake;
+    honeypotChannelId?: Snowflake;
 }
 
 interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
@@ -108,6 +109,11 @@ export class Guild extends Model<GuildAttributes, GuildCreationAttributes> imple
                     defaultValue: null,
                 },
                 memberMessagesChannelId: {
+                    type: DataTypes.STRING,
+                    allowNull: true,
+                    defaultValue: null,
+                },
+                honeypotChannelId: {
                     type: DataTypes.STRING,
                     allowNull: true,
                     defaultValue: null,

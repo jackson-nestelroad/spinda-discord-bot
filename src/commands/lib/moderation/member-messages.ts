@@ -17,6 +17,9 @@ import { CustomCommandEngine } from '../../../custom-commands/custom-command-eng
 
 export class MockCommandSourceForMemberMessages extends MockCommandSourceBase {
     public async send(res: SendResponse): Promise<Message> {
+        if (!this.channel.isSendable()) {
+            throw new Error('Message cannot be sent to channel');
+        }
         return await this.channel.send(res);
     }
 

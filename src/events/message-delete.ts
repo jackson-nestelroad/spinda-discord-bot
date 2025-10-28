@@ -1,4 +1,4 @@
-import { Message, TextChannel } from 'discord.js';
+import { Message, OmitPartialGroupDMChannel, TextChannel } from 'discord.js';
 import { EmbedTemplates } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../bot';
@@ -12,7 +12,7 @@ export class MessageDeleteEvent extends BaseLogEvent<'messageDelete'> {
         super(bot, 'messageDelete', LogOptionBit.MessageDeleted);
     }
 
-    public async run(msg: Message) {
+    public async run(msg: OmitPartialGroupDMChannel<Message>) {
         const channel = await this.getDestination(msg.guild?.id ?? null);
         if (channel && !msg.author.bot) {
             const embed = this.bot.createEmbed(EmbedTemplates.Log);

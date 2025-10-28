@@ -1,5 +1,5 @@
 import { Canvas, CanvasRenderingContext2D, Image, ImageData, createCanvas } from 'canvas';
-import { AttachmentBuilder, Message, Snowflake } from 'discord.js';
+import { AttachmentBuilder, Message, OmitPartialGroupDMChannel, Snowflake } from 'discord.js';
 import { BaseService } from 'panda-discord';
 
 import { SpindaDiscordBot } from '../../../bot';
@@ -47,7 +47,7 @@ export class CanvasBundle {
     public drawImage(composite: CanvasGlobalCompositeOperation, ...args: any[]) {
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.globalCompositeOperation = composite;
-        this.ctx.drawImage(...args);
+        (this.ctx['drawImage'] as any)(...args);
     }
 
     public drawCanvas(composite: CanvasGlobalCompositeOperation, bundle: CanvasBundle) {
@@ -477,7 +477,7 @@ export class SpindaGeneratorService extends BaseService<SpindaDiscordBot> {
         };
     }
 
-    public async generateAndSend(msg: Message, spinda: GeneratedSpindaData): Promise<void> {
+    public async generateAndSend(msg: OmitPartialGroupDMChannel<Message>, spinda: GeneratedSpindaData): Promise<void> {
         await msg.channel.send({ files: [new AttachmentBuilder((await this.generate(spinda)).buffer)] });
     }
 
