@@ -13,12 +13,12 @@ export class BlocklistEntry
     extends Model<BlocklistEntryAttributes, BlocklistEntryCreationAttributes>
     implements BlocklistEntryAttributes
 {
-    public readonly id: number;
-    public readonly guildId: Snowflake;
-    public readonly userId: Snowflake;
+    public declare readonly id: number;
+    public declare readonly guildId: Snowflake;
+    public declare readonly userId: Snowflake;
 
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
+    public declare readonly createdAt: Date;
+    public declare readonly updatedAt: Date;
 
     static initialize(sequelize: Sequelize) {
         BlocklistEntry.init(

@@ -15,15 +15,15 @@ export interface WarningAttributes {
 interface WarningCreationAttributes extends Optional<WarningAttributes, 'id'> {}
 
 export class Warning extends Model<WarningAttributes, WarningCreationAttributes> implements WarningAttributes {
-    public readonly id: number;
-    public readonly guildId: Snowflake;
-    public readonly userId: Snowflake;
-    public readonly issuerId: Snowflake;
-    public readonly reason: string;
-    public readonly date: Date;
+    public declare readonly id: number;
+    public declare readonly guildId: Snowflake;
+    public declare readonly userId: Snowflake;
+    public declare readonly issuerId: Snowflake;
+    public declare readonly reason: string;
+    public declare readonly date: Date;
 
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
+    public declare readonly createdAt: Date;
+    public declare readonly updatedAt: Date;
 
     static initialize(sequelize: Sequelize) {
         Warning.init(

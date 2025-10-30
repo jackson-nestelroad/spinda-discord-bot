@@ -31,18 +31,18 @@ export class CustomCommand
     extends Model<CustomCommandAttributes, CustomCommandCreationAttributes>
     implements CustomCommandAttributes
 {
-    public readonly id: number;
-    public readonly guildId: Snowflake;
-    public name: string;
-    public message: string;
-    public description: string;
-    public contentName: string;
-    public contentDescription: string;
-    public permission: keyof typeof CommandPermission;
-    public flags: number;
+    public declare readonly id: number;
+    public declare readonly guildId: Snowflake;
+    public declare name: string;
+    public declare message: string;
+    public declare description: string;
+    public declare contentName: string;
+    public declare contentDescription: string;
+    public declare permission: keyof typeof CommandPermission;
+    public declare flags: number;
 
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
+    public declare readonly createdAt: Date;
+    public declare readonly updatedAt: Date;
 
     static initialize(sequelize: Sequelize) {
         CustomCommand.init(

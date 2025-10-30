@@ -25,15 +25,15 @@ export class CaughtSpinda
     extends Model<SerializedCaughtSpindaAttributes, SerializedCaughtSpindaCreationAttributes>
     implements SerializedCaughtSpindaAttributes
 {
-    public readonly id: number;
-    public readonly userId: Snowflake;
-    public readonly position: number;
-    public readonly generatedAt: Date;
-    public readonly pid: string;
-    public readonly features: string;
+    public declare readonly id: number;
+    public declare readonly userId: Snowflake;
+    public declare readonly position: number;
+    public declare readonly generatedAt: Date;
+    public declare readonly pid: string;
+    public declare readonly features: string;
 
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
+    public declare readonly createdAt: Date;
+    public declare readonly updatedAt: Date;
 
     public static serializeAttributes(attrs: CaughtSpindaAttributes): SerializedCaughtSpindaAttributes;
     public static serializeAttributes(attrs: GeneratedSpindaData): SerializedGeneratedSpindaData;

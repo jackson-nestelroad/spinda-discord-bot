@@ -33,21 +33,21 @@ export interface GuildAttributes {
 interface GuildCreationAttributes extends Optional<GuildAttributes, 'logOptions'> {}
 
 export class Guild extends Model<GuildAttributes, GuildCreationAttributes> implements GuildAttributes {
-    public readonly id!: Snowflake;
-    public prefix!: string;
-    public logChannelId?: Snowflake;
-    public logOptions: number;
-    public timeoutSequence?: string;
-    public warnsToBeginTimeouts?: number;
-    public warnsToBan?: number;
-    public memberJoinedCode?: string;
-    public memberLeftCode?: string;
-    public memberMessagesChannelId?: Snowflake;
-    public honeypotChannelId?: Snowflake;
-    public honeypotEnableBans: boolean;
+    public declare readonly id: Snowflake;
+    public declare prefix: string;
+    public declare logChannelId?: Snowflake;
+    public declare logOptions: number;
+    public declare timeoutSequence?: string;
+    public declare warnsToBeginTimeouts?: number;
+    public declare warnsToBan?: number;
+    public declare memberJoinedCode?: string;
+    public declare memberLeftCode?: string;
+    public declare memberMessagesChannelId?: Snowflake;
+    public declare honeypotChannelId?: Snowflake;
+    public declare honeypotEnableBans: boolean;
 
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
+    public declare readonly createdAt: Date;
+    public declare readonly updatedAt: Date;
 
     public hasLogOption(option: LogOptionBit): boolean {
         return !!(this.logOptions & option);
