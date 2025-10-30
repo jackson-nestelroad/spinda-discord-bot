@@ -1,9 +1,11 @@
-import { Message } from 'discord.js';
+import { Message, TextBasedChannel, TextChannel } from 'discord.js';
 import {
     BaseEvent,
     ChatCommandParameters,
     CommandSource,
+    EmbedTemplates,
     MessageCommandSource,
+    MockCommandSourceBase,
     NamedArgsOption,
     SplitArgumentArray,
 } from 'panda-discord';
@@ -91,6 +93,48 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
         }
     }
 
+    private async checkHoneypot(msg: Message, guild: GuildAttributes) {
+        // Catch the honeypot channel for the guild.
+        if (!guild.honeypotChannelId || msg.channelId != guild.honeypotChannelId) {
+            return;
+        }
+
+        // Forward to log channel, if it exists.
+        let channel = guild.logChannelId
+            ? (this.bot.client.channels.cache.get(guild.logChannelId) as TextBasedChannel)
+            : msg.channel;
+
+        if (channel && channel.isSendable()) {
+            const embed = this.bot.createEmbed(EmbedTemplates.Success);
+            embed.setTitle('\u{1F36F} Honeypot');
+
+            let response = `${msg.author} has been honeypotted!`;
+            if (!guild.honeypotEnableBans) {
+                response +=
+                    '\n\nThis is just a warning. If you are a moderator and this is unexpected, be sure to *explicitly* enable bans by setting the `enablebans` option to `True` when using the `/honeypot` command';
+            }
+
+            embed.setDescription(response);
+            await channel.send({ embeds: [embed] });
+        }
+
+        if (guild.honeypotEnableBans) {
+            try {
+                await msg.member.ban({ deleteMessageSeconds: 86400, reason: 'Posted to honeypot channel.' });
+            } catch (error) {
+                if (channel && channel.isSendable()) {
+                    await this.bot.sendErrorToChannel(channel, error);
+                }
+            }
+        }
+
+        try {
+            await msg.delete();
+        } catch (err) {
+            // Do nothing.
+        }
+    }
+
     public async run(msg: Message) {
         // User is a bot or in a direct message
         if (msg.author.bot || msg.guild === null) {
@@ -112,26 +156,7 @@ export class MessageCreateEvent extends BaseEvent<'messageCreate', SpindaDiscord
             ? this.bot.dataService.getCachedGuild(msg.guild.id)
             : await this.bot.dataService.getGuild(msg.guild.id);
 
-        // Catch the honeypot channel for the guild.
-        if (guild.honeypotChannelId && msg.channelId == guild.honeypotChannelId) {
-            if (msg.channel.isSendable()) {
-                let response = `${msg.author} has been honeypotted!`;
-                if (!guild.honeypotEnableBans) {
-                    response +=
-                        '\n\nThis is just a warning. If you are a moderator and this is unexpected, be sure to *explicitly* enable bans by setting the `enablebans` option to `True` when using the `/honeypot` command';
-                }
-                await msg.channel.send(response);
-            }
-            if (guild.honeypotEnableBans) {
-                try {
-                    await msg.member.ban({ deleteMessageSeconds: 86400, reason: 'Posted to honeypot channel.' });
-                } catch (error) {
-                    if (msg.channel.isSendable()) {
-                        msg.channel.send(`Could not ban ${msg.author}: ${error.message || error.toString()}`);
-                    }
-                }
-            }
-        }
+        this.checkHoneypot(msg, guild);
 
         const prefix = guild.prefix;
 
