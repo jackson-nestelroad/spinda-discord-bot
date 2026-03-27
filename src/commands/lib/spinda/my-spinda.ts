@@ -73,8 +73,6 @@ export class MySpindaCommand extends ComplexCommand<SpindaDiscordBot, MySpindaAr
         } else {
             if (args.position <= 0) {
                 throw new Error(`Position must be a positive integer.`);
-            } else if (args.position > SpindaGeneratorService.partySize) {
-                throw new Error(`Position too large.`);
             } else if (args.position > caughtSpinda.length) {
                 throw new Error(`Invalid position. You only have ${caughtSpinda.length} Spinda caught.`);
             }

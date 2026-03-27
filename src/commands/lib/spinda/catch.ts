@@ -8,6 +8,7 @@ import {
 } from 'panda-discord';
 
 import { CommandCategory, CommandPermission, SpindaDiscordBot } from '../../../bot';
+import { Environment } from '../../../data/environment';
 import { SpindaCommandNames } from './command-names';
 import { SpindaGeneratorService } from './generator';
 import { SpindaPositionAutocomplete } from './util/autocomplete';
@@ -68,7 +69,7 @@ export class CatchCommand extends ComplexCommand<SpindaDiscordBot, CatchArgs> {
         let pos: number = caughtSpinda.length;
 
         // User must replace an existing Spinda
-        if (caughtSpinda.length >= SpindaGeneratorService.partySize) {
+        if (caughtSpinda.length >= SpindaGeneratorService.partySize && src.author.id !== Environment.getGlobalOwner()) {
             // Save the numeric timestamp of the targeted Spinda
             // Checked after the replacement segment to make sure a newer Spinda has not taken this spot
             const generatedAt = wantedSpinda.generatedAt.valueOf();
