@@ -19,9 +19,9 @@ if (Environment.getEnvironment() !== 'production') {
             intents: [
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.GuildBans,
-                GatewayIntentBits.GuildMembers,
+                // GatewayIntentBits.GuildMembers,
                 GatewayIntentBits.GuildMessages,
-                GatewayIntentBits.MessageContent,
+                // GatewayIntentBits.MessageContent,
                 GatewayIntentBits.DirectMessages,
             ],
             partials: [

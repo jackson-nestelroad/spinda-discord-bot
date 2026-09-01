@@ -29,7 +29,7 @@ class SaveSnapshotSubCommand extends SimpleCommand<SpindaDiscordBot> {
 
     public async run({ bot, src, guildId }: CommandParameters<SpindaDiscordBot>) {
         const snapshot: GuildMembersSnapshot = {};
-        const members = await bot.memberListService.getMemberListForGuild(guildId);
+        const members = await bot.getMemberListForGuild(guildId);
         for (const [id, member] of members) {
             snapshot[id] = {
                 nickname: member.nickname,
@@ -81,7 +81,7 @@ class RestoreFromSnapshotSubCommand extends ComplexCommand<SpindaDiscordBot, Res
             rolesErrors: 0,
         };
 
-        const members = await bot.memberListService.getMemberListForGuild(guildId);
+        const members = await bot.getMemberListForGuild(guildId);
         for (const userId in guildSnapshot) {
             if (!members.has(userId as Snowflake)) {
                 ++stats.memberNotFound;

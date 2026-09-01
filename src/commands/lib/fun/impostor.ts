@@ -110,9 +110,7 @@ export class ImpostorCommand extends ComplexCommand<SpindaDiscordBot, ImpostorAr
     }
 
     public async run({ bot, src }: CommandParameters<SpindaDiscordBot>, args: ImpostorArgs) {
-        const name =
-            args.user?.user.username ??
-            (await bot.memberListService.getMemberListForGuild(src.guild.id)).random().user.username;
+        const name = args.user?.user.username ?? (await bot.getMemberListForGuild(src.guild.id)).random().user.username;
 
         await src.send(this.generateText(name, args.identity, args.force));
     }

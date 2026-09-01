@@ -69,8 +69,8 @@ export const CommandTypes: CommandTypeArray = [
     SetCommandCommand,
     RemoveCommandCommand,
     RunCustomCommand,
-    RunUniversalCommand,
-    SnapshotMembersCommand,
+    // RunUniversalCommand,
+    // SnapshotMembersCommand,
 
     LogsCommand,
     MemberMessagesCommand,

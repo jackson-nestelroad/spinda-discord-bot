@@ -737,7 +737,7 @@ export class CustomCommandEngine {
                     break;
                 case 'random-member':
                     {
-                        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
+                        const memberList = await this.context.params.bot.getMemberListForGuild(
                             this.context.params.guildId,
                         );
                         return memberList.random().user.username;
@@ -1333,9 +1333,7 @@ export class CustomCommandEngine {
             errors: {},
         };
 
-        const memberList = await this.context.params.bot.memberListService.getMemberListForGuild(
-            this.context.params.guildId,
-        );
+        const memberList = await this.context.params.bot.getMemberListForGuild(this.context.params.guildId);
         for (const [id, member] of memberList) {
             this.context.member = member;
             try {

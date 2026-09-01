@@ -42,7 +42,7 @@ export class RunUniversalCommand extends ComplexCommand<SpindaDiscordBot, RunUni
     };
 
     public async run({ bot, src, guildId, extraArgs }: CommandParameters<SpindaDiscordBot>, args: RunUniversalArgs) {
-        const members = await bot.memberListService.getMemberListForGuild(guildId);
+        const members = await bot.getMemberListForGuild(guildId);
         const otherAdmins = members.filter(
             member => member.permissions.has(PermissionFlagsBits.Administrator) && !member.user.bot,
         );

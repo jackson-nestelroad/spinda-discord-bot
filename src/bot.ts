@@ -1,4 +1,4 @@
-import { AttachmentBuilder, PermissionFlagsBits, Snowflake } from 'discord.js';
+import { AttachmentBuilder, Collection, PermissionFlagsBits, Snowflake } from 'discord.js';
 import {
     BaseHelpServiceInternal,
     CommandPermissionOptions,
@@ -59,7 +59,8 @@ export class SpindaDiscordBot extends PandaDiscordBot {
 
     public readonly helpService: SpindaHelpService = new SpindaHelpService(this, new BaseHelpServiceInternal(this));
     public readonly timeoutService: SpindaTimeoutService = new SpindaTimeoutService(this);
-    public readonly memberListService: MemberListService = new MemberListService(this);
+    // private readonly memberListService: MemberListService = new MemberListService(this);
+    private readonly memberListService: MemberListService = undefined;
 
     public readonly dataService = new DataService(this);
     public readonly resourceService = new ResourceService(this);
@@ -68,6 +69,17 @@ export class SpindaDiscordBot extends PandaDiscordBot {
     public readonly customCommandService = new CustomCommandService(this);
     public readonly pollsService = new PollsService(this);
     public readonly autoTimeoutService = new AutoTimeoutService(3, this);
+
+    public async getMemberListForGuild(guildId: Snowflake): Promise<Collection<Snowflake, GuildMember>> {
+        if (this.memberListService) {
+            return await this.memberListService.getMemberListForGuild(guildId);
+        }
+        const guild = this.client.guilds.cache.get(guildId);
+        if (guild) {
+            return guild.members.cache;
+        }
+        return new Collection();
+    }
 
     public createJSONAttachment(data: object, name: string, src: CommandSource): AttachmentBuilder {
         return new AttachmentBuilder(Buffer.from(JSON.stringify(data)), {
